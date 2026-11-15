@@ -1,45 +1,31 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {BeatProvider} from './beat/BeatContext';
-import {Background} from './layers/Background';
 import {BeatDebug} from './layers/BeatDebug';
 import {Layer} from './layers/Layer';
-import {Rings} from './layers/Rings';
-import {LoopProps} from './schema';
+import {configuredLayers} from './layers/registry';
+import type {LoopInput} from './schema';
 
-type Props = LoopProps & {
-  /** Internal: used by SeamCheck to start partway through the loop */
+type Props = LoopInput & {
+  /** Internal: used by SeamCheck to start partway through the loop. */
   frameOffset?: number;
 };
 
-/**
- * The layer stack. Order here = z-order (first is bottom).
- * To add a layer: add its schema in schema.ts, build a component in
- * layers/, and drop it into this stack inside a <Layer>.
- */
-export const LoopComposition: React.FC<Props> = ({
-  bpm,
-  bars,
-  beatsPerBar,
-  fps,
-  frameOffset = 0,
-  background,
-  rings,
-  debug,
-}) => {
+/** Procedural layers are configured through registry-derived composition props. */
+export const LoopComposition: React.FC<Props> = (props) => {
+  const layers = configuredLayers(props);
   return (
-    <BeatProvider bpm={bpm} bars={bars} beatsPerBar={beatsPerBar} fps={fps} frameOffset={frameOffset}>
+    <BeatProvider bpm={props.bpm} bars={props.bars} beatsPerBar={props.beatsPerBar}
+      fps={props.fps} frameOffset={props.frameOffset ?? 0}>
       <AbsoluteFill style={{backgroundColor: 'black'}}>
-        <Layer enabled={background.enabled} opacity={background.opacity} blendMode={background.blendMode}>
-          <Background {...background} />
-        </Layer>
-
-        <Layer enabled={rings.enabled} opacity={rings.opacity} blendMode={rings.blendMode}>
-          <Rings {...rings} />
-        </Layer>
-
-        <Layer enabled={debug.enabled}>
-          <BeatDebug divisions={[background.division, rings.division]} />
+        {layers.map(({name, definition, props: layer}) => (
+          <Layer key={name} enabled={layer.enabled} opacity={layer.opacity} blendMode={layer.blendMode}>
+            {definition.render(layer)}
+          </Layer>
+        ))}
+        <Layer enabled={props.debug.enabled}>
+          <BeatDebug divisions={layers.filter(({props: layer}) => layer.enabled)
+            .map(({props: layer}) => layer.division)} />
         </Layer>
       </AbsoluteFill>
     </BeatProvider>

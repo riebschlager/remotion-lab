@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["DOM", "ES2022"]
   },
-  "include": ["src", "remotion.config.ts"]
+  "include": ["src", "remotion.config.ts", "tests", "scripts"]
 }

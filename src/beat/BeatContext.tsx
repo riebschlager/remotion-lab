@@ -16,7 +16,8 @@ type Props = TimingConfig & {
 /**
  * The single source of time for every layer. Layers call `useBeat()` —
  * they never call `useCurrentFrame()` directly. That one rule keeps
- * everything on the beat grid and guarantees the loop closes.
+ * everything on the beat grid. Layers must also preserve event identity and
+ * continuity at the wrap; a periodic clock alone cannot guarantee that.
  */
 export const BeatProvider: React.FC<Props> = ({
   bpm,

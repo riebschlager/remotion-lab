@@ -11,7 +11,22 @@ import {
   step,
   stepRandom,
 } from '../beat/envelopes';
-import {ringsSchema} from '../schema';
+import {zColor} from '@remotion/zod-types';
+import {baseLayerSchema} from './base';
+import {defineLayer} from './definition';
+
+export const ringsSchema = baseLayerSchema.extend({
+  color: zColor(),
+  accentColor: zColor(),
+  /** Every Nth ring uses the accent color (0 = never) */
+  accentEvery: z.number().int().min(0).max(16),
+  /** How long each ring lives, in steps */
+  lifeSteps: z.number().int().min(1).max(16),
+  maxRadius: z.number().min(100).max(1400).step(10),
+  thickness: z.number().min(1).max(80).step(1),
+  /** How far the center wanders, in px (loopable noise) */
+  drift: z.number().min(0).max(300).step(1),
+});
 
 type Props = z.infer<typeof ringsSchema>;
 
@@ -84,3 +99,13 @@ export const Rings: React.FC<Props> = ({
     </AbsoluteFill>
   );
 };
+
+export const ringsLayer = defineLayer({
+  schema: ringsSchema,
+  defaults: {
+    enabled: true, opacity: 1, blendMode: 'screen', division: '1/4', offsetBeats: 0,
+    color: '#7fe7ff', accentColor: '#ff4fa3', accentEvery: 4, lifeSteps: 3,
+    maxRadius: 900, thickness: 14, drift: 80,
+  },
+  Component: Rings,
+});

@@ -10,7 +10,16 @@
     "render:60": "remotion render BeatLoop out/loop-60fps.mp4 --props='{\"fps\":60}'",
     "seamcheck": "remotion render SeamCheck out/seamcheck.mp4",
     "still": "remotion still BeatLoop out/frame0.png --frame=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "skills:add": "remotion skills add",
+    "skills:update": "remotion skills update",
+    "skills:check": "node scripts/check-skills.mjs",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:visual": "node --import tsx --test tests/visual/*.test.ts",
+    "check": "npm run skills:check && npm run typecheck && npm test",
+    "presets": "node --import tsx scripts/list-presets.ts",
+    "render:preset": "remotion render PresetLoop out/preset.mp4",
+    "seamcheck:preset": "remotion render PresetSeamCheck out/preset-seamcheck.mp4"
   },
   "dependencies": {
     "@remotion/cli": "4.0.543",
@@ -22,7 +31,16 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@remotion/bundler": "4.0.543",
+    "@remotion/renderer": "4.0.543",
+    "@types/node": "^26.6.6",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "^19.0.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

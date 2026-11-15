@@ -39,6 +39,7 @@ export const divisionBeats = (division: Division, beatsPerBar = 4) => {
  * loop. "4 bars" inside a 2-bar loop will pop at the seam.
  */
 export const divisionFitsLoop = (stepBeats: number, totalBeats: number) => {
+  if (!Number.isFinite(stepBeats) || !Number.isFinite(totalBeats) || stepBeats <= 0 || totalBeats <= 0) return false;
   const n = totalBeats / stepBeats;
   return Math.abs(n - Math.round(n)) < 1e-6;
 };
@@ -68,6 +69,9 @@ export const step = (
   totalBeats: number,
   offsetBeats = 0,
 ): Step => {
+  if (!divisionFitsLoop(stepBeats, totalBeats)) {
+    throw new Error(`Step length ${stepBeats} must fit a whole number of times in ${totalBeats} beats.`);
+  }
   const local = mod(beat - offsetBeats, totalBeats);
   const stepsPerLoop = Math.max(1, Math.round(totalBeats / stepBeats));
   const index = Math.floor(local / stepBeats) % stepsPerLoop;
@@ -99,6 +103,8 @@ export const pulse = (
 /**
  * Decay measured in beats since a hit at `hitBeat`, wrapped across the loop.
  * Use for tails longer than one step (e.g. a crash that rings for 3 beats).
+ * A single-hit envelope cannot exceed the loop; use overlapping events (as
+ * Rings does) when multiple generations must be alive at the same time.
  */
 export const decaySince = (
   beat: number,
@@ -107,6 +113,10 @@ export const decaySince = (
   totalBeats: number,
   curve = 2,
 ) => {
+  if (!Number.isFinite(lengthBeats) || !Number.isFinite(totalBeats) || lengthBeats <= 0 || totalBeats <= 0 || lengthBeats > totalBeats) {
+    throw new Error('decaySince lengthBeats must be positive and no longer than totalBeats; use overlapping events for longer tails.');
+  }
+  if (!Number.isFinite(curve) || curve <= 0) throw new Error('decaySince curve must be positive and finite.');
   const since = mod(beat - hitBeat, totalBeats);
   return since >= lengthBeats ? 0 : Math.pow(1 - since / lengthBeats, curve);
 };
@@ -124,13 +134,14 @@ export const easeInOutSine = (t: number) => 0.5 - 0.5 * Math.cos(clamp01(t) * Ma
 export type LfoShape = 'sine' | 'triangle' | 'saw' | 'square';
 
 /**
- * Periodic motion locked to the loop. `cycles` is rounded to an integer —
- * a non-integer cycle count is the #1 cause of a visible seam.
+ * Periodic motion locked to the loop. Require whole, nonnegative cycle counts
+ * instead of silently changing the requested motion. Zero holds a constant.
+ * Saw/square waves intentionally jump; periodic does not mean continuous.
  * Output range: -1 → 1.
  */
 export const lfo = (loopPhase: number, cycles = 1, shape: LfoShape = 'sine', phaseOffset = 0) => {
-  const c = Math.max(1, Math.round(cycles));
-  const p = mod(loopPhase * c + phaseOffset, 1);
+  if (!Number.isInteger(cycles) || cycles < 0) throw new Error('lfo cycles must be a nonnegative integer.');
+  const p = mod(loopPhase * cycles + phaseOffset, 1);
   switch (shape) {
     case 'sine':
       return Math.sin(p * Math.PI * 2);

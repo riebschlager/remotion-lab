@@ -3,7 +3,8 @@
  * function of numbers so it can be reasoned about (and tested) in isolation.
  *
  * Core rule: time is expressed as LOOP PHASE (0 → 1), and beats are derived
- * from phase. That guarantees the frame after the last frame is frame 0.
+ * from phase. The frame after the last frame samples frame 0. Layer functions
+ * must still make that transition continuous, except for intentional attacks.
  */
 
 export type TimingConfig = {
