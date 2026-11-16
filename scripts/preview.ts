@@ -8,7 +8,9 @@
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
-import {inspectLoop, openSession} from './lib/render';
+import {findSketch} from '../src/sketches';
+import {missingAssetsHint} from '../src/assets';
+import {inspectLoop, missingSketchAssets, openSession} from './lib/render';
 
 const {values, positionals} = parseArgs({allowPositionals: true, options: {
   props: {type: 'string'}, scale: {type: 'string'}, strict: {type: 'boolean'},
@@ -23,6 +25,17 @@ const scale = Number(values.scale ?? 0.2);
 if (!(scale > 0 && scale <= 1)) throw new Error('--scale must be above 0 and at most 1');
 const raw = values.props?.trim();
 const inputProps = raw ? JSON.parse(raw.startsWith('{') ? raw : await readFile(raw, 'utf8')) : {};
+
+// A sketch whose collection is not on this machine cannot render: say so before bundling.
+const sketch = findSketch(id.replace(/-seam$/, ''));
+if (sketch) {
+  let missing: string[] = [];
+  try { missing = missingSketchAssets(sketch, inputProps); } catch { /* Invalid props are reported by the render below. */ }
+  if (missing.length) {
+    console.error(`Cannot preview "${id}":\n${missing.map((line) => `  ${line}`).join('\n')}\n${missingAssetsHint}`);
+    process.exit(1);
+  }
+}
 
 const session = await openSession();
 try {

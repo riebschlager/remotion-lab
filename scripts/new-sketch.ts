@@ -79,7 +79,13 @@ Palette, shapes, type, texture, references.
 
 ## Assets
 
-Collections under public/assets/ this sketch may use, or "None".
+"None", or the collection this sketch draws on. Read
+collections/<collection>/manifest.json and the clips' filmstrips before
+choosing, then list each asset with the facts that shaped the design:
+
+- clip \`<collection>/<path>\`: frames, native fps, size, alpha, loops on its own?
+  How it is driven (once every N beats, restarted per hit, one frame per hit).
+- font \`<collection>/<Family>\`: weights or variable axes used.
 
 ## Notes
 

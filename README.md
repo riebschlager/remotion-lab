@@ -25,6 +25,7 @@ npm run dev          # opens Remotion Studio — edit props live in the right pa
 | `npm run sketches` | List sketches with their tempo, canvas and duration |
 | `npm run sketch:new -- <id>` | Scaffold `src/sketches/<id>/` and register it |
 | `npm run preview -- <id>` | Contact sheet plus determinism and seam checks → `out/preview/<id>/` |
+| `npm run assets:scan` | Describe the collections in `public/assets/` → `collections/<name>/manifest.json` and filmstrips |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Timing, envelope, event identity, and configuration regression tests |
 | `npm run test:visual` | Rendered seam, determinism, clean defaults, and composition integration tests |
@@ -61,7 +62,7 @@ npx remotion render neon-rain out/neon-rain.mp4 --props='{"canvas":"square","bpm
 
 `brief.md` records the idea, rhythm, look and assets in plain language.
 `sketch.tsx` default-exports `defineSketch({id, title, description, schema,
-defaults, Component, validate?, timing?, canvas?, debugDivisions?})`. The `id`
+defaults, Component, assets?, validate?, timing?, canvas?, debugDivisions?})`. The `id`
 must equal the folder name. `schema` and `defaults` cover only the sketch's
 own params; every sketch also receives these shared controls:
 
@@ -81,6 +82,8 @@ unknown or invalid fields fail before rendering with a field-specific message.
 Inside a sketch component:
 
 - `useBeat()` is still the only clock, and all seven loop rules below apply.
+- `useAsset()` and `<ClipFrame>` bring in GIFs, video and fonts from a
+  collection; see "Asset collections".
 - `useCanvas()` returns `{width, height, vmin, vmax, cx, cy, aspect}`. Size
   everything in `vmin` (1% of the shorter side) or as fractions of the canvas,
   never literal pixels, so one sketch renders correctly on every canvas.
@@ -114,7 +117,141 @@ wide canvas, with no per-sketch test code.
 Sketch defaults live in the sketch's own file, so Studio's "save default
 props" does not apply to them; edit `defaults` in `sketch.tsx` instead.
 
-Asset collections will live in `public/assets/`, which is gitignored.
+## Asset collections
+
+A collection is a folder of animated GIFs, video clips and fonts that sketches
+are built from: `public/assets/<collection>/`, with any subfolders. Name the
+folder with lowercase letters, digits and hyphens. `public/assets/` is
+gitignored, so the media itself never enters git.
+
+What is committed is a description of each collection, in `collections/`:
+
+```
+collections/
+  index.ts                     generated: imports every manifest
+  <collection>/manifest.json   measurements, plus your descriptions and tags
+  <collection>/filmstrips/     one small image per clip
+```
+
+```bash
+npm run assets:scan            # every collection folder present on this machine
+npm run assets:scan -- retro   # only public/assets/retro/
+```
+
+The scan reads `.gif`, `.mp4`, `.m4v`, `.mov` and `.webm` clips and `.ttf`,
+`.otf`, `.woff` and `.woff2` fonts with Remotion's bundled ffmpeg, so nothing
+else needs installing. Other files are listed as skipped; animated WebP, APNG
+and AVIF are not supported. Commit `collections/` after scanning.
+
+### Reading a collection
+
+An agent cannot watch a clip. Before designing a sketch, read the
+collection's `manifest.json` and open the filmstrips of the clips you are
+considering. A filmstrip shows up to six evenly spaced frames, each labelled
+with its source frame (`F0`, `F18`, …); a checkerboard is transparency.
+
+Clips are keyed by file path inside the collection (`"loops/spin.gif"`):
+
+| Field | Meaning |
+| --- | --- |
+| `description`, `tags` | Hand-written. The only fields to edit; a re-scan keeps them |
+| `width`, `height` | Display size in pixels, after any rotation stored in the file |
+| `frameCount` | Exact number of source frames; valid frames are `0..frameCount-1` |
+| `fps`, `fpsRational` | Native rate as a number and as an exact fraction, e.g. `[30000, 1001]` |
+| `timing` | `constant`: frame `i` starts at `i / fps`. `variable`: frames have their own lengths (common in GIFs); `fps` is the average, `fpsRational` is `null` and `frameStarts` lists every start in seconds |
+| `durationSeconds` | Start of the first frame to the end of the last |
+| `hasAlpha` | At least one pixel is transparent, so the clip can sit over other layers |
+| `hasAudio` | The file has a sound track. Sketches ignore it |
+| `loop.seamless` | Stepping from the last frame back to the first is no bigger than the motion beside it, so the clip loops on its own. `seamDifference` and `neighborDifference` are the two measurements, 0–1 |
+| `filmstrip` | `file` relative to the manifest, and the source `frames` it shows |
+
+Fonts are keyed by family name. Each family lists its `faces`, one per file,
+with `weight`, `style`, `subfamily`, variable `axes` (`{wght: {min, default,
+max}}`, empty for a static face), named `instances`, `glyphCount`, and
+`missingAscii`: the printable ASCII characters the face cannot draw. Check
+`missingAscii` before setting text, since display fonts often lack lowercase
+or digits.
+
+Write a `description` and `tags` for the collection and for anything worth
+finding again. Re-scanning keeps them, rewrites the measurements, removes
+entries whose files are gone (and says so), and deletes their filmstrips. A
+manifest whose media folder is not on this machine is left untouched.
+
+### Using assets in a sketch
+
+```tsx
+import {clip, font} from '../../assets';
+import {ClipFrame} from '../../assets/ClipFrame';
+import {defineSketch, useAsset} from '../define';
+
+const spin = clip('retro', 'loops/spin.gif');   // names are type-checked against the manifest
+const chunk = font('retro', 'Chunk Five');
+
+const Poster: React.FC<Props> = ({beatsPerSpin}) => {
+  const {beat} = useBeat();
+  const {width, height, vmin} = useCanvas();
+  const loop = useAsset(spin);    // adds loop.src
+  const type = useAsset(chunk);   // adds type.fontFamily
+  return (
+    <AbsoluteFill>
+      <ClipFrame clip={loop} frame={((beat / beatsPerSpin) % 1) * loop.frameCount}
+        width={width} height={height} fit="cover" />
+      <div style={{fontFamily: type.fontFamily, fontSize: 12 * vmin}}>SPIN</div>
+    </AbsoluteFill>
+  );
+};
+
+export default defineSketch({/* … */ Component: Poster, assets: [spin, chunk]});
+```
+
+- `clip(collection, name)` and `font(collection, family)` return the manifest
+  entry, so `frameCount`, `fps`, `hasAlpha`, `axes` and the rest are available
+  to the design. A name that is not in the manifest is a type error and a
+  runtime error that lists what the collection has.
+- List every asset in `assets`. Use `assets: (props) => [...]` when a param
+  chooses one; `clipNames(collection)` gives the names for a `z.enum`.
+- `useAsset(ref)` returns the usable form and throws if the sketch did not
+  declare the asset.
+- `<ClipFrame clip frame width height fit? style? />` draws one source frame.
+  `frame` is floored and wraps around the clip. Do not put `<AnimatedImage>`
+  or `<Video>` in a sketch directly: they follow Remotion's frame clock, so
+  the clip would drift off the beat and jump at the loop point. Derive `frame`
+  from `useBeat()` instead:
+
+  | Intent | `frame` |
+  | --- | --- |
+  | Play the clip once every `n` beats | `((beat / n) % 1) * clip.frameCount` |
+  | Restart it on every hit | `step(...).phase * clip.frameCount` |
+  | Advance one source frame per hit | `step(...).index` |
+
+  A clip only loops cleanly if `loop.seamless` is true and its cycle fits the
+  loop a whole number of times.
+- Fonts are registered under a family name scoped to the collection, so use
+  `type.fontFamily`, never the bare family name. Every face is loaded before
+  the component first mounts and the render waits for it. Drive variable axes
+  with `fontVariationSettings`, e.g. `` `"wght" ${100 + 800 * energy}` ``,
+  inside the ranges in the manifest.
+- Size clips and type in `vmin` or canvas fractions like everything else.
+
+A dedicated beat-driven clip layer and a kinetic type layer are planned;
+`ClipFrame` and `fontVariationSettings` are the building blocks until then.
+
+### When the media is not there
+
+Declared assets are checked against the public folder when a composition's
+metadata is calculated, before any frame renders. A sketch whose files are
+missing fails with the paths it needs:
+
+```
+Invalid sketch "poster": assets: public/assets/retro/loops/spin.gif is missing
+(clip "loops/spin.gif" in collection "retro"). Collection media is not in git: …
+```
+
+Other compositions are unaffected. `npm run preview` reports the same thing
+before it bundles. CI has no media, so the rendered suite skips the loop
+checks of any sketch whose files are absent and says which files; it still
+checks that such a sketch fails with this message. The scanner and asset
+helpers are tested against a small collection generated at test time.
 
 ## Named presets
 
@@ -427,6 +564,10 @@ triplet swing onset, silent rings, and swung tails spanning multiple loops.
 Modulation checks cover normalized sources, weighted mixes, output ranges,
 real rendered transforms/colors, source validation, identity after reorder,
 neutral overrides, and seam continuity of the combined preset.
+Asset checks build a small collection at test time and render every frame of
+its GIFs and videos to confirm the browser shows the source frame the manifest
+predicts, along with transparency, variable-font weights and the errors for
+missing, unknown and undeclared assets.
 Frames are rendered out of order and
 repeated to check determinism. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.
@@ -453,7 +594,9 @@ npm run skills:add     # restore/install official skills when needed
 npm run skills:update  # deliberately refresh upstream skills; review the diff
 ```
 
-Keep all `remotion` and `@remotion/*` dependencies at the same exact version.
+Keep all `remotion` and `@remotion/*` dependencies (including
+`@remotion/media`, `@remotion/fonts` and `@remotion/studio`, which the asset
+helpers use) at the same exact version.
 When upgrading, update skills together with the framework, then run both test
 suites. The setup check reports a skill/framework version mismatch for review.
 After adding local skills, start a new agent session if discovery is stale.
@@ -487,6 +630,11 @@ src/
     Background.tsx      gradient component + schema + defaults
     Rings.tsx           wrapped rings + schema + defaults
     BeatDebug.tsx       optional grid overlay + timing diagnostics
+  assets/
+    manifest.ts         the manifest format
+    index.ts            clip(), font(), missing-file checks, frame → time
+    fonts.ts            collection font registration
+    ClipFrame.tsx       one exact source frame of a GIF or video
   sketches/
     index.ts            the list of sketches (maintained by sketch:new)
     define.tsx          defineSketch, shared controls, useSketch, divisionIssues
@@ -494,8 +642,15 @@ src/
     UseLayer.tsx        registered layers inside a sketch
     <id>/brief.md       the idea in plain language
     <id>/sketch.tsx     params, component and definition
+collections/
+  index.ts              generated list of manifests
+  <name>/manifest.json  what public/assets/<name>/ contains
+  <name>/filmstrips/    sampled frames of each clip
 scripts/
   preview.ts            contact sheet + loop checks for any composition
   new-sketch.ts         scaffold and register a sketch
+  scan-assets.ts        write collection manifests and filmstrips
   lib/render.ts         shared still rendering, checks and sheet layout
+  lib/scan.ts           clip and font measurement
+  lib/pixels.ts         labels for sheets and filmstrips
 ```

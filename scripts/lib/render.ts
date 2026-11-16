@@ -1,17 +1,41 @@
 /** Shared still-rendering, loop checks and contact sheets for previews and visual tests. */
+import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {bundle} from '@remotion/bundler';
 import {openBrowser, renderStill, selectComposition} from '@remotion/renderer';
 import {PNG} from 'pngjs';
+import {fill, stamp} from './pixels';
+import {missingAssets} from '../../src/assets';
+import type {Sketch} from '../../src/sketches/define';
 
 export type Session = Awaited<ReturnType<typeof openSession>>;
 type Composition = Awaited<ReturnType<typeof selectComposition>>;
 
-export const openSession = async () => {
+/**
+ * Collection files a sketch needs that are not on this machine. Asset media
+ * is not in git, so scripts and tests ask this before bundling: a clear
+ * message, or a skipped test, beats a render that cannot find its files.
+ */
+export const missingSketchAssets = (sketch: Sketch, inputProps: Record<string, unknown> = {},
+  publicDir = path.resolve('public')) => missingAssets(
+  sketch.assets(sketch.resolve({...sketch.defaultProps, ...inputProps})),
+  (file) => existsSync(path.join(publicDir, file)));
+
+export const openSession = async ({entryPoint = path.resolve('src/index.ts'), publicDir, alias}: {
+  entryPoint?: string;
+  /** Folder served as public/. Defaults to the project's. */
+  publicDir?: string;
+  /** Module names resolved to files, for test entry points that import generated data. */
+  alias?: Record<string, string>;
+} = {}) => {
   const bundleDir = await mkdtemp(path.join(tmpdir(), 'remotion-lab-'));
-  const serveUrl = await bundle({entryPoint: path.resolve('src/index.ts'), outDir: bundleDir});
+  // Link the public folder instead of copying it: collections can be large and this bundle is temporary.
+  const serveUrl = await bundle({entryPoint, outDir: bundleDir, symlinkPublicDir: true,
+    ...(publicDir ? {publicDir} : {}),
+    ...(alias ? {webpackOverride: (config) => ({...config,
+      resolve: {...config.resolve, alias: {...config.resolve?.alias, ...alias}}})} : {})});
   const browser = await openBrowser('chrome');
   return {
     select: (id: string, inputProps: Record<string, unknown> = {}) =>
@@ -119,33 +143,6 @@ export const inspectLoop = async (session: Session, id: string, inputProps: Reco
   };
   await writeFile(path.join(dir, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
   return report;
-};
-
-// A 3×5 pixel font: enough to stamp frame and beat numbers onto the sheet.
-const glyphs: Record<string, string> = {
-  0: '111101101101111', 1: '010110010010111', 2: '111001111100111', 3: '111001111001111',
-  4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001001001001',
-  8: '111101111101111', 9: '111101111001111', '.': '000000000000010', F: '111100110100100',
-  B: '110101110101110',
-};
-
-const fill = (png: PNG, x0: number, y0: number, w: number, h: number, [r, g, b]: number[]) => {
-  for (let y = Math.max(0, y0); y < Math.min(png.height, y0 + h); y++) {
-    for (let x = Math.max(0, x0); x < Math.min(png.width, x0 + w); x++) {
-      const i = (y * png.width + x) * 4;
-      png.data[i] = r; png.data[i + 1] = g; png.data[i + 2] = b; png.data[i + 3] = 255;
-    }
-  }
-};
-
-const stamp = (png: PNG, text: string, x: number, y: number, size: number) => {
-  [...text].forEach((character, index) => {
-    const glyph = glyphs[character];
-    if (!glyph) return;
-    [...glyph].forEach((bit, i) => {
-      if (bit === '1') fill(png, x + index * size * 4 + (i % 3) * size, y + Math.floor(i / 3) * size, size, size, [235, 235, 235]);
-    });
-  });
 };
 
 type Cell = {image: PNG; label: string; divider?: boolean};

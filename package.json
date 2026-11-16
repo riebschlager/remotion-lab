@@ -22,11 +22,15 @@
     "seamcheck:preset": "remotion render PresetSeamCheck out/preset-seamcheck.mp4",
     "sketches": "node --import tsx scripts/list-sketches.ts",
     "sketch:new": "node --import tsx scripts/new-sketch.ts",
-    "preview": "node --import tsx scripts/preview.ts"
+    "preview": "node --import tsx scripts/preview.ts",
+    "assets:scan": "node --import tsx scripts/scan-assets.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.543",
+    "@remotion/fonts": "4.0.543",
+    "@remotion/media": "4.0.543",
     "@remotion/noise": "4.0.543",
+    "@remotion/studio": "4.0.543",
     "@remotion/zod-types": "4.0.543",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -36,9 +40,11 @@
   "devDependencies": {
     "@remotion/bundler": "4.0.543",
     "@remotion/renderer": "4.0.543",
+    "@types/fontkit": "^2.0.9",
     "@types/node": "^26.6.6",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.0.0",
+    "fontkit": "^3.0.0",
     "pngjs": "^7.0.0",
     "tsx": "^4.23.15",
     "typescript": "^5.6.0"

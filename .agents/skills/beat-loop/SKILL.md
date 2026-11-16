@@ -115,30 +115,35 @@ registers it in `src/sketches/index.ts`. Use `src/sketches/pulse-grid` as the
 structural reference. Do not add a registry layer, preset or Root entry for a
 sketch.
 
-1. Write the brief first: idea, rhythm, look, assets, notes. Keep it current
-   when the design changes, so the sketch can be rebuilt or forked from it.
-2. Declare only the sketch's own params in `schema`, with complete `defaults`.
+1. If the idea uses GIFs, video or fonts, read the collection first; see
+   "Asset collections" below. Design from what the manifest and filmstrips
+   show, not from file names.
+2. Write the brief: idea, rhythm, look, assets, notes. Under Assets, name each
+   clip and font with the facts that shaped the design (frame count, alpha,
+   whether it loops). Keep the brief current when the design changes, so the
+   sketch can be rebuilt or forked from it.
+3. Declare only the sketch's own params in `schema`, with complete `defaults`.
    Timing, `canvas`, `customSize`, `transparent`, `variant` and `debug` are
    supplied and reserved. Override starting tempo or canvas with `timing` and
    `canvas` on the definition.
-3. Build the component from `useBeat()` and the helpers in `src/beat`. Read
+4. Build the component from `useBeat()` and the helpers in `src/beat`. Read
    sizes from `useCanvas()` and express them in `vmin` or canvas fractions.
    Seed with `useSketch().seed('channel')`; choose per-item identity from a
    wrapped step or event index plus a stable item number, never render order.
    A delay is an `offsetBeats` on a wrapped grid, never a subtraction that can
    go negative or a clamp that drops events near the seam.
-4. Return field-prefixed messages from `validate(props, timing)` for every
+5. Return field-prefixed messages from `validate(props, timing)` for every
    division, pattern or cycle count the sketch exposes. `divisionIssues` covers
    divisions; `patternIssues` covers patterns.
-5. Reuse registered layers with `<UseLayer id type props />`. Rings measures
+6. Reuse registered layers with `<UseLayer id type props />`. Rings measures
    in literal pixels, so prefer it only on the portrait canvas.
-6. Run `npm run preview -- <id>` and read `out/preview/<id>/sheet.png`. The
+7. Run `npm run preview -- <id>` and read `out/preview/<id>/sheet.png`. The
    top row is on the beat, the middle row half a beat later, the bottom row
    crosses the loop point at the red line. Labels are frame (`F`) and beat
    (`B`). Judge it against the brief: composition, legibility at phone size,
    whether hits read as hits, and whether the seam row looks like any other
    three consecutive frames. Iterate before reporting.
-7. Preview one more canvas (`--props='{"canvas":"landscape"}'`), then run
+8. Preview one more canvas (`--props='{"canvas":"landscape"}'`), then run
    `npm run check`. `npm run test:visual` applies determinism and seam checks
    to every registered sketch automatically; add sketch-specific tests only
    for behavior those do not cover.
@@ -146,6 +151,63 @@ sketch.
 The seam check is a heuristic. A hit that lands exactly on beat 0 is an
 intended jump and is compared with interior hits; anything larger is a
 warning. Determinism failures are always defects.
+
+## Asset collections
+
+Media lives in `public/assets/<collection>/` and is gitignored. Its committed
+description is `collections/<collection>/manifest.json` with one filmstrip
+per clip in `filmstrips/`. `npm run assets:scan [-- <collection>]` writes
+both and regenerates `collections/index.ts`. README.md documents every field.
+
+Before designing with a collection:
+
+1. Read the manifest. Collection, clip and font entries carry a hand-written
+   `description` and `tags`; start there, then the measurements.
+2. Open the filmstrip (`filmstrip.file`, relative to the manifest) of every
+   clip you might use. Cells are labelled with their source frame;
+   `filmstrip.frames` lists the same numbers. A checkerboard is transparency.
+3. Decide from the facts. `hasAlpha` clips can overlay other layers; opaque
+   ones are backdrops or need a blend mode. `loop.seamless` clips can cycle;
+   others should be retriggered on a hit or played once per loop, with the
+   cut placed on a beat. `frameCount` against the number of rendered frames
+   per cycle tells you whether a clip will look smooth or stepped. `width`
+   and `height` tell you which canvases it fills without heavy cropping.
+4. For fonts, check `faces` for the weights and styles that exist, `axes` for
+   variable ranges, and `missingAscii` before choosing the words.
+
+After a scan adds entries, write their `description` and `tags` from the
+filmstrips. Edit nothing else in a manifest; re-scanning keeps those two
+fields and rewrites the rest.
+
+In a sketch:
+
+- `clip('collection', 'path/in/collection.gif')` and `font('collection',
+  'Family Name')` from `src/assets` return the manifest entry. Create them at
+  module level and list them in `defineSketch({assets: [...]})`, or use
+  `assets: (props) => [...]` when a param selects one.
+- `useAsset(ref)` in the component adds `src` to a clip and `fontFamily` to a
+  font. It throws for an asset that was not declared.
+- `<ClipFrame clip frame width height fit? style? />` from
+  `src/assets/ClipFrame` draws exactly one source frame. Compute `frame` from
+  `useBeat()`: `((beat / n) % 1) * clip.frameCount` plays once every `n`
+  beats, `step(...).phase * clip.frameCount` restarts on each hit, and
+  `step(...).index` advances one frame per hit. `frame` is floored and wraps.
+  A cycle of `n` beats must fit the loop a whole number of times; validate it
+  like any other division.
+- Never render `<AnimatedImage>`, `<Video>` or `<Gif>` directly in a sketch.
+  They read Remotion's frame clock, which breaks the loop rules. `ClipFrame`
+  freezes that clock at the frame you ask for. It also hides a difference
+  between the two players: a GIF is addressed by a frame's start time and a
+  video by its middle (`clipFrameTime` in `src/assets`).
+- Use `type.fontFamily` from `useAsset`, not the bare family name: fonts are
+  registered under a collection-scoped name so a missing font can never be
+  silently replaced by one installed on the machine. Faces load before the
+  component mounts. Animate variable axes with `fontVariationSettings`.
+
+Declared assets are checked before rendering. "public/assets/… is missing"
+means the collection is not on this machine; say so, and do not substitute
+other media. `npm run test:visual` skips the loop checks of such a sketch.
+`tests/visual/assets-entry.tsx` is a complete small example.
 
 ## Adding a layer
 
