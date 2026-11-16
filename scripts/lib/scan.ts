@@ -169,6 +169,29 @@ const frameDifference = (a: Buffer, b: Buffer) => {
   return sum / (a.length * 255);
 };
 
+/**
+ * Whether a clip loops on its own: stepping from its last frame back to its
+ * first is no bigger than an ordinary step inside it.
+ *
+ * `steps` are the changes between consecutive frames across the whole clip.
+ * Their upper quartile stands for an ordinary step, because the frames next
+ * to the loop point say little by themselves: animation drawn on twos or
+ * threes and exported at a higher rate repeats frames, so the pair on either
+ * side of the seam is often a hold with no motion at all.
+ */
+export const loopVerdict = (seamDifference: number, steps: number[]) => {
+  const sorted = [...steps].sort((a, b) => a - b);
+  const at = 0.75 * (sorted.length - 1);
+  const neighborDifference = sorted.length
+    ? sorted[Math.floor(at)] + (sorted[Math.ceil(at)] - sorted[Math.floor(at)]) * (at % 1) : 0;
+  return {
+    // The same allowance the sketch seam check uses: a loop point may move twice as much as ordinary motion.
+    seamless: seamDifference <= Math.max(2 * neighborDifference, 0.01),
+    seamDifference: round(seamDifference, 4),
+    neighborDifference: round(neighborDifference, 4),
+  };
+};
+
 /** Labelled frames side by side; transparency shows as a checkerboard. */
 const filmstripImage = (cells: Array<{frame: number; rgba: Buffer}>, width: number, height: number) => {
   const gap = 4;
@@ -215,13 +238,15 @@ const scanClip = async (file: string, name: string, filmstripDir: string, warn: 
 
   const wanted = filmstripFrames(probe.frameCount);
   const kept = new Map<number, Buffer>();
-  const head: Buffer[] = [];
-  let tail: Buffer[] = [];
+  let first: Buffer | null = null;
+  let last: Buffer | null = null;
+  const steps: number[] = [];
   let transparent = false;
   const decoded = await decodeFrames(file, width, height, probe.decoder, (index, rgba) => {
     if (wanted.includes(index)) kept.set(index, rgba);
-    if (index < 2) head.push(rgba);
-    tail = [...tail.slice(-1), rgba];
+    if (last) steps.push(frameDifference(last, rgba));
+    first ??= rgba;
+    last = rgba;
     if (probe.declaresAlpha && !transparent) {
       // Area scaling blends edge pixels, so allow for rounding before calling a frame transparent.
       for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 250) { transparent = true; break; }
@@ -233,12 +258,6 @@ const scanClip = async (file: string, name: string, filmstripDir: string, warn: 
   if (probe.timing.timing === 'variable' && probe.frameCount > 2000) {
     warn(`${name}: ${probe.frameCount} unevenly timed frames make a large manifest entry; consider re-encoding at a constant frame rate`);
   }
-
-  const first = head[0];
-  const last = tail[tail.length - 1];
-  const seamDifference = frameDifference(last, first);
-  const neighborDifference = probe.frameCount < 2 ? 0
-    : (frameDifference(head[0], head[1]) + frameDifference(tail[0], tail[1])) / 2;
 
   const filmstrip = `filmstrips/${name}.jpg`;
   await writeJpeg(filmstripImage(wanted.map((frame) => ({frame, rgba: kept.get(frame)!})), width, height),
@@ -257,12 +276,7 @@ const scanClip = async (file: string, name: string, filmstripDir: string, warn: 
     ...(probe.timing.frameStarts ? {frameStarts: probe.timing.frameStarts} : {}),
     hasAlpha: transparent,
     hasAudio: probe.hasAudio,
-    loop: {
-      // The same rule the sketch seam check uses: a loop point may move as much as its neighbors do.
-      seamless: seamDifference <= Math.max(2 * neighborDifference, 0.01),
-      seamDifference: round(seamDifference, 4),
-      neighborDifference: round(neighborDifference, 4),
-    },
+    loop: loopVerdict(frameDifference(last!, first!), steps),
     filmstrip: {file: filmstrip, frames: wanted},
     bytes: (await stat(file)).size,
   };

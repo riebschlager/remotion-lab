@@ -68,6 +68,21 @@ test('frame numbers past either end wrap around the clip', async () => {
   assert.equal(nearest(video, gray(await render({video: 'clips/count.mp4', videoFrame: video.length + 3}, 'video-wrap'), 1)), 3);
 });
 
+test('a clip longer than the loop still shows its later frames', async () => {
+  // Remotion clamps the frame clock to the composition's length. In a 15-frame loop, a clip addressed
+  // through that clock could show nothing later than 14/30 s: about source frame 5 of either fixture.
+  const props = {bpm: 120, bars: 1, beatsPerBar: 1, gif: 'steps.gif', video: 'clips/count.mp4'};
+  for (const [gifFrame, videoFrame] of [[7, 11], [6, 8], [1, 2]]) {
+    const composition = await session.select('asset-probe', {...props, gifFrame, videoFrame});
+    assert.equal(composition.durationInFrames, 15);
+    for (const at of [0, 14]) {
+      const png = await session.still(composition, at, path.join(artifacts, `short-loop-${gifFrame}-${at}.png`), 0.2);
+      assert.equal(gray(png, 0), fixtureLevels['steps.gif'][gifFrame], `GIF frame ${gifFrame} at loop frame ${at}`);
+      assert.equal(nearest(fixtureLevels['clips/count.mp4'], gray(png, 1)), videoFrame, `video frame ${videoFrame} at loop frame ${at}`);
+    }
+  }
+});
+
 test('transparency reported by the scan is transparency in the render', async () => {
   assert.equal(manifest.clips['uneven.gif'].hasAlpha, true);
   assert.equal(manifest.clips['clips/cutout.webm'].hasAlpha, true);

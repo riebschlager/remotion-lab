@@ -71,6 +71,8 @@ export const fixtureLevels = {
   'steps.gif': [20, 50, 80, 110, 140, 170, 200, 230],
   'pulse.gif': [40, 100, 160, 220, 160, 100],
   'uneven.gif': [60, 120, 180, 240],
+  // Drawn on twos: every frame is shown twice, so the frames beside the loop point do not move.
+  'held.gif': [40, 40, 100, 100, 160, 160, 220, 220, 160, 160, 100, 100],
   'clips/count.mp4': [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240],
   'clips/ntsc.mp4': [30, 80, 130, 180, 230],
   'clips/cutout.webm': [40, 70, 100, 130, 160, 190, 220],
@@ -86,10 +88,12 @@ export const buildFixtureCollection = async (assetsDir: string, collection = 'fi
   await mkdir(path.join(dir, 'type'), {recursive: true});
   const gif = (name: keyof typeof fixtureLevels, delays: number[], cutout = false) => writeFile(path.join(dir, name),
     encodeGif(16, 16, fixtureLevels[name].map((level, i) => ({level, delay: delays[i % delays.length], cutout}))));
-  // A ramp that snaps back at the end, a ramp that returns smoothly, and uneven timing with transparency.
+  // A ramp that snaps back at the end, a ramp that returns smoothly, uneven timing with transparency,
+  // and a smooth return whose frames are each held twice.
   await gif('steps.gif', [10]);
   await gif('pulse.gif', [8]);
   await gif('uneven.gif', unevenDelays, true);
+  await gif('held.gif', [4]);
   const h264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p'];
   await encodeVideo(path.join(dir, 'clips/count.mp4'), [...fixtureLevels['clips/count.mp4']], '12', h264);
   await encodeVideo(path.join(dir, 'clips/ntsc.mp4'), [...fixtureLevels['clips/ntsc.mp4']], '30000/1001', h264);

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Video} from '@remotion/media';
-import {AnimatedImage, Freeze, useVideoConfig} from 'remotion';
-import {clipFrameTime, type ClipRef} from './index';
+import {AnimatedImage, Freeze, Sequence, useVideoConfig} from 'remotion';
+import {clipFrameTime, sourceFrameIndex, type ClipRef} from './index';
 
 /**
  * Draws exactly one source frame of a clip.
@@ -15,7 +15,8 @@ import {clipFrameTime, type ClipRef} from './index';
  *   const {beat} = useBeat();
  *   <ClipFrame clip={spin} frame={Math.floor(((beat / 4) % 1) * spin.frameCount)} width={w} height={h} />
  *
- * `frame` is floored and wraps around the clip, so any number is valid.
+ * `frame` is floored and wraps around the clip, so any finite number is valid;
+ * see `sourceFrameIndex` for how values a rounding error below a whole frame are treated.
  */
 export const ClipFrame: React.FC<{
   /** From `useAsset(clip(...))`. */
@@ -29,13 +30,18 @@ export const ClipFrame: React.FC<{
   style?: React.CSSProperties;
 }> = ({clip, frame, width, height, fit = 'contain', style}) => {
   const {fps} = useVideoConfig();
-  const count = clip.frameCount;
-  const sourceFrame = ((Math.floor(frame) % count) + count) % count;
+  const sourceFrame = sourceFrameIndex(frame, clip.frameCount);
   return (
-    <Freeze frame={clipFrameTime(clip, sourceFrame) * fps}>
-      {clip.format === 'gif'
-        ? <AnimatedImage src={clip.src} width={width} height={height} fit={fit} style={style} />
-        : <Video src={clip.src} muted objectFit={fit} style={{width, height, ...style}} />}
+    // The players read media time from the frame clock. Remotion clamps that clock to the
+    // composition's own length, even inside <Freeze>, so a clip longer than the loop could never
+    // show its later frames. Holding the clock at 0 and starting the clip that far in the past
+    // carries the same time without the limit.
+    <Freeze frame={0}>
+      <Sequence layout="none" from={-clipFrameTime(clip, sourceFrame) * fps}>
+        {clip.format === 'gif'
+          ? <AnimatedImage src={clip.src} width={width} height={height} fit={fit} style={style} />
+          : <Video src={clip.src} muted objectFit={fit} style={{width, height, ...style}} />}
+      </Sequence>
     </Freeze>
   );
 };

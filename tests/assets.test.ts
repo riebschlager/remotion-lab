@@ -7,8 +7,10 @@ import {after, before, test} from 'node:test';
 import {z} from 'zod';
 import {manifests} from '../collections';
 import {missingSketchAssets} from '../scripts/lib/render';
-import {analyseTiming, filmstripFrames, scanAssets} from '../scripts/lib/scan';
-import {assetFiles, assetKey, clipFrameTime, createAssets, missingAssets} from '../src/assets';
+import {analyseTiming, filmstripFrames, loopVerdict, scanAssets} from '../scripts/lib/scan';
+import {assetFiles, assetKey, clipFrameTime, createAssets, missingAssets, sourceFrameIndex} from '../src/assets';
+import {step} from '../src/beat/envelopes';
+import {getBeatState, getLoopDurationInFrames} from '../src/beat/timing';
 import {cssFontFamily, faceDescriptors, facesToLoad} from '../src/assets/fonts';
 import {collectionSchema, type CollectionManifest} from '../src/assets/manifest';
 import {defineSketch} from '../src/sketches/define';
@@ -30,7 +32,7 @@ before(async () => {
   await buildFixtureCollection(assetsDir);
   const {reports} = await scan();
   assert.deepEqual(reports.map((report) => [report.collection, report.status, report.clips, report.fonts, report.skipped, report.failed]),
-    [['fixture', 'created', 6, 2, ['notes.txt'], []]]);
+    [['fixture', 'created', 7, 2, ['notes.txt'], []]]);
   manifest = await read();
 }, {timeout: 120_000});
 after(async () => { if (root) await rm(root, {recursive: true, force: true}); });
@@ -44,6 +46,7 @@ test('the scan measures clips exactly', () => {
     // WebM stores millisecond timestamps (0, 33, 67…), which still describe an even 30 fps.
     'clips/cutout.webm': ['webm', 'vp9', 64, 64, 7, [30, 1], 0.233333, 'constant', true, false],
     'clips/ntsc.mp4': ['mp4', 'h264', 64, 64, 5, [30000, 1001], 0.166833, 'constant', false, false],
+    'held.gif': ['gif', 'gif', 16, 16, 12, [25, 1], 0.48, 'constant', false, false],
     'pulse.gif': ['gif', 'gif', 16, 16, 6, [25, 2], 0.48, 'constant', false, false],
     'steps.gif': ['gif', 'gif', 16, 16, 8, [10, 1], 0.8, 'constant', false, false],
     'uneven.gif': ['gif', 'gif', 16, 16, 4, null, 0.75, 'variable', true, false],
@@ -63,6 +66,23 @@ test('the scan tells clips that loop on their own from clips that snap back', ()
   assert.equal(steps.seamless, false);
   assert(steps.seamDifference > 5 * steps.neighborDifference);
   assert.equal(manifest.clips['clips/count.mp4'].loop.seamless, false);
+});
+
+test('held frames beside the loop point do not hide a clip that loops', () => {
+  // held.gif is pulse.gif drawn on twos. Its first two and last two frames are identical, so
+  // measuring motion only beside the seam finds none and calls an ordinary step a cut.
+  const held = manifest.clips['held.gif'].loop;
+  assert.equal(held.seamless, true);
+  assert.equal(held.seamDifference, manifest.clips['pulse.gif'].loop.seamDifference);
+  assert.equal(held.neighborDifference, held.seamDifference);
+  // An ordinary step is the upper quartile of every consecutive change in the clip.
+  assert.deepEqual(loopVerdict(0.2, [0, 0.2, 0, 0.2, 0]), {seamless: true, seamDifference: 0.2, neighborDifference: 0.2});
+  assert.deepEqual(loopVerdict(0.5, [0, 0.2, 0, 0.2, 0]), {seamless: false, seamDifference: 0.5, neighborDifference: 0.2});
+  // A mostly still clip with one cut inside it gives no excuse for a cut at the seam.
+  assert.equal(loopVerdict(0.3, [0, 0, 0, 0, 0, 0, 0, 0.4]).seamless, false);
+  // A single frame, or a still clip, loops trivially.
+  assert.deepEqual(loopVerdict(0, []), {seamless: true, seamDifference: 0, neighborDifference: 0});
+  assert.equal(loopVerdict(0.004, [0, 0]).seamless, true);
 });
 
 test('every clip gets a filmstrip of evenly spaced, labelled frames', async () => {
@@ -200,6 +220,34 @@ test('each source frame maps to a time inside the clip that selects it', () => {
   close(clipFrameTime(clip('fixture', 'clips/ntsc.mp4'), 4), (4.5 * 1001) / 30000);
   assert.throws(() => clipFrameTime(clip('fixture', 'pulse.gif'), 6), /has frames 0\.\.5; got 6/);
   assert.throws(() => clipFrameTime(clip('fixture', 'pulse.gif'), 1.5), /got 1\.5/);
+});
+
+test('beat positions a rounding error short of a whole frame select that frame', () => {
+  assert.deepEqual([0, 0.5, 5.999999999999979, 6, 6.999, 14.999999999, 15, -1, -0.5, 31].map((frame) => sourceFrameIndex(frame, 15)),
+    [0, 0, 6, 6, 6, 0, 0, 14, 14, 1]);
+  assert.throws(() => sourceFrameIndex(Number.NaN, 15), /finite/);
+  // A 15-frame clip restarted on every beat of a 120 BPM, 30 fps loop has one source frame per rendered
+  // frame. Both documented recipes must show each of them once, in order, on every beat.
+  const timing = {bpm: 120, bars: 4, beatsPerBar: 4, fps: 30};
+  const frames = Array.from({length: getLoopDurationInFrames(timing)}, (_, frame) => getBeatState(frame, timing));
+  const expected = frames.map((_, frame) => frame % 15);
+  const restarted = frames.map(({beat, totalBeats}) => step(beat, 1, totalBeats).phase * 15);
+  assert(restarted.some((frame, i) => Math.floor(frame) !== expected[i]), 'the fixture no longer reproduces the rounding error');
+  assert.deepEqual(restarted.map((frame) => sourceFrameIndex(frame, 15)), expected);
+  assert.deepEqual(frames.map(({beat}) => sourceFrameIndex((beat % 1) * 15, 15)), expected);
+  // Other tempos, rates and meters whose cycles are whole rendered frames.
+  for (const [config, cycleBeats, count] of [
+    [{bpm: 100, bars: 4, beatsPerBar: 4, fps: 30}, 1, 18], [{bpm: 120, bars: 4, beatsPerBar: 4, fps: 60}, 1, 30],
+    [{bpm: 90, bars: 8, beatsPerBar: 4, fps: 30}, 1, 20], [{bpm: 120, bars: 4, beatsPerBar: 3, fps: 30}, 3, 45],
+  ] as const) {
+    const total = getLoopDurationInFrames(config);
+    for (let frame = 0; frame < total; frame++) {
+      const {beat, totalBeats} = getBeatState(frame, config);
+      assert.equal(sourceFrameIndex(step(beat, cycleBeats, totalBeats).phase * count, count), frame % count,
+        `${config.bpm} BPM at ${config.fps} fps, frame ${frame}`);
+      assert.equal(sourceFrameIndex(((beat / cycleBeats) % 1) * count, count), frame % count);
+    }
+  }
 });
 
 test('font faces load under a collection-scoped family with ranges for variable axes', () => {

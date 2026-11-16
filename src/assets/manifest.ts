@@ -40,11 +40,11 @@ export const clipSchema = z.object({
   hasAlpha: z.boolean(),
   hasAudio: z.boolean(),
   loop: z.object({
-    /** True when stepping from the last frame to the first is no bigger than ordinary motion. */
+    /** True when stepping from the last frame to the first is no bigger than an ordinary step in the clip. */
     seamless: z.boolean(),
     /** Change from the last frame to the first, 0..1. */
     seamDifference: z.number().min(0),
-    /** Mean change between the first two and the last two frames, 0..1. */
+    /** An ordinary step: the upper quartile of the change between consecutive frames across the clip, 0..1. */
     neighborDifference: z.number().min(0),
   }).strict(),
   filmstrip: z.object({

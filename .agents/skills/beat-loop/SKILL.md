@@ -169,7 +169,9 @@ Before designing with a collection:
 3. Decide from the facts. `hasAlpha` clips can overlay other layers; opaque
    ones are backdrops or need a blend mode. `loop.seamless` clips can cycle;
    others should be retriggered on a hit or played once per loop, with the
-   cut placed on a beat. `frameCount` against the number of rendered frames
+   cut placed on a beat. The flag compares the seam with an ordinary step
+   across the whole clip; it says nothing about hard cuts inside the clip,
+   so look at the filmstrip and description too. `frameCount` against the number of rendered frames
    per cycle tells you whether a clip will look smooth or stepped. `width`
    and `height` tell you which canvases it fills without heavy cropping.
 4. For fonts, check `faces` for the weights and styles that exist, `axes` for
@@ -191,7 +193,9 @@ In a sketch:
   `src/assets/ClipFrame` draws exactly one source frame. Compute `frame` from
   `useBeat()`: `((beat / n) % 1) * clip.frameCount` plays once every `n`
   beats, `step(...).phase * clip.frameCount` restarts on each hit, and
-  `step(...).index` advances one frame per hit. `frame` is floored and wraps.
+  `step(...).index` advances one frame per hit. `frame` is floored and wraps,
+  and absorbs floating-point error just below a whole frame, so pass the
+  product as it is.
   A cycle of `n` beats must fit the loop a whole number of times; validate it
   like any other division.
 - Never render `<AnimatedImage>`, `<Video>` or `<Gif>` directly in a sketch.
@@ -207,7 +211,8 @@ In a sketch:
 Declared assets are checked before rendering. "public/assets/… is missing"
 means the collection is not on this machine; say so, and do not substitute
 other media. `npm run test:visual` skips the loop checks of such a sketch.
-`tests/visual/assets-entry.tsx` is a complete small example.
+`tests/visual/assets-entry.tsx` is a complete small example, and
+`src/sketches/sticker-slap` is a sketch built on a real collection.
 
 ## Adding a layer
 

@@ -15,7 +15,26 @@ move it to "Done" so this file stays the source of truth.
   determinism and seam checks; the rendered suite applies both to every sketch.
 - **Asset collections.** `npm run assets:scan`, committed manifests and
   filmstrips, typed `clip()` and `font()`, font loading, and `ClipFrame` for
-  drawing one exact source frame. Built and tested against synthetic fixtures only.
+  drawing one exact source frame.
+- **Asset pipeline proven on real media** (segment 1). `collections/test/` describes a
+  real collection: four GIFs, two 1080×1920 H.264 videos and one static font.
+  Sizes, frame counts, rates, durations, alpha and font facts were confirmed
+  with ffprobe, ImageMagick, fontconfig and a byte-level GIF reader. The
+  `sticker-slap` sketch draws a video and a GIF through `ClipFrame` and sets
+  type in the collection font; its rendered frames were matched to
+  independently decoded source frames on portrait and landscape. Real media
+  exposed three defects, each fixed with a fixture test:
+  - `loop.seamless` compared the seam only with the frames beside it, so a
+    loop drawn on twos or threes (held frames at the seam) read as a cut. It
+    now compares with the upper-quartile step across the whole clip;
+    `neighborDifference` carries that value.
+  - `step(...).phase * frameCount` lands a rounding error below whole frames,
+    so `ClipFrame` showed the previous source frame. `sourceFrameIndex` in
+    `src/assets` now owns flooring and wrapping.
+  - Remotion clamps the frame clock to the composition's length even inside
+    `<Freeze>`, so a clip longer than the loop (or the 2 s seam view) could
+    not show its later frames. `ClipFrame` now carries clip time through a
+    negative `<Sequence from>` instead.
 
 ## Decisions already made
 
@@ -30,47 +49,36 @@ These apply to every segment; the prompts do not repeat them.
   second sketch needs it.
 - `useBeat()` is the only clock. No state between frames, no unseeded randomness.
 
-## 1. Prove the asset pipeline on real media
+## Carried over from segment 1
 
-**Why first:** the scanner has never seen a real GIF, video or font, and no
-sketch uses an asset yet. Everything later builds on the manifest being right.
+What the first real collection did not cover, and what later segments
+should know:
 
-**Before starting:** put a small collection in `public/assets/<name>/`: a few
-GIFs, a few video clips (ideally one with alpha and one phone-shot clip), and
-at least one static and one variable font.
-
-**Done when:** a manifest for the real collection is committed, and one
-sketch that uses a clip and a font passes preview on two canvases.
-
-```text
-Read README.md (especially "Sketches" and "Asset collections"), AGENTS.md, ROADMAP.md
-and the beat-loop skill first. This session is roadmap segment 1: prove the asset
-pipeline on real media. It has only ever run on synthetic fixtures.
-
-I have put a real collection in public/assets/. If that folder is empty, stop and tell
-me; do not substitute generated fixtures.
-
-1. Run npm run assets:scan on it. Open the manifest and several filmstrips and check
-   them against the actual files: frame counts, frame rates, durations, sizes, alpha,
-   the loops-on-its-own flag, font families, weights and variable axes. Use ffprobe or
-   another independent tool to confirm a sample of the numbers. Do not trust the
-   scanner's own output as its verification.
-2. Fix whatever the real files expose in the scanner or helpers, and add a regression
-   test for each fix using a small generated fixture that reproduces the problem.
-3. Build one sketch with npm run sketch:new that uses at least one clip through
-   ClipFrame, driven from useBeat(), and one font from the collection. Keep it simple:
-   its job is to exercise the path from brief to manifest to render, not to be
-   impressive. Write its brief.md, including the Assets section.
-4. Run npm run preview on it for portrait and landscape and look at both contact
-   sheets. Confirm the clip frames shown match the source frames you expect at those
-   beats, and that the font is the collection's font and not a fallback.
-5. Run npm run check and npm run test:visual.
-
-Report what the scan got right, what it got wrong and how you fixed it, anything in the
-collection the pipeline still cannot handle, and how long the scan and one preview
-took. Then update ROADMAP.md: move this segment to Done and note any change that
-affects later segments. Commit only if I ask.
-```
+- **Not yet seen on real media:** a variable font, a video with alpha, a
+  phone-shot clip (rotation metadata, variable frame rate, an audio track),
+  WebM, and a GIF with truly uneven delays. These paths are still verified on
+  generated fixtures only. Add such files to `public/assets/` and re-run the
+  checks from segment 1 before relying on them. Segment 3's variable-axis work
+  can only be verified on fixtures until a variable font is added.
+- **GIFs that approximate a frame rate** (delays alternating 7 and 6
+  hundredths for 15 fps) are recorded as `constant` at that rate, by the same
+  one-tick tolerance used for WebM. Frame starts are then off by up to a third
+  of a hundredth and `durationSeconds` by up to one hundredth. Frame
+  addressing was confirmed correct at these rates; a GIF whose frames are only
+  two hundredths long could be mis-addressed under this tolerance and has not
+  been tested.
+- **`loop.seamless` only describes the loop point.** A clip with hard cuts
+  inside it (the glitch GIF) is correctly not seamless here, but a clip could
+  loop at the seam and still cut in the middle. Segment 2's validation should
+  not treat the flag as "safe to cycle" without the filmstrip.
+- **Frame selection for segment 2** should go through `sourceFrameIndex`, not
+  its own `Math.floor`, and rendered tests should include a loop shorter than
+  the clip.
+- **Cost on this machine:** scanning the collection (77 MB, 2,215 frames)
+  takes 17–18 s. A preview takes 27–33 s, most of it bundling and video
+  decoding; the rendered suite takes about 108 s with this sketch in it.
+- File names with spaces and capitals work as clip keys, filmstrip names and
+  URLs. Names containing `#`, `%` or `?` have not been tried.
 
 ## 2. Beat-driven Clip layer
 

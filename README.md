@@ -95,7 +95,8 @@ Inside a sketch component:
 - Return extra musical checks from `validate(props, timing)`;
   `divisionIssues('division', props.division, timing)` covers the common case.
 
-`pulse-grid` is the working example. When a piece of a sketch proves
+`pulse-grid` is the working example, and `sticker-slap` is the example that
+uses a video, a GIF and a font from a collection. When a piece of a sketch proves
 reusable, promote it to a registered layer (see "Adding a layer").
 
 ### Previewing a sketch
@@ -162,7 +163,7 @@ Clips are keyed by file path inside the collection (`"loops/spin.gif"`):
 | `durationSeconds` | Start of the first frame to the end of the last |
 | `hasAlpha` | At least one pixel is transparent, so the clip can sit over other layers |
 | `hasAudio` | The file has a sound track. Sketches ignore it |
-| `loop.seamless` | Stepping from the last frame back to the first is no bigger than the motion beside it, so the clip loops on its own. `seamDifference` and `neighborDifference` are the two measurements, 0–1 |
+| `loop.seamless` | Stepping from the last frame back to the first is no bigger than an ordinary step inside the clip, so the clip loops on its own. `seamDifference` is that step and `neighborDifference` is the ordinary one (the upper quartile of the change between consecutive frames over the whole clip, so held or repeated frames do not count as motion), both 0–1 |
 | `filmstrip` | `file` relative to the manifest, and the source `frames` it shows |
 
 Fonts are keyed by family name. Each family lists its `faces`, one per file,
@@ -213,7 +214,9 @@ export default defineSketch({/* … */ Component: Poster, assets: [spin, chunk]}
 - `useAsset(ref)` returns the usable form and throws if the sketch did not
   declare the asset.
 - `<ClipFrame clip frame width height fit? style? />` draws one source frame.
-  `frame` is floored and wraps around the clip. Do not put `<AnimatedImage>`
+  `frame` is floored and wraps around the clip; a value within a rounding
+  error of the next whole frame (5.999999999999979) counts as that frame, so
+  the recipes below need no rounding of their own. Do not put `<AnimatedImage>`
   or `<Video>` in a sketch directly: they follow Remotion's frame clock, so
   the clip would drift off the beat and jump at the loop point. Derive `frame`
   from `useBeat()` instead:
@@ -566,8 +569,10 @@ real rendered transforms/colors, source validation, identity after reorder,
 neutral overrides, and seam continuity of the combined preset.
 Asset checks build a small collection at test time and render every frame of
 its GIFs and videos to confirm the browser shows the source frame the manifest
-predicts, along with transparency, variable-font weights and the errors for
-missing, unknown and undeclared assets.
+predicts, including clips longer than the loop that shows them, along with
+transparency, variable-font weights and the errors for missing, unknown and
+undeclared assets. `sticker-slap` runs the same sketch checks on a real
+collection wherever `public/assets/test/` is present.
 Frames are rendered out of order and
 repeated to check determinism. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.

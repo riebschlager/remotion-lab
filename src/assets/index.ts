@@ -94,6 +94,21 @@ export const missingAssets = (refs: AssetRef[], exists: (publicPath: string) => 
 export const missingAssetsHint = 'Collection media is not in git: copy the collection into public/assets/, or re-scan if a file was renamed.';
 
 /**
+ * The source frame a possibly fractional, possibly out-of-range frame number
+ * selects: floored and wrapped around the clip.
+ *
+ * Beat math is floating point, so a position meant to be exactly frame 6
+ * often arrives as 5.999999999999979 (`step(...).phase * frameCount` does
+ * this on most frames when the clip's cycle is a whole number of rendered
+ * frames). A plain floor would show the previous frame, so a value within a
+ * millionth of the next whole frame counts as that frame.
+ */
+export const sourceFrameIndex = (frame: number, frameCount: number) => {
+  if (!Number.isFinite(frame)) throw new Error(`Clip frame must be a finite number; got ${frame}`);
+  return ((Math.floor(frame + 1e-6) % frameCount) + frameCount) % frameCount;
+};
+
+/**
  * The time, in seconds from the clip's start, to ask a player for so that it
  * shows exactly one source frame.
  *
