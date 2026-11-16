@@ -46,11 +46,37 @@ between frames; do not promise sample-accurate audio or frame-exact onsets.
    range`. Disabled layers skip musical checks; schema constraints always run.
 4. Add loop fixtures and run `npm run check` and `npm run test:visual`.
 
-The stack has one instance per registered type. `layerOrder` must include
-all registered names once, including disabled layers. The stack and generated
-geometry are procedural; edit through composition props rather than adding
-independently editable timeline clips. Root selector/timing defaults stay
-inline for Studio source editing. Layer defaults live in their definitions.
+## Layer instances
+
+A supplied `layers: [{id, type, props?}]` array replaces the legacy stack.
+Array order is z-order; `[]` intentionally leaves a black canvas. Each entry
+uses a registry-generated discriminated schema, so props are partial but
+specific to that type. IDs must be globally unique, including disabled
+instances, and stable across frames and reorderings. Allowed IDs begin with
+a letter and contain letters, digits, hyphens or underscores (max 64 chars).
+
+Effective settings are registry defaults, then the resolved top-level type
+settings, then the instance's own props. Type-level preset overrides can
+supply shared defaults; explicitly authored instance fields win. Preset array
+overrides replace the whole array, without merging by ID. Include a background
+entry when needed; instances are not implicitly added.
+
+When `layers` is omitted, the original singleton stack and `layerOrder` still
+work. Explicit instances ignore `layerOrder`; their array supplies the order.
+Root selector/timing defaults stay inline. Layer defaults live in definitions.
+Stacks remain procedural and are edited through props rather than independent
+Studio timeline clips.
+
+Use `{id, type, seed}` from `useLayerInstance()` for instance-aware layers.
+Pass `seed('channel')` to random/noise helpers; never seed from array position.
+Legacy instances use their type as their ID and retain old seed strings;
+new IDs get independent channels. Renaming an ID deliberately changes its
+random variation. The Rings implementation is the working example.
+
+Test repeated layers for independently resolved fields, duplicate-ID errors,
+per-instance musical validation, default isolation, reorder-stable motion,
+rendered color/timing/blend differences, and continuity through the seam.
+The `prism-stack` preset demonstrates three independent ring instances.
 
 ## Named presets
 
@@ -61,7 +87,7 @@ same validation used by the direct loop compositions.
 
 `PresetLoop` and `PresetSeamCheck` accept `{preset, overrides}`. Resolution is
 registry defaults, then saved preset, then caller overrides. Layer fields
-merge individually; arrays replace wholesale. Unknown override fields fail.
+merge individually; arrays (including `layers`) replace wholesale. Unknown override fields fail.
 `BeatLoop` and `SeamCheck` retain shallow CLI merging; explicitly supplied
 layer objects must be complete, while omitted layers get registry defaults.
 

@@ -1,6 +1,6 @@
 /** Registry-derived controls and configuration types for Remotion Studio. */
 import {z} from 'zod';
-import {layerNames, layerOrderSchema, layerShape} from './layers/registry';
+import {layerInstancesSchema, layerNames, layerOrderSchema, layerShape} from './layers/registry';
 
 // Preserve existing imports while layer authoring now lives in each module.
 export {baseLayerSchema, blendModeSchema, divisionSchema} from './layers/base';
@@ -20,6 +20,7 @@ export const loopSchema = timingSchema.extend({
   timingMode: timingSchema.shape.timingMode.default('visual'),
   ...layerShape,
   layerOrder: layerOrderSchema.default(() => [...layerNames]),
+  layers: layerInstancesSchema.optional(),
   debug: debugSchema,
 });
 

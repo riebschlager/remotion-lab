@@ -14,6 +14,7 @@ import {
 import {zColor} from '@remotion/zod-types';
 import {baseLayerSchema} from './base';
 import {defineLayer} from './definition';
+import {useLayerInstance} from './InstanceContext';
 
 export const ringsSchema = baseLayerSchema.extend({
   color: zColor(),
@@ -47,14 +48,15 @@ export const Rings: React.FC<Props> = ({
   offsetBeats,
 }) => {
   const {width, height} = useVideoConfig();
+  const {seed} = useLayerInstance();
   const {beat, totalBeats, beatsPerBar, loopPhase} = useBeat();
 
   const stepLen = divisionBeats(division, beatsPerBar);
   const s = step(beat, stepLen, totalBeats, offsetBeats);
 
   // Loopable drift of the emitter center.
-  const cx = width / 2 + loopNoise('rings-x', loopPhase, 0.8) * drift;
-  const cy = height / 2 + loopNoise('rings-y', loopPhase, 0.8) * drift;
+  const cx = width / 2 + loopNoise(seed('x'), loopPhase, 0.8) * drift;
+  const cy = height / 2 + loopNoise(seed('y'), loopPhase, 0.8) * drift;
 
   const rings = [];
   for (let k = 0; k < lifeSteps; k++) {
@@ -68,8 +70,8 @@ export const Rings: React.FC<Props> = ({
     const isAccent = accentEvery > 0 && bornIndex % accentEvery === 0;
 
     // Seeded per-ring variation — same ring, same values, every loop.
-    const squash = 0.85 + stepRandom('rings-squash', bornIndex) * 0.3;
-    const rot = stepRandom('rings-rot', bornIndex) * 180;
+    const squash = 0.85 + stepRandom(seed('squash'), bornIndex) * 0.3;
+    const rot = stepRandom(seed('rot'), bornIndex) * 180;
 
     rings.push(
       <ellipse

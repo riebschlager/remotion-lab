@@ -15,8 +15,8 @@ export const validateLoopProps = (input: unknown): LoopProps => {
 
   const props = result.data;
   const errors: string[] = [];
-  for (const {name, definition, props: layer} of configuredLayers(props)) {
-    errors.push(...definition.validate(layer, props).map((message) => `${name}.${message}`));
+  for (const {validationPath, definition, props: layer} of configuredLayers(props)) {
+    errors.push(...definition.validate(layer, props).map((message) => `${validationPath}.${message}`));
   }
   if (props.timingMode === 'exact' && !isFrameExact(props)) {
     const {effectiveBpm} = getBeatState(0, props);

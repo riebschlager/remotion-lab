@@ -9,6 +9,7 @@ import {PNG} from 'pngjs';
 import {LoopProps} from '../../src/schema';
 import {fixture} from '../fixtures';
 import {presetNames, resolvePreset} from '../../src/presets';
+import type {LayerInstanceInput} from '../../src/layers/registry';
 
 let serveUrl: string;
 let bundleDir: string;
@@ -165,6 +166,8 @@ for (const preset of presetNames) {
     assert.equal(difference(first, await image(direct, 0, `${preset}-direct`)), 0);
     const lead = Math.min(Math.floor(n / 2), loop.fps);
     assert.equal(difference(first, await image(seam, lead, `${preset}-seam`)), 0);
+    assert.equal(difference(last, await image(seam, lead - 1, `${preset}-seam`)), 0);
+    assert.equal(difference(first, await image(loop, 0, `${preset}-repeat`)), 0);
   });
 }
 
@@ -184,4 +187,59 @@ test('registry layerOrder changes the rendered stacking order', async () => {
   const normal = await select('BeatLoop');
   const reversed = await select('BeatLoop', {layerOrder: ['rings', 'background']});
   assert(difference(await image(normal, 0, 'order-normal'), await image(reversed, 0, 'order-reversed')) > 0.001);
+});
+
+test('explicit default instances preserve legacy pixels and do not depend on unused layerOrder', async () => {
+  const legacy = await select('BeatLoop');
+  const explicit = await select('BeatLoop', {layers: [
+    {id: 'background', type: 'background'}, {id: 'rings', type: 'rings'},
+  ], layerOrder: ['rings', 'background']});
+  for (const frame of [0, 23]) assert.equal(difference(
+    await image(legacy, frame, 'legacy-instance'), await image(explicit, frame, 'explicit-instance')), 0);
+});
+
+test('each repeated ring contributes independent color, timing and blending to the rendered stack', async () => {
+  const layers: LayerInstanceInput[] = [
+    {id: 'back', type: 'background'},
+    {id: 'pink', type: 'rings', props: {color: '#ff6699', division: '1/2', offsetBeats: 0.5, opacity: 0.7}},
+    {id: 'cyan', type: 'rings', props: {color: '#55ddff', division: '1/8', offsetBeats: 0.25, opacity: 0.7}},
+  ];
+  const full = await image(await select('BeatLoop', {layers}), 9, 'multiple-rings');
+  for (const index of [1, 2]) {
+    const disabled = layers.map((layer, i) => i === index ? {...layer, props: {...layer.props, enabled: false}} : layer);
+    assert(difference(full, await image(await select('BeatLoop', {layers: disabled}), 9, `without-${index}`)) > 0.0001);
+  }
+  for (const [label, patch] of [
+    ['color', {color: '#ffff00'}], ['timing', {division: '1/4', offsetBeats: -0.5}], ['blend', {blendMode: 'multiply'}],
+  ] as const) {
+    const modified: LayerInstanceInput[] = layers.map((layer) => layer.id === 'cyan' && layer.type === 'rings'
+      ? {...layer, props: {...layer.props, ...patch}} : layer);
+    assert(difference(full, await image(await select('BeatLoop', {layers: modified}), 9, `instance-${label}`)) > 0.0001);
+  }
+  const covered = [layers[1], layers[2], layers[0]];
+  assert(difference(full, await image(await select('BeatLoop', {layers: covered}), 9, 'instance-order')) > 0.0001);
+});
+
+test('ring identity is independent of position in the array and produces distinct drift per ID', async () => {
+  const ring: LayerInstanceInput = {id: 'stable', type: 'rings', props: {offsetBeats: 0.5}};
+  const first = await image(await select('BeatLoop', {layers: [ring]}), 23, 'stable-ring');
+  const disabled: LayerInstanceInput = {id: 'disabled', type: 'rings', props: {enabled: false}};
+  for (const layers of [[disabled, ring], [ring, disabled]]) {
+    assert.equal(difference(first, await image(await select('BeatLoop', {layers}), 23, `stable-${layers[0].id}`)), 0);
+  }
+  const other = await image(await select('BeatLoop', {layers: [{...ring, id: 'other'}]}), 23, 'other-ring');
+  assert(difference(first, other) > 0.0001);
+});
+
+test('all entry points reject duplicate IDs and per-instance division errors', async () => {
+  const duplicates = [{id: 'same', type: 'rings'}, {id: 'same', type: 'rings'}];
+  const invalid = [{id: 'too-slow', type: 'rings', props: {division: '4 bars'}}];
+  for (const id of ['BeatLoop', 'SeamCheck']) {
+    await expectInvalid(id, {layers: duplicates}, /Duplicate layer ID/);
+    await expectInvalid(id, {bars: 1, layers: invalid}, /too-slow.*division/);
+  }
+  for (const id of ['PresetLoop', 'PresetSeamCheck']) {
+    await expectInvalid(id, {preset: 'prism-stack', overrides: {layers: duplicates}}, /Duplicate layer ID/);
+    await expectInvalid(id, {preset: 'prism-stack', overrides: {bars: 1, layers: invalid}}, /too-slow.*division/);
+  }
 });

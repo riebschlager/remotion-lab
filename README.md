@@ -51,6 +51,7 @@ Open **Presets → PresetLoop** in Studio and choose a `preset`. Use
 | `neon-orbit` | Original cyan rings, pink accents, violet pulse | 120 BPM, 4 bars |
 | `amber-echo` | Gold and coral rings on the offbeat, with longer echoes | 100 BPM, 4 bars |
 | `midnight-drift` | Quiet rotating blue gradient, rings disabled | 90 BPM, 8 bars |
+| `prism-stack` | Three pink, cyan and gold ring instances with independent timing and blending | 120 BPM, 4 bars |
 
 Presets are defined once in `src/presets.ts`. Each stores a title, description
 and overrides of the registry defaults. Adding a preset there automatically
@@ -64,7 +65,7 @@ npx remotion render PresetLoop out/custom-amber.mp4 --props='{"preset":"amber-ec
 
 For reusable variations, save that JSON to a file and pass `--props=./my-look.json`.
 Resolution order is **registry defaults → saved preset → your overrides**.
-Individual fields within a layer merge; arrays such as `layerOrder` replace
+Individual fields within a layer merge; arrays such as `layers` and `layerOrder` replace
 the whole array. Unknown preset names, misspelled override fields and invalid
 musical settings fail before rendering. Enable optional override fields in
 Studio by clearing their `<undefined>` checkbox, or use its JSON editor.
@@ -80,16 +81,59 @@ preset compositions when you want convenient partial layer overrides.
 exports a `defineLayer({schema, defaults, Component, validate?})` definition.
 The registry generates typed schema fields, fallback defaults, partial preset
 controls, rendering, musical validation and enabled debug divisions. It keeps
-the original back-to-front order unless `layerOrder` overrides it.
+the original back-to-front order unless `layerOrder` overrides it. This legacy
+form renders one instance of every registered type:
 
 ```json
 {"layerOrder": ["rings", "background"]}
 ```
 
-Every registered name must appear exactly once, including disabled layers.
-Layer definitions currently have one instance each. Their stack and generated
-geometry are procedural: edit parameters through composition props rather
-than duplicating or dragging them as independent Studio clips. Timing and
+For this legacy form, every registered name must appear exactly once, including
+disabled layers. To stack multiple instances of any registered type, supply
+`layers` instead. Its array order is back-to-front; it replaces the entire
+legacy stack and takes precedence over `layerOrder`.
+
+```json
+{
+  "preset": "neon-orbit",
+  "overrides": {
+    "layers": [
+      {"id": "backdrop", "type": "background"},
+      {"id": "slow-pink", "type": "rings", "props": {
+        "color": "#ff6699", "division": "1/2", "offsetBeats": 0.5,
+        "opacity": 0.7, "blendMode": "screen"
+      }},
+      {"id": "fast-cyan", "type": "rings", "props": {
+        "color": "#55ddff", "division": "1/8", "offsetBeats": 0.25,
+        "opacity": 0.4, "blendMode": "plus-lighter"
+      }}
+    ]
+  }
+}
+```
+
+Save this JSON and use `--props=./my-stack.json`, or choose `prism-stack` in
+Studio to try a complete example. `layers` also works directly on `BeatLoop`
+and `SeamCheck`. Each entry has a unique `id`, a registered `type`, and optional
+partial `props` validated against that type's schema. IDs start with a letter
+and contain letters, numbers, hyphens or underscores (up to 64 characters).
+All IDs must be unique, including disabled instances.
+
+Effective instance settings are **registry defaults → top-level type settings
+from the preset and caller → instance props**. For example, `overrides.rings`
+supplies shared ring settings, while `layers[i].props` wins for that instance.
+Instances are never implicitly added: include a background if you want one.
+An empty `layers: []` intentionally renders only the black canvas. Array
+overrides replace the whole stack rather than merging entries by ID.
+
+Stable IDs also namespace seeded drift and ring variation. Reordering an
+instance keeps its motion; renaming it deliberately changes its random
+variation. The default IDs `background` and `rings` preserve the old look.
+Layer components can access `{id, type, seed}` through `useLayerInstance()`;
+use `seed('channel')` with `loopNoise` or `stepRandom`, never an array index.
+
+Stacks and generated geometry remain procedural: edit instance props or the
+JSON array rather than duplicating independent Studio timeline clips. Timing and
 preset defaults on the root registrations remain source-editable in Studio;
 shared layer defaults live beside each layer's implementation.
 
@@ -136,7 +180,7 @@ divisions; their other fields must still satisfy the schema.
 
 1. **Define** – in `src/layers/MyLayer.tsx`, extend `baseLayerSchema` from `layers/base.ts`, build a component using `useBeat()`, and export a `defineLayer` definition with its schema, defaults and component. Use `Background.tsx` as the template. Keep defaults in the definition, rather than attaching defaults to individual schema fields, so partial preset overrides stay sparse.
 2. **Register** – import the definition in `src/layers/registry.ts` and add one entry to `layerRegistry`. Place it at its default z-position. Use `enabled: false` for opt-in effects to preserve existing presets. No edits to Root, LoopComposition, global validation or debug division lists are needed.
-3. **Constrain and test** – standard division validation is automatic. For additional musical constraints, add `validate(props, timing)` to the definition, returning messages such as `['radius: exceeds the supported range']`. Disabled layers skip these extra checks; schema constraints always apply. Add fixtures and run `npm run check` and `npm run test:visual`.
+3. **Constrain and test** – standard division validation is automatic and runs independently for every instance. For additional musical constraints, add `validate(props, timing)` to the definition, returning messages such as `['radius: exceeds the supported range']`. Disabled instances skip these extra checks; schema constraints always apply. Use `useLayerInstance().seed` to namespace random channels, then add fixtures and run `npm run check` and `npm run test:visual`.
 
 Every layer gets `enabled`, `opacity`, `blendMode`, `division`, and `offsetBeats` for free. Per-layer offsets are what make a stack feel composed instead of everything hitting at once.
 
@@ -151,6 +195,9 @@ Rendered fixtures cover offset hits, tails longer than the loop, odd meter,
 rounded tempo, 60fps, clean exports, malformed CLI props, and SeamCheck's
 mapping to the actual boundary frames. They also exercise each named preset,
 partial overrides, invalid selections and actual layer stacking order.
+Multi-instance checks verify independent colors, timing and blend modes,
+stable motion after reordering, duplicate-ID rejection, and legacy pixel
+equivalence when expressed as explicit instances.
 Frames are rendered out of order and
 repeated to check determinism. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.
@@ -202,6 +249,7 @@ src/
     base.ts             shared layer controls
     definition.ts       defineLayer: defaults, renderer, validation contract
     registry.ts         register once; derive schema, order and configured layers
+    InstanceContext.tsx stable IDs and per-instance random seed channels
     Layer.tsx           enabled / opacity / blend wrapper
     Background.tsx      gradient component + schema + defaults
     Rings.tsx           wrapped rings + schema + defaults

@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {layerNames, layerOrderSchema, layerOverrideShape} from './layers/registry';
+import {layerInstancesSchema, layerNames, layerOrderSchema, layerOverrideShape} from './layers/registry';
 import {createLoopDefaults, debugSchema, timingSchema} from './schema';
 import {validateLoopProps} from './validation';
 
@@ -9,6 +9,7 @@ import {validateLoopProps} from './validation';
 export const loopOverridesSchema = timingSchema.partial().extend({
   ...layerOverrideShape,
   layerOrder: layerOrderSchema.optional(),
+  layers: layerInstancesSchema.optional(),
   debug: debugSchema.partial().strict().optional(),
 }).strict();
 export type LoopOverrides = z.input<typeof loopOverridesSchema>;
@@ -37,6 +38,28 @@ export const loopPresets = {
       bpm: 90, bars: 8,
       background: {colorA: '#030816', colorB: '#164f72', pulseAmount: 0},
       rings: {enabled: false},
+    },
+  },
+  'prism-stack': {
+    title: 'Prism Stack',
+    description: 'Three independent pink, cyan and gold ring layers on different beat divisions.',
+    overrides: {
+      background: {colorA: '#05091c', colorB: '#261049', pulseAmount: 0.25, offsetBeats: 0.5},
+      layers: [
+        {id: 'backdrop', type: 'background'},
+        {id: 'slow-rings', type: 'rings', props: {
+          color: '#ff6ca8', accentColor: '#ffbbdb', division: '1/2', offsetBeats: 0.5,
+          blendMode: 'screen', opacity: 0.65, lifeSteps: 4, thickness: 12, maxRadius: 1100, drift: 100,
+        }},
+        {id: 'offbeat-rings', type: 'rings', props: {
+          color: '#58e6ff', accentColor: '#a2f3ff', division: '1/4', offsetBeats: -0.5,
+          blendMode: 'plus-lighter', opacity: 0.4, lifeSteps: 3, thickness: 10, maxRadius: 900, drift: 70,
+        }},
+        {id: 'fast-rings', type: 'rings', props: {
+          color: '#ffcf69', accentColor: '#fff1b8', division: '1/8', offsetBeats: 0.25,
+          blendMode: 'screen', opacity: 0.5, lifeSteps: 3, thickness: 6, maxRadius: 600, drift: 140,
+        }},
+      ],
     },
   },
 } satisfies Record<string, PresetDefinition>;

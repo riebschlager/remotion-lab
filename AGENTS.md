@@ -29,6 +29,13 @@ in one module. Add the exported definition to `src/layers/registry.ts`;
 schema fields, rendering, validation and debug divisions derive from it.
 Use disabled defaults for opt-in layers so existing presets keep their look.
 Add named looks in `src/presets.ts`; overrides merge individual layer fields.
-The generated stack has one instance per registered type. Configure its
-`layerOrder` through props rather than authoring independent timeline clips.
+For repeated types, use `layers: [{id, type, props?}]`. Array order is z-order;
+IDs must be unique and stable. Instance props inherit the top-level settings
+for their type, then override individual fields. A supplied `layers` array
+replaces the legacy stack (including `[]`); `layerOrder` applies only when
+`layers` is omitted. Preset array overrides replace the complete array.
+Namespace randomness with `useLayerInstance().seed('channel')`, never an array
+index, so reordering preserves motion. All enabled instances receive shared
+and local musical validation. Edit these procedural stacks through props
+rather than authoring independent timeline clips.
 See the beat-loop skill for details and add appropriate loop tests.
