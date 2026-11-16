@@ -252,6 +252,59 @@ other media. `npm run test:visual` skips the loop checks of such a sketch.
 `tests/visual/assets-entry.tsx` is a complete small example, and
 `src/sketches/sticker-slap` is a sketch built on a real collection.
 
+## Kinetic Type
+
+Use `Type` from `src/type/Type.tsx` inside a sketch; keep it outside the registry
+until a second sketch needs a layer. Read the chosen font's manifest first.
+Declare it in assets and bind settings with `defineSketch({types: p =>
+[{font: ref, settings: p.title, field: 'title'}]})`. Expose `typeSettingsSchema`
+in the sketch schema. Both metadata paths validate before rendering; a hook
+cannot provide that guarantee alone. `typeIssues` is available for custom checks.
+
+Choose from the brief:
+
+- “Hit the whole title”: split line, mode all.
+- “One word/letter per hit”: split word/letter, mode sequence.
+- “Traveling ripple”: mode stagger, staggerBeats in beats (default .25).
+- “Breathe the weight/width”: axes mappings keyed by manifest tags, each with
+  a normalized modulation signal and a range inside the selected face.
+
+Settings require text/split/mode/division. Optional pattern, offsetBeats and
+attack/decay/curve use the existing helpers; attack/decay are division units.
+Whitespace preserves space but consumes no hit or stagger position. Repeated
+text has source-position IDs. Sequence counts active hits, including accents
+but excluding rests, and requires a whole number of visible-unit rounds in
+one loop. Stagger offsets wrap, including negatives; never clamp delayed units
+away near the seam. Long tails retain their unit identity across rests/joins.
+All-rest patterns produce zero energy. Unit styles receive energy, strength,
+age, axes and unit identity for scale/opacity/position/color/blur.
+
+Axis signals use the shared weighted mix, LFO and circular noise rules.
+Inherited beat sources follow sequence assignment or stagger offsets. Explicit
+source rhythms retain shared override semantics. Sequence inheritance expands
+to a full-loop pattern, so a different source division may need an explicit
+compatible pattern. Bindings check these constraints too. Use distinct stable
+channel names for separate Type blocks. Ranges may reverse but cannot exceed
+the selected face. Missing axes or weight/style faces fail; do not synthesize.
+
+Box x/y/width/height are canvas fractions; maximum fontSize is vmin. Explicit
+newlines define lines. Remotion measureText plus SVG ink bounds account for
+advances, overhangs and tall glyphs only after the collection font is loaded.
+Pure fitType shrinks to both width and height. Default-axis measurements fix
+line breaks and unit slots for the loop. Current glyphs are contained with
+SVG aspect fitting, shrinking inside their slots if wider/taller; neighbors
+never move. This can reduce apparent size on a wide axis. There is no reflow
+mode. Keep effects within generous box margins; the outer box clips effects.
+
+Coverage is deliberately printable ASCII plus newlines: missingAscii is the
+only coverage evidence in today's manifests. Name unsupported characters in
+validation rather than using fallback. No rich text, automatic line wrapping,
+joined scripts, custom tracking/leading, kerning, ligatures or optical sizing
+in this version. Keep generated units procedural and edit props in Studio.
+Use type-beat as the real-font example; Lab Block fixtures verify variable
+weight while the real collection only contains static BBH Bogle. Check both
+canvas contact sheets for phone-size legibility and inspect seam neighbors.
+
 ## Adding a layer
 
 1. In `src/layers/MyLayer.tsx`, extend `baseLayerSchema` from `layers/base.ts`,

@@ -11,6 +11,12 @@ import type {FontRef} from './index';
  */
 export const cssFontFamily = (ref: Pick<FontRef, 'collection' | 'family'>) => `"${ref.collection}/${ref.family}"`;
 
+/** Type pins the exact selected file so overlapping static/variable faces cannot win CSS matching. */
+export const fontFaceFamily = (ref: Pick<FontRef, 'collection' | 'family'>, face: Pick<FontFace, 'file'>) =>
+  `${ref.collection}/${ref.family}/${face.file}`;
+export const cssFontFaceFamily = (ref: Pick<FontRef, 'collection' | 'family'>, face: Pick<FontFace, 'file'>) =>
+  JSON.stringify(fontFaceFamily(ref, face));
+
 const formatRank = ['woff2', 'woff', 'otf', 'ttf'];
 
 /** One file per distinct face, preferring the smallest format when a face ships in several. */
@@ -37,13 +43,17 @@ const loading = new Map<string, Promise<void>>();
  * Register every face of a family. `loadFont` holds the render while each
  * file loads and cancels it if one fails. Safe to call repeatedly.
  */
-export const loadCollectionFont = (ref: FontRef) => Promise.all(facesToLoad(ref).map((face) => {
+export const loadCollectionFont = (ref: FontRef) => Promise.all([
+  ...facesToLoad(ref).map((face) => ({face, family: `${ref.collection}/${ref.family}`})),
+  ...ref.faces.map((face) => ({face, family: fontFaceFamily(ref, face)})),
+].map(({face, family}) => {
   const url = staticFile(`assets/${ref.collection}/${face.file}`);
-  let pending = loading.get(url);
+  const key = JSON.stringify([family, url]);
+  let pending = loading.get(key);
   if (!pending) {
-    pending = loadFont({family: `${ref.collection}/${ref.family}`, url, ...faceDescriptors(face)});
-    pending.catch(() => loading.delete(url));
-    loading.set(url, pending);
+    pending = loadFont({family, url, ...faceDescriptors(face)});
+    pending.catch(() => loading.delete(key));
+    loading.set(key, pending);
   }
   return pending;
 }));

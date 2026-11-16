@@ -23,6 +23,10 @@ before(async () => {
   assert.deepEqual(reports[0].failed, []);
   await rm(path.join(dir, 'ghost.gif'));
   manifest = JSON.parse(await readFile(path.join(root, 'collections/fixture/manifest.json'), 'utf8'));
+  // Two overlapping faces in one family: Type must pin the selected file,
+  // rather than letting CSS choose the last matching static/variable face.
+  manifest.fonts['Lab Overlap'] = {description: 'Overlapping fixture faces', tags: [],
+    faces: [manifest.fonts['Lab Static'].faces[0], manifest.fonts['Lab Block'].faces[0]]};
   await writeFile(path.join(root, 'manifests.json'), JSON.stringify({fixture: manifest}));
   session = await openSession({entryPoint: path.resolve('tests/visual/assets-entry.tsx'),
     publicDir: path.join(root, 'public'), alias: {'asset-fixture-manifests': path.join(root, 'manifests.json')}});
@@ -179,4 +183,105 @@ test('Clip fades hide a non-looping source reset on the actual rendered seam', a
       else { assert(gray(png, 0) <= 1); assert(gray(png, 1) <= 1); }
     }
   }
+});
+
+// Columns of actual painted pixels: no DOM assertions can accidentally bless a fallback font.
+const inkColumns = (png: PNG) => {
+  const columns = Array.from({length: png.width}, (_, x) => {
+    let max = 0;
+    for (let y = 0; y < png.height; y++) max = Math.max(max, png.data[(y * png.width + x) * 4]);
+    return max;
+  });
+  const runs: Array<{x: number; width: number; level: number; coverage: number}> = [];
+  columns.forEach((value, x) => {
+    if (value < 10) return;
+    if (x === 0 || columns[x - 1] < 10) runs.push({x, width: 1, level: value, coverage: value / 255});
+    else { const run = runs[runs.length - 1]; run.width++; run.coverage += value / 255; run.level = Math.max(run.level, value); }
+  });
+  return runs;
+};
+const typeFrame = async (props: Record<string, unknown>, frame: number, label: string) => {
+  const composition = await session.select('type-probe', props);
+  return session.still(composition, frame, path.join(artifacts, `type-${label}.png`), 0.2);
+};
+
+test('Type uses the loaded collection face, with exact fixture glyph proportions', async () => {
+  const png = await typeFrame({}, 0, 'collection-face');
+  const runs = inkColumns(png);
+  assert.equal(runs.length, 2);
+  // 20 vmin = 216 composition pixels. Lab Static's A has exactly half-em ink width.
+  for (const run of runs) assert(Math.abs(run.coverage - 216 * 0.2 * 0.5) <= 1, JSON.stringify(runs));
+  // A browser fallback A is neither a solid rectangle nor exactly this half-em width.
+  const rows = [];
+  for (let y = 0; y < png.height; y++) {
+    if (png.data[(y * png.width + runs[0].x + 2) * 4] > 200) rows.push(y);
+  }
+  assert(Math.abs(rows.length - 216 * 0.2) <= 1.5);
+});
+
+test('Type animates a variable axis between beats while unit slots stay fixed', async () => {
+  const settings = {text: 'A A', split: 'word', mode: 'all', division: '1/2',
+    axes: {wght: {signal: {type: 'beat'}, range: [100, 900]}}};
+  const peak = inkColumns(await typeFrame({family: 'Lab Block', settings}, 0, 'axis-peak'));
+  const rest = inkColumns(await typeFrame({family: 'Lab Block', settings}, 45, 'axis-rest'));
+  assert.equal(peak.length, 2); assert.equal(rest.length, 2);
+  for (let i = 0; i < 2; i++) {
+    assert.equal(peak[i].x, rest[i].x);
+    assert(Math.abs(peak[i].coverage - 216 * 0.2 * 0.9) <= 1);
+    assert(Math.abs(rest[i].coverage - 216 * 0.2 * 0.1) <= 1);
+  }
+  const repeated = await typeFrame({family: 'Lab Block', settings}, 0, 'axis-repeated');
+  assert.deepEqual(inkColumns(repeated), peak);
+});
+
+test('Type shows sequential active hits and leaves a rest silent', async () => {
+  const settings = {text: 'A A', split: 'word', mode: 'sequence', division: '1/2', pattern: {steps: [1, 0, 0.5, 0]}};
+  const first = inkColumns(await typeFrame({settings, showEnergy: true}, 0, 'first-hit'));
+  const rest = inkColumns(await typeFrame({settings, showEnergy: true}, 60, 'rest'));
+  const second = inkColumns(await typeFrame({settings, showEnergy: true}, 120, 'second-hit'));
+  assert.equal(first.length, 1); assert.equal(second.length, 1); assert.equal(rest.length, 0);
+  assert(second[0].x > first[0].x);
+  assert(Math.abs(second[0].level - 128) <= 1);
+});
+
+test('Type fits explicit lines inside its box on tall and wide canvases', async () => {
+  for (const canvas of ['portrait', 'landscape']) {
+    const png = await typeFrame({canvas, settings: {text: 'A A A A A\nA A A A A', split: 'letter', mode: 'stagger', division: '1/4'}}, 0, `fit-${canvas}`);
+    let ink = 0;
+    for (let y = 0; y < png.height; y++) for (let x = 0; x < png.width; x++) {
+      if (png.data[(y * png.width + x) * 4] < 10) continue;
+      ink++;
+      assert(x >= png.width * 0.1 - 1 && x <= png.width * 0.9 + 1 && y >= png.height * 0.25 - 1 && y <= png.height * 0.75 + 1);
+    }
+    assert(ink > 50);
+  }
+});
+
+test('Type rejects missing characters and invalid axes before rendering', async () => {
+  const settings = {text: 'B', split: 'letter', mode: 'all', division: '1/4'};
+  await assert.rejects(session.select('type-probe', {settings}), /label.text.*"B"/);
+  await assert.rejects(session.select('type-probe', {family: 'Lab Block', settings: {...settings, text: 'A',
+    axes: {wght: {signal: {type: 'beat'}, range: [100, 901]}}}}), /label.axes.wght.range/);
+});
+
+test('Type variable axes follow one-word-per-hit assignment', async () => {
+  const settings = {text: 'A A', split: 'word', mode: 'sequence', division: '1/4',
+    axes: {wght: {signal: {type: 'beat'}, range: [100, 900]}}};
+  const first = inkColumns(await typeFrame({family: 'Lab Block', settings}, 0, 'axis-sequence-first'));
+  const second = inkColumns(await typeFrame({family: 'Lab Block', settings}, 30, 'axis-sequence-second'));
+  assert.equal(first.length, 2); assert.equal(second.length, 2);
+  assert(first[0].coverage > first[1].coverage * 5);
+  assert(second[1].coverage > second[0].coverage * 5);
+  assert.deepEqual(first.map((r) => r.x), second.map((r) => r.x));
+});
+
+
+test('Type pins the chosen file when static and variable faces overlap', async () => {
+  const settings = {text: 'A A', split: 'word', mode: 'all', division: '1/2'};
+  const fixed = inkColumns(await typeFrame({family: 'Lab Overlap', settings}, 0, 'overlap-static'));
+  const varied = inkColumns(await typeFrame({family: 'Lab Overlap', settings: {...settings,
+    axes: {wght: {signal: {type: 'beat'}, range: [100, 900]}}}}, 0, 'overlap-variable'));
+  assert.equal(fixed.length, 2); assert.equal(varied.length, 2);
+  assert(Math.abs(fixed[0].coverage - 216 * 0.2 * 0.5) <= 1);
+  assert(Math.abs(varied[0].coverage - 216 * 0.2 * 0.9) <= 1);
 });

@@ -10,6 +10,8 @@ import React from 'react';
 import {AbsoluteFill, Composition, registerRoot} from 'remotion';
 import {z} from 'zod';
 import {createAssets} from '../../src/assets';
+import {Type} from '../../src/type/Type';
+import {typeSettingsSchema} from '../../src/type/model';
 import {Clip} from '../../src/assets/Clip';
 import {clipPlaybackSchema} from '../../src/assets/clipPlayback';
 import {ClipFrame} from '../../src/assets/ClipFrame';
@@ -76,7 +78,21 @@ const probe = defineSketch({
   assets: (props) => [clip('fixture', props.gif), clip('fixture', props.video), font('fixture', props.family)],
 });
 
-registerRoot(() => (
+const typeProbe = defineSketch({
+  id: 'type-probe', title: 'Type Probe', description: 'Collection type with deterministic fitting and rhythm.',
+  schema: z.object({settings: typeSettingsSchema, family: z.string(), showEnergy: z.boolean()}),
+  defaults: {settings: {text: 'A A', split: 'word', mode: 'all', division: '1/2'}, family: 'Lab Static', showEnergy: false},
+  canvas: 'square', timing: {bars: 2, fps: 60},
+  assets: (p) => [font('fixture', p.family)],
+  types: (p) => [{font: font('fixture', p.family), settings: p.settings, field: 'label'}],
+  Component: ({settings, family, showEnergy}) => <Type font={font('fixture', family)} settings={settings}
+    x={0.1} y={0.25} width={0.8} height={0.5} fontSize={20}
+    unitStyle={showEnergy ? ({energy}) => ({opacity: energy}) : undefined} />,
+});
+
+registerRoot(() => (<>
+  <Composition id={typeProbe.id} component={typeProbe.Loop} schema={typeProbe.schema} defaultProps={typeProbe.defaultProps}
+    calculateMetadata={({props}) => typeProbe.metadata(props)} width={1080} height={1080} fps={60} durationInFrames={1} />
   <Composition id={probe.id} component={probe.Loop} schema={probe.schema} defaultProps={probe.defaultProps}
     calculateMetadata={({props}) => probe.metadata(props)} width={1080} height={1080} fps={30} durationInFrames={1} />
-));
+</>));

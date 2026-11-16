@@ -108,3 +108,20 @@ Read README's mode table and cut rules before choosing from a brief. Use
 `useClipPlayback` or Clip's style function for latest accent strength. Box
 coordinates are canvas fractions; derive square sizes from useCanvas().vmin.
 Clip remains a sketch building block until a second sketch needs a registry layer.
+
+Kinetic typography uses `Type` from `src/type/Type.tsx`, kept at sketch level.
+Read font faces/axes/missingAscii first. Use `typeSettingsSchema` and declare
+`defineSketch({types: p => [{font, settings: p.title, field: 'title'}]})` plus
+assets, so both metadata paths validate coverage, one actual face and musical
+compatibility. Text supports printable ASCII plus explicit newlines; name
+unsupported characters instead of silently falling back. Box coordinates are
+canvas fractions, maximum fontSize is vmin, and fitting shrinks in both axes.
+Choose split line/word/letter and mode all/sequence/stagger from the brief.
+Sequence assigns only active hits and requires whole visible-unit rounds per
+loop. Whitespace consumes no hit. Stagger uses wrapped per-unit offsets.
+Map unitStyle's energy to paint/transforms; leave space for effects in the box.
+Axis ranges must stay within the selected face. Inherited beat signals follow
+unit assignment/offsets; sources with explicit rhythms use shared modulation
+rules. Measurement runs only after font loading. Layout slots use default
+axes and stay fixed; current glyphs shrink into their slots as needed, never
+reflow. See README for fitting tradeoffs and current typography limitations.

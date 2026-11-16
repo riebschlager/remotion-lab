@@ -62,7 +62,7 @@ npx remotion render neon-rain out/neon-rain.mp4 --props='{"canvas":"square","bpm
 
 `brief.md` records the idea, rhythm, look and assets in plain language.
 `sketch.tsx` default-exports `defineSketch({id, title, description, schema,
-defaults, Component, assets?, clips?, validate?, timing?, canvas?, debugDivisions?})`. The `id`
+defaults, Component, assets?, clips?, types?, validate?, timing?, canvas?, debugDivisions?})`. The `id`
 must equal the folder name. `schema` and `defaults` cover only the sketch's
 own params; every sketch also receives these shared controls:
 
@@ -287,8 +287,77 @@ Neither the manifest flag, ping-pong nor a fade removes hard cuts *inside*
 a clip: inspect its filmstrip. `clip-duet` demonstrates fit plus faded,
 swung retrigger on real GIF/video media; CI verifies all modes on fixtures.
 
-A kinetic type building block is still planned; use `fontVariationSettings`
-until then.
+### Choosing kinetic Type from a brief
+
+`Type` in `src/type/Type.tsx` is a sketch building block, outside the registry.
+It sets collection fonts in a bounded canvas-relative box. Read the font's
+manifest first, declare it in `assets`, and expose `typeSettingsSchema` in the
+sketch schema. Declare matching bindings in `defineSketch({types: p =>
+[{font: ref, settings: p.title, field: 'title'}]})`; both metadata paths check
+face availability, coverage, axes and rhythm before rendering.
+
+```tsx
+import {Type} from '../../type/Type';
+// settings is the same object validated in the sketch's types binding.
+<Type font={ref} settings={settings} x={0.08} y={0.15}
+  width={0.84} height={0.65} fontSize={24}
+  unitStyle={({energy}) => ({opacity: 0.5 + 0.5 * energy})} />
+```
+
+`x/y/width/height` are canvas fractions; `fontSize` is a maximum in vmin
+(default 20), reduced to fit both box dimensions. `align` is left, center
+(default) or right. Explicit `\n` controls lines; there is no automatic wrap.
+Measurement uses Remotion's `measureText` plus SVG ink bounds after the
+collection font finishes loading, including overhangs. Pure fitting logic
+lives in `src/type/layout.ts`; timing/validation lives in `src/type/model.ts`.
+
+| Brief asks for | Settings |
+| --- | --- |
+| Entire title hits together | `split: 'line'`, `mode: 'all'` |
+| Alternate words or letters on active hits | `split: 'word'` or `'letter'`, `mode: 'sequence'` |
+| A traveling ripple across the phrase | `mode: 'stagger'`, `staggerBeats: 0.125` |
+| Pulse a variable weight/width | `axes: {wght: {signal: {type: 'beat'}, range: [100, 900]}}` using the selected face's actual range |
+
+Every settings object supplies `text`, `split`, `mode`, and `division`.
+Optional `pattern`, `offsetBeats`, `attack`, `decay`, `curve` use existing beat
+helpers. Attack/decay are division units. Stagger offsets wrap, including
+negative values; whitespace keeps its layout space but never consumes a hit
+or stagger index. Repeated words/letters have distinct source-position IDs.
+Sequence counts active hits, skips rests and requires whole unit rounds per
+loop: active hits must be divisible by visible units. Choose all/stagger when
+that constraint does not suit the phrase. Long envelope tails retain their
+unit identity across rests and the loop point. All-rest patterns are silent.
+
+`unitStyle` receives `id`, `text`, `line`, `index`, `energy`, latest `strength`,
+`age` and sampled `axes`. Map energy to scale, opacity, translation, color or
+blur; transforms and blur can be clipped by the outer box, so leave room.
+Generated units remain procedural; edit the text and rhythm props in Studio.
+`channel` provides stable independent noise identity for different Type blocks.
+
+Axis mappings use normalized beat/LFO/noise signals and weighted mixes.
+Inherited beat sources follow the unit's sequence assignment or stagger;
+explicit source rhythm overrides retain the shared modulation semantics.
+A sequence's inherited axis pattern spans the full loop, so overriding its
+source division may need a compatible pattern too. Ranges (including reversed
+ranges) must stay within one selected face's manifest axes. `weight` defaults
+to 400 and `italic` to false; unavailable faces fail rather than synthesize.
+Type uses a file-scoped font family so overlapping static and variable faces
+cannot silently select a different file.
+
+Layout is deliberately fixed: line breaks, font size and unit slots are
+measured at the face's default axes (and selected weight). Each current glyph
+is contained within its slot using SVG aspect fitting, shrinking if its ink
+or advance grows. Axis changes cannot push neighbors or reflow lines; a wide
+axis may therefore reduce that unit's apparent size. Optical sizing, kerning
+and ligatures are disabled so split units have predictable geometry.
+
+Coverage is conservatively limited to printable ASCII and newlines because
+manifests currently record `missingAscii`, not a complete Unicode character
+map. Unsupported characters are named in validation. This version has no
+rich text, automatic wrapping, joined-script shaping, reflow animation or
+custom tracking/leading. `type-beat` demonstrates traveling letters and
+sequential words in the real BBH Bogle font. Variable weight is verified with
+Lab Block fixtures; the real collection has no variable font yet.
 
 ### When the media is not there
 
@@ -693,6 +762,11 @@ src/
     ClipFrame.tsx       one exact source frame of a GIF or video
     Clip.tsx            beat-driven playback, relative layout and accent hook
     clipPlayback.ts     pure fit/retrigger/step/scrub selection + validation
+  type/
+    Type.tsx            bounded collection typography and per-unit styling
+    model.ts            splitting, rhythm, axes and pre-render validation
+    layout.ts           pure fitting from measured metrics
+    measure.ts          loaded-font advance and SVG ink measurements
   sketches/
     index.ts            the list of sketches (maintained by sketch:new)
     define.tsx          defineSketch, shared controls, useSketch, divisionIssues

@@ -55,6 +55,25 @@ move it to "Done" so this file stays the source of truth.
   - Scrub addresses 0..last without endpoint wrap; discontinuous beat/saw/square
     sources require explicit cut permission. Internal footage cuts remain.
 
+- **Kinetic Type building block** (segment 3). `src/type/Type.tsx` sets
+  explicit lines in bounded, canvas-relative boxes. Line/word/letter units
+  use all, sequence or wrapped stagger timing, with per-unit pattern energy
+  and manifest-bounded variable-axis signals. Declarative `types` bindings
+  validate coverage, faces, axes and rhythm in both metadata paths. Remotion
+  measurement plus SVG ink bounds run only after collection fonts load;
+  pure layout/timing modules have unit coverage. Slots stay fixed at reference
+  axes; current glyphs shrink into them rather than moving neighboring units.
+  `type-beat` uses real BBH Bogle on portrait/landscape, with inspected contact
+  sheets and Studio. Fixture pixels prove the collection face, variable weight
+  changes, stable unit anchors, sequential accents, and bounded multiline fit.
+  - Sequence requires complete unit rounds per loop, including only active
+    hits. Axis beat sources inherit unit assignment and stagger offsets.
+  - Coverage is printable ASCII/newlines, matching the manifest's available
+    evidence. No automatic wrapping, rich text, joined scripts, animated reflow
+    or custom tracking/leading. Kerning, ligatures and optical sizing are off.
+  - The real collection has only a static font; variable axes remain verified
+    on generated fixtures until real variable media is added.
+
 ## Decisions already made
 
 These apply to every segment; the prompts do not repeat them.
@@ -98,54 +117,6 @@ should know:
   decoding; the rendered suite takes about 108 s with this sketch in it.
 - File names with spaces and capitals work as clip keys, filmstrip names and
   URLs. Names containing `#`, `%` or `?` have not been tried.
-
-## 3. Kinetic Type layer
-
-**Why:** fonts are one of the three asset kinds, and text is what most social
-pieces need. Can run before or after segment 2.
-
-**Done when:** a sketch can set words in a collection font, animate them per
-word or per letter on a pattern, and pulse a variable-font axis on the beat.
-
-```text
-Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
-roadmap segment 3: a kinetic Type building block for sketches, using fonts from asset
-collections (see "Asset collections" in the README and src/assets/fonts.ts).
-
-Build a Type component that:
-- Sets one or more lines of text in a collection font, sized in useCanvas() units, and
-  fits text to a box so it never overflows on any canvas. Check the checked-in Remotion
-  skills for the recommended text measuring and fitting approach before writing one.
-- Splits text into lines, words or letters, and gives each unit a stable identity so
-  hits can address them: all at once, one unit per hit in order, or staggered with a
-  per-unit beat offset. Per-unit timing must use wrapped offsets on the beat grid so it
-  is seamless, the way src/sketches/pulse-grid delays its tiles.
-- Exposes per-unit energy from the existing pattern and envelope helpers so a sketch
-  can map it to scale, opacity, position, color or blur.
-- Supports variable-font axes as animation targets: map a normalized signal from
-  src/beat/modulation.ts to an axis range taken from the manifest, and reject ranges
-  outside what the font supports before rendering.
-- Uses the manifest's missing-character information to fail validation, with the
-  characters named, when the text cannot be set in the chosen font.
-
-Text measurement must be deterministic across frames and must not run before the font
-has loaded. Layout must not shift when an axis animates unless the sketch asks for
-that; decide how to handle width changes from a weight or width axis and tell me the
-choice.
-
-Put layout and timing logic in pure modules with unit tests. Add rendered tests using
-the fixture fonts in tests/fixtures/fonts so CI can run them, including one that
-proves the collection font was used and not a fallback, and one that shows a
-variable axis changing between two beats.
-
-Then build a sketch that uses Type with a real font from public/assets/, preview it on
-portrait and landscape, and look at the contact sheets for legibility at phone size.
-If there is no real collection, tell me and verify on fixtures only.
-
-Update the README, AGENTS.md and the beat-loop skill. Run npm run check and
-npm run test:visual. Report what was built, what was verified and how, and what kinds
-of typography it cannot do yet. Update ROADMAP.md. Commit only if I ask.
-```
 
 ## 4. Brief-to-sketch skill
 

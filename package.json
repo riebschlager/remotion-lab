@@ -28,6 +28,7 @@
   "dependencies": {
     "@remotion/cli": "4.0.543",
     "@remotion/fonts": "4.0.543",
+    "@remotion/layout-utils": "4.0.543",
     "@remotion/media": "4.0.543",
     "@remotion/noise": "4.0.543",
     "@remotion/studio": "4.0.543",
