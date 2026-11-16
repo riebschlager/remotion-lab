@@ -26,6 +26,39 @@ the musical clock and periodic behavior are its core contract.
   `npm run skills:check`. Keep upstream skills intact; put local conventions
   in the beat-loop skill.
 
+New animation ideas start as sketches, not registry layers. Run
+`npm run sketch:new -- <id>`, write `src/sketches/<id>/brief.md`, and build
+`sketch.tsx` around `defineSketch`. Keep everything the sketch needs inside
+its folder; do not edit the registry, shared schema, presets or Root for one.
+Sketch components use `useBeat()`, `useCanvas()` and `useSketch().seed()`.
+Size in `vmin` or canvas fractions, never literal pixels, so every canvas
+works. Shared control names (timing, `canvas`, `customSize`, `transparent`,
+`variant`, `debug`) are reserved. Validate musical params in the definition's
+`validate`. Then run `npm run preview -- <id>`, open
+`out/preview/<id>/sheet.png`, and compare it with the brief: fix a determinism
+failure always, and treat a seam warning as a defect unless the seam row
+shows an intended hit. Check at least one other canvas with
+`--props='{"canvas":"landscape"}'`. Promote code to a registered layer only
+when a second sketch needs it.
+
+GIFs, video clips and fonts come from asset collections. The media is in
+`public/assets/<collection>/` and is not in git; you cannot watch it. Before
+designing a sketch that uses a collection, read
+`collections/<collection>/manifest.json` (frame counts, native fps, size,
+alpha, whether a clip loops on its own, font weights, axes and missing
+characters, plus hand-written descriptions and tags) and open the filmstrip
+image of each clip you are considering. Choose clips from that evidence, and
+name them in the brief. In code, get references with `clip()` and `font()`
+from `src/assets`, list every one in `defineSketch({assets})`, and read them
+with `useAsset()`. Draw clips only with `<ClipFrame>`, with `frame` derived
+from `useBeat()`; never place `<AnimatedImage>` or `<Video>` directly, because
+they follow the frame clock. Use the returned `fontFamily` for type. If the
+user adds or changes media, run `npm run assets:scan`, then fill in
+`description` and `tags` for the new entries from their filmstrips; those two
+fields are the only ones to edit by hand, and `collections/` is committed.
+If a sketch fails with "is missing … Collection media is not in git", the
+files are not on this machine: report that instead of working around it.
+
 New layers own their schema, defaults, component and optional extra validator
 in one module. Add the exported definition to `src/layers/registry.ts`;
 schema fields, rendering, validation and debug divisions derive from it.
