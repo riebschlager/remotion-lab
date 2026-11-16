@@ -15,7 +15,9 @@ the musical clock and periodic behavior are its core contract.
   do not participate in division compatibility checks.
 - Keep final defaults free of diagnostics. Enable `debug` explicitly for
   inspection. Keep authored composition selector/timing defaults inline so
-  Studio can save edits; procedural layer defaults belong in `defineLayer`.
+  Studio can save edits. Layer defaults belong in `defineLayer`; the direct
+  compositions also need literal snapshots for Studio's nested controls. Keep
+  those snapshots aligned with the registry via `tests/studio-defaults.test.ts`.
 - Run `npm run check` after changes. For rendered motion or timing changes,
   also run `npm run test:visual`; inspect Studio for aesthetic changes.
   `npm run seamcheck` is a manual diagnostic, not an automated pass/fail test.
@@ -46,4 +48,12 @@ loop; nonzero swing requires even slot counts and delays odd slots without
 changing pair duration. The shared validator handles these constraints.
 When adding a layer, explicitly consume its pattern; schema exposure alone
 does not make rendering rhythm-aware. Preserve the legacy path when omitted.
+Shared `modulation` maps normalized beat/LFO/noise sources to visual targets;
+source arrays use a weighted mean, not an unbounded sum. Use the pure helpers
+in `src/beat/modulation.ts` with the existing beat state and instance seed.
+`LayerModulation` applies scale, rotation and pixel displacement automatically;
+consume `useLayerModulation().color` for layer-specific paint. Do not apply
+geometry twice. Beat sources inherit the instance rhythm unless overridden;
+their divisions and patterns receive shared validation too. Keep whole-cycle
+LFOs and stable noise channels. Omission/null must preserve legacy rendering.
 See the beat-loop skill for details and add appropriate loop tests.

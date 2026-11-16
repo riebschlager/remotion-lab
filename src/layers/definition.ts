@@ -4,6 +4,7 @@ import {divisionBeats, divisionFitsLoop} from '../beat/envelopes';
 import {getTotalBeats, type TimingConfig} from '../beat/timing';
 import type {BaseLayerProps} from './base';
 import {patternIssues} from '../beat/patterns';
+import {modulationIssues} from '../beat/modulation';
 
 /** A typed definition at authoring time, with a uniform runtime interface.
  * The registry only passes props resolved by the matching Zod schema.
@@ -34,6 +35,7 @@ export const defineLayer = <S extends z.ZodObject>(definition: {
         errors.push(`division: "${props.division}" must fit a whole number of times in ${timing.bars} bars (${totalBeats} beats). Choose a shorter division or more bars.`);
       }
       if (props.pattern) errors.push(...patternIssues(props.pattern, divisionBeats(props.division, timing.beatsPerBar), totalBeats));
+      errors.push(...modulationIssues(props.modulation, props, timing));
       return [...errors, ...(definition.validate?.(props as z.output<S>, timing) ?? [])];
     },
   };

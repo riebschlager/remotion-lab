@@ -31,6 +31,18 @@ export const RemotionRoot: React.FC = () => {
         component={LoopComposition}
         schema={loopSchema}
         defaultProps={{
+          // Studio needs literal defaults to display and save nested controls.
+          // tests/studio-defaults.test.ts keeps these aligned with the registry.
+          background: {
+            enabled: true, opacity: 1, blendMode: 'normal', division: '1/4', offsetBeats: 0,
+            colorA: '#0b0b1a', colorB: '#3a1d6e', pulseAmount: 0.6, rotationsPerLoop: 1,
+          },
+          rings: {
+            enabled: true, opacity: 1, blendMode: 'screen', division: '1/4', offsetBeats: 0,
+            color: '#7fe7ff', accentColor: '#ff4fa3', accentEvery: 4, lifeSteps: 3,
+            maxRadius: 900, thickness: 14, drift: 80,
+          },
+          layerOrder: ['background', 'rings'],
           bpm: 120,
           bars: 4,
           beatsPerBar: 4,
@@ -51,6 +63,18 @@ export const RemotionRoot: React.FC = () => {
         component={SeamCheck}
         schema={loopSchema}
         defaultProps={{
+          // Studio needs literal defaults to display and save nested controls.
+          // tests/studio-defaults.test.ts keeps these aligned with the registry.
+          background: {
+            enabled: true, opacity: 1, blendMode: 'normal', division: '1/4', offsetBeats: 0,
+            colorA: '#0b0b1a', colorB: '#3a1d6e', pulseAmount: 0.6, rotationsPerLoop: 1,
+          },
+          rings: {
+            enabled: true, opacity: 1, blendMode: 'screen', division: '1/4', offsetBeats: 0,
+            color: '#7fe7ff', accentColor: '#ff4fa3', accentEvery: 4, lifeSteps: 3,
+            maxRadius: 900, thickness: 14, drift: 80,
+          },
+          layerOrder: ['background', 'rings'],
           bpm: 120,
           bars: 4,
           beatsPerBar: 4,
@@ -71,7 +95,7 @@ export const RemotionRoot: React.FC = () => {
           id="PresetLoop"
           component={PresetComposition}
           schema={presetSchema}
-          defaultProps={{preset: 'neon-orbit', overrides: {}}}
+          defaultProps={{preset: 'neon-orbit' as const, overrides: {}}}
           calculateMetadata={presetMetadata}
           width={1080}
           height={1920}

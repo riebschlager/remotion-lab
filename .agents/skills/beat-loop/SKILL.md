@@ -65,6 +65,48 @@ BeatDebug lists strengths and swing amounts. Test zero-strength silence,
 weighted accents, exact onsets for fractional swing, negative offsets, stable
 identity, odd meters, loop compatibility, and tails through rests and seams.
 
+## Shared modulation
+
+`modulation` optionally maps a normalized `signal` to a target `range`.
+Signals are beat envelopes, integer-cycle LFOs or circular looping noise;
+arrays combine them by weighted mean. Weights default to one, must be finite
+and nonnegative, and zero removes a source. An all-zero mix yields zero,
+which maps to the first output endpoint, not necessarily a neutral transform.
+LFO/noise values normalize from -1..1 to 0..1. Saw/square jumps are intentional.
+
+Targets are scale (nonnegative multipliers), rotation (degrees), color (two
+CSS colors), and displacement.x/y (pixels). Numeric endpoints may reverse.
+Omitted targets are neutral; omitted/null modulation preserves old rendering.
+A supplied modulation object replaces the inherited object as a whole.
+
+Use `sampleSignal`, `mapRange`, `mapColor`, `modulateNumber`, `modulateColor`,
+`modulateDisplacement` and `resolveModulation` from `src/beat/modulation.ts`.
+The context contains existing `useBeat()` state as `time`, the instance's
+`seed`, and its division/offset/pattern. No additional clock or frame state.
+`beatSignal` also centralizes the normal background/core beat envelopes.
+
+Beat sources inherit the resolved layer rhythm unless division, offset or
+pattern is explicitly overridden; null pattern selects the fixed grid.
+Attack/decay use division units; curve must be positive. LFO cycles are whole
+and nonnegative, phaseOffset is in cycles. Noise channels use stable instance
+IDs; different channel strings make axes independent. Source compatibility
+is checked per target and instance. Zero-weight sources skip musical checks;
+all structural constraints remain active. Disabled instances skip musical
+checks. Keep new sources wired into both sampling and validation.
+
+`LayerModulation` applies centered scale/rotation and composition-pixel
+translation inside the existing layer blend wrapper. Do not apply those
+transforms again in the layer. Read `useLayerModulation().color` for paint:
+Background replaces its center glow, Rings replace current strokes/core.
+Color mappings override the normal pulse/accent palette; strengths continue
+to control intensity/opacity. New layers must explicitly consume mapped color.
+
+`modulation-orbit` demonstrates all sources and targets. Test normalized
+ranges, weighted mixing, source rhythm inheritance, per-instance isolation,
+reorder-stable seeds, neutral output, actual rendered target effects, and
+seam continuity. Preserve deliberate source-editable preset defaults instead
+of assuming every composition starts with the same selection.
+
 ## Adding a layer
 
 1. In `src/layers/MyLayer.tsx`, extend `baseLayerSchema` from `layers/base.ts`,

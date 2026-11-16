@@ -7,7 +7,6 @@ import {
   easeOutCubic,
   loopNoise,
   mod,
-  pulse,
   step,
   stepRandom,
 } from '../beat/envelopes';
@@ -15,7 +14,9 @@ import {zColor} from '@remotion/zod-types';
 import {baseLayerSchema} from './base';
 import {defineLayer} from './definition';
 import {useLayerInstance} from './InstanceContext';
-import {patternEvents, patternPulse} from '../beat/patterns';
+import {patternEvents} from '../beat/patterns';
+import {beatSignal} from '../beat/modulation';
+import {useLayerModulation} from './LayerModulation';
 
 export const ringsSchema = baseLayerSchema.extend({
   color: zColor(),
@@ -52,7 +53,9 @@ export const Rings: React.FC<Props> = ({
 }) => {
   const {width, height} = useVideoConfig();
   const {seed} = useLayerInstance();
-  const {beat, totalBeats, beatsPerBar, loopPhase} = useBeat();
+  const time = useBeat();
+  const {beat, totalBeats, beatsPerBar, loopPhase} = time;
+  const {color: modulatedColor} = useLayerModulation();
 
   const stepLen = divisionBeats(division, beatsPerBar);
   const s = pattern ? null : step(beat, stepLen, totalBeats, offsetBeats);
@@ -88,7 +91,7 @@ export const Rings: React.FC<Props> = ({
         ry={r * squash}
         transform={`rotate(${rot} ${cx} ${cy})`}
         fill="none"
-        stroke={isAccent ? accentColor : color}
+        stroke={modulatedColor ?? (isAccent ? accentColor : color)}
         strokeWidth={thickness * (0.4 + 0.6 * fade)}
         opacity={fade * strength}
       />,
@@ -96,15 +99,13 @@ export const Rings: React.FC<Props> = ({
   }
 
   // A core that punches on each step.
-  const core = pattern
-    ? patternPulse(beat, stepLen, totalBeats, pattern, offsetBeats, {decay: 0.5, curve: 2})
-    : pulse(s!.phase, {decay: 0.5, curve: 2});
+  const core = beatSignal({time, seed, division, offsetBeats, pattern}, {decay: 0.5, curve: 2});
 
   return (
     <AbsoluteFill>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         {rings}
-        <circle cx={cx} cy={cy} r={30 + core * 50} fill={color} opacity={pattern ? core : 0.4 + core * 0.6} />
+        <circle cx={cx} cy={cy} r={30 + core * 50} fill={modulatedColor ?? color} opacity={pattern ? core : 0.4 + core * 0.6} />
       </svg>
     </AbsoluteFill>
   );

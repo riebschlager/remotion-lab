@@ -10,6 +10,7 @@ import {LoopProps} from '../../src/schema';
 import {fixture} from '../fixtures';
 import {presetNames, resolvePreset} from '../../src/presets';
 import type {LayerInstanceInput} from '../../src/layers/registry';
+import type {Modulation} from '../../src/beat/modulation';
 
 let serveUrl: string;
 let bundleDir: string;
@@ -178,8 +179,13 @@ for (const preset of presetNames) {
 test('preset controls reject invalid selection and overrides through both metadata entry points', async () => {
   const initial = await select('PresetLoop');
   const initialSeam = await select('PresetSeamCheck');
-  assert.deepEqual(initial.props, {preset: 'neon-orbit', overrides: {}});
-  assert.deepEqual(initial.props, initialSeam.props);
+  // Each view is source-editable and can deliberately default to a different
+  // saved look. Verify its resolved settings instead of forcing one selection.
+  for (const composition of [initial, initialSeam]) {
+    const resolved = resolvePreset(composition.props);
+    assert.equal(composition.fps, resolved.fps);
+    assert.equal(resolved.debug.enabled, false);
+  }
   for (const id of ['PresetLoop', 'PresetSeamCheck']) {
     await expectInvalid(id, {preset: 'missing'}, /preset/);
     await expectInvalid(id, {preset: 'amber-echo', overrides: {rings: {thikness: 10}}}, /overrides.rings/);
@@ -297,5 +303,59 @@ test('all entry points reject incompatible pattern cycles with the instance ID',
   for (const id of ['BeatLoop', 'SeamCheck']) await expectInvalid(id, {layers}, /bad-pattern.*pattern.steps/);
   for (const id of ['PresetLoop', 'PresetSeamCheck']) {
     await expectInvalid(id, {preset: 'swing-session', overrides: {layers}}, /bad-pattern.*pattern.steps/);
+  }
+});
+
+test('each shared modulation target changes actual ring pixels and background consumes mapped color', async () => {
+  const high = {type: 'lfo', cycles: 0, phaseOffset: 0.25} as const;
+  const baseline = await image(await select('BeatLoop'), 23, 'modulation-baseline');
+  const cases: Array<[string, Modulation]> = [
+    ['scale', {scale: {signal: high, range: [1, 1.3]}}],
+    ['rotation', {rotation: {signal: high, range: [0, 30]}}],
+    ['color', {color: {signal: high, range: ['#000000', '#ffffff']}}],
+    ['displacement', {displacement: {x: {signal: high, range: [0, 80]}, y: {signal: high, range: [0, -60]}}}],
+  ];
+  for (const [target, modulation] of cases) {
+    const composition = await select('BeatLoop', {rings: {...fixture.rings, modulation}});
+    assert(difference(baseline, await image(composition, 23, `modulation-${target}`)) > 0.0001, `No visible ${target} modulation`);
+  }
+  const background = await select('BeatLoop', {background: {...fixture.background,
+    modulation: {color: {signal: high, range: ['#000000', '#ffffff']}}}});
+  assert(difference(baseline, await image(background, 23, 'modulation-background-color')) > 0.001);
+});
+
+test('modulation can be cleared per instance and empty mappings preserve original pixels', async () => {
+  const baseline = await image(await select('BeatLoop'), 23, 'modulation-legacy');
+  for (const modulation of [null, {}]) {
+    const composition = await select('BeatLoop', {rings: {...fixture.rings, modulation}});
+    assert.equal(difference(baseline, await image(composition, 23, `modulation-empty-${modulation === null ? 'null' : 'object'}`)), 0);
+  }
+  const cleared = await select('BeatLoop', {
+    rings: {...fixture.rings, modulation: {scale: {signal: {type: 'lfo', cycles: 0}, range: [1.5, 2]}}},
+    layers: [{id: 'background', type: 'background'}, {id: 'rings', type: 'rings', props: {modulation: null}}],
+  });
+  assert.equal(difference(baseline, await image(cleared, 23, 'modulation-cleared-instance')), 0);
+});
+
+test('noise modulation retains instance identity after array reorder', async () => {
+  const ring: LayerInstanceInput = {id: 'stable', type: 'rings', props: {
+    modulation: {displacement: {x: {signal: {type: 'noise', channel: 'x'}, range: [-150, 150]}}},
+  }};
+  const first = await image(await select('BeatLoop', {layers: [ring]}), 23, 'modulation-stable');
+  const reordered = await select('BeatLoop', {layers: [
+    {id: 'unused', type: 'rings', props: {enabled: false}}, ring,
+  ]});
+  assert.equal(difference(first, await image(reordered, 23, 'modulation-reordered')), 0);
+});
+
+test('all entry points reject modulation beat sources that do not fit the loop', async () => {
+  const layers = [{id: 'modulated', type: 'rings', props: {
+    modulation: {scale: {signal: {type: 'beat', pattern: {steps: [1, 0, 0]}}, range: [1, 1.2]}},
+  }}];
+  for (const id of ['BeatLoop', 'SeamCheck']) {
+    await expectInvalid(id, {layers}, /modulated.*modulation.scale.signal.pattern.steps/);
+  }
+  for (const id of ['PresetLoop', 'PresetSeamCheck']) {
+    await expectInvalid(id, {preset: 'modulation-orbit', overrides: {layers}}, /modulated.*modulation.scale.signal.pattern.steps/);
   }
 });

@@ -1,7 +1,9 @@
 import {z} from 'zod';
 import {beatPatternSchema} from '../beat/patterns';
+import {modulationSchema} from '../beat/modulation';
 
-export const divisionSchema = z.enum(['1/16', '1/8', '1/4', '1/2', '1 bar', '2 bars', '4 bars']);
+import {divisionSchema} from '../beat/divisions';
+export {divisionSchema};
 
 export const blendModeSchema = z.enum([
   'normal',
@@ -24,6 +26,8 @@ export const baseLayerSchema = z.object({
   offsetBeats: z.number().min(-4).max(4).step(0.25),
   /** Optional rhythmic strengths and swing. null clears an inherited pattern. */
   pattern: beatPatternSchema.nullable().optional(),
+  /** Optional shared visual mappings. null clears inherited modulation. */
+  modulation: modulationSchema.nullable().optional(),
 });
 
 export type BaseLayerProps = z.infer<typeof baseLayerSchema>;

@@ -2,11 +2,12 @@ import React from 'react';
 import {AbsoluteFill, interpolateColors} from 'remotion';
 import {z} from 'zod';
 import {useBeat} from '../beat/BeatContext';
-import {divisionBeats, pulse, step} from '../beat/envelopes';
 import {zColor} from '@remotion/zod-types';
 import {baseLayerSchema} from './base';
 import {defineLayer} from './definition';
-import {patternPulse} from '../beat/patterns';
+import {beatSignal} from '../beat/modulation';
+import {useLayerInstance} from './InstanceContext';
+import {useLayerModulation} from './LayerModulation';
 
 export const backgroundSchema = baseLayerSchema.extend({
   colorA: zColor(),
@@ -32,15 +33,13 @@ export const Background: React.FC<Props> = ({
   offsetBeats,
   pattern,
 }) => {
-  const {beat, totalBeats, beatsPerBar, loopPhase} = useBeat();
+  const time = useBeat();
+  const {seed} = useLayerInstance();
+  const {color: modulatedColor} = useLayerModulation();
+  const hit = beatSignal({time, seed, division, offsetBeats, pattern}, {decay: 0.7, curve: 3}) * pulseAmount;
 
-  const stepLen = divisionBeats(division, beatsPerBar);
-  const hit = (pattern
-    ? patternPulse(beat, stepLen, totalBeats, pattern, offsetBeats, {decay: 0.7, curve: 3})
-    : pulse(step(beat, stepLen, totalBeats, offsetBeats).phase, {decay: 0.7, curve: 3})) * pulseAmount;
-
-  const center = interpolateColors(hit, [0, 1], [colorA, colorB]);
-  const angle = loopPhase * 360 * rotationsPerLoop;
+  const center = modulatedColor ?? interpolateColors(hit, [0, 1], [colorA, colorB]);
+  const angle = time.loopPhase * 360 * rotationsPerLoop;
 
   return (
     <AbsoluteFill

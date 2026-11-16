@@ -80,6 +80,43 @@ export const loopPresets = {
       ],
     },
   },
+  'modulation-orbit': {
+    title: 'Modulation Orbit',
+    description: 'Pattern-driven scale, LFO rotation, mixed colors and looping noise displacement.',
+    overrides: {
+      background: {colorA: '#060b1b', colorB: '#261334', offsetBeats: 0.5, modulation: {
+        color: {signal: [{type: 'noise', channel: 'palette', radius: 0.7, weight: 0.4},
+          {type: 'lfo', cycles: 1, phaseOffset: 0.25, weight: 0.6}], range: ['#160d36', '#255b70']},
+      }},
+      layers: [
+        {id: 'backdrop', type: 'background'},
+        {id: 'breathing-rings', type: 'rings', props: {
+          division: '1/8', offsetBeats: 0.25, pattern: beatPatterns.shuffle,
+          color: '#50caff', accentColor: '#ed80d9', opacity: 0.75, drift: 0, modulation: {
+            scale: {signal: {type: 'beat'}, range: [0.94, 1.1]},
+            rotation: {signal: {type: 'lfo', cycles: 1}, range: [-18, 18]},
+            color: {signal: [{type: 'beat', weight: 0.25},
+              {type: 'lfo', cycles: 2, phaseOffset: 0.25, weight: 0.75}], range: ['#50caff', '#ed80d9']},
+            displacement: {
+              x: {signal: {type: 'noise', channel: 'position-x', radius: 0.8}, range: [-80, 80]},
+              y: {signal: {type: 'noise', channel: 'position-y', radius: 0.8}, range: [-100, 100]},
+            },
+          },
+        }},
+        {id: 'orbit-rings', type: 'rings', props: {
+          division: '1/2', offsetBeats: 0.5, color: '#ffb66c', accentColor: '#ffe4ac',
+          thickness: 8, opacity: 0.5, blendMode: 'plus-lighter', drift: 0, modulation: {
+            scale: {signal: {type: 'lfo', cycles: 2, phaseOffset: 0.25}, range: [0.85, 1.1]},
+            rotation: {signal: {type: 'noise', channel: 'turn', radius: 0.6}, range: [-12, 12]},
+            displacement: {
+              x: {signal: {type: 'lfo', cycles: 1, phaseOffset: 0.25}, range: [-90, 90]},
+              y: {signal: {type: 'lfo', cycles: 1}, range: [-60, 60]},
+            },
+          },
+        }},
+      ],
+    },
+  },
 } satisfies Record<string, PresetDefinition>;
 
 export type PresetName = keyof typeof loopPresets;

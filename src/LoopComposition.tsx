@@ -5,6 +5,7 @@ import {BeatDebug} from './layers/BeatDebug';
 import {Layer} from './layers/Layer';
 import {configuredLayers} from './layers/registry';
 import {LayerInstanceProvider} from './layers/InstanceContext';
+import {LayerModulation} from './layers/LayerModulation';
 import type {LoopInput} from './schema';
 
 type Props = LoopInput & {
@@ -22,7 +23,7 @@ export const LoopComposition: React.FC<Props> = (props) => {
         {layers.map(({id, type, definition, props: layer}) => (
           <Layer key={id} enabled={layer.enabled} opacity={layer.opacity} blendMode={layer.blendMode}>
             <LayerInstanceProvider id={id} type={type}>
-              {definition.render(layer)}
+              <LayerModulation layer={layer}>{definition.render(layer)}</LayerModulation>
             </LayerInstanceProvider>
           </Layer>
         ))}

@@ -53,6 +53,7 @@ Open **Presets → PresetLoop** in Studio and choose a `preset`. Use
 | `midnight-drift` | Quiet rotating blue gradient, rings disabled | 90 BPM, 8 bars |
 | `prism-stack` | Three pink, cyan and gold ring instances with independent timing and blending | 120 BPM, 4 bars |
 | `swing-session` | Shuffled cyan hits, accented amber backbeats, rests and trailing rings | 120 BPM, 4 bars |
+| `modulation-orbit` | Beat-driven scale, LFO rotation, mixed colors and looping noise displacement | 120 BPM, 4 bars |
 
 Presets are defined once in `src/presets.ts`. Each stores a title, description
 and overrides of the registry defaults. Adding a preset there automatically
@@ -195,6 +196,81 @@ Reusable `syncopated`, `backbeat` and `shuffle` examples are exported as
 each enabled instance's strengths, rests and swing amount. Generated pattern
 controls remain part of composition props, including the JSON editor.
 
+## Shared modulation
+
+Every registered instance can optionally map beat envelopes, LFOs and looping
+noise to scale, rotation, color and displacement. Choose `modulation-orbit` in
+Studio for a complete example. A compact custom configuration looks like:
+
+```json
+{
+  "preset": "neon-orbit",
+  "overrides": {
+    "rings": {
+      "offsetBeats": 0.5,
+      "modulation": {
+        "scale": {"signal": {"type": "beat"}, "range": [1, 1.15]},
+        "rotation": {"signal": {"type": "lfo", "cycles": 2}, "range": [-15, 15]},
+        "color": {
+          "signal": [{"type": "beat", "weight": 0.3}, {"type": "noise", "channel": "tint", "weight": 0.7}],
+          "range": ["#61d8ff", "#ff80c8"]
+        },
+        "displacement": {
+          "x": {"signal": {"type": "noise", "channel": "x"}, "range": [-60, 60]},
+          "y": {"signal": {"type": "lfo", "cycles": 1}, "range": [-40, 40]}
+        }
+      }
+    }
+  }
+}
+```
+
+| Source | Behavior and optional controls |
+| --- | --- |
+| `beat` | Inherits the layer's division, offset and pattern. Optional `division`, `offsetBeats`, `pattern`, `attack`, `decay`, `curve` override them. `pattern: null` selects the fixed grid. Envelope defaults: attack 0, decay 0.6, curve 2. |
+| `lfo` | Whole `cycles` per complete loop (default 1), `shape` (sine, triangle, saw, square), and `phaseOffset` in cycles. Zero cycles holds a constant. Saw/square waves intentionally jump. |
+| `noise` | Circular looping noise with optional `channel` (default `noise`), `radius` (default 1), and `z` (default 0). Channels are namespaced by stable instance ID. Use different channel names for independent axes. |
+
+All signals are normalized to 0–1. LFO/noise values map from their native
+−1…1 range and clamp at the endpoints; noise naturally need not reach both
+extremes. A `signal` can be one source or a nonempty array of sources. Arrays
+use a weighted mean, with each `weight` defaulting to 1. Weights must be
+finite and nonnegative. Weight zero removes a source from the mix; all-zero
+weights produce zero, which maps to the first output endpoint.
+
+| Target | Output units and effect |
+| --- | --- |
+| `scale` | Nonnegative multiplier range; scales the entire layer about its center |
+| `rotation` | Degree range; rotates the entire layer about its center |
+| `color` | Two CSS colors; replaces the background's center glow or the rings' current strokes and core fill |
+| `displacement.x`, `displacement.y` | Pixel ranges; shifts the entire layer along each axis |
+
+Numeric ranges can run in either direction. Geometry applies as centered
+scale/rotation followed by displacement in composition pixels, inside the
+layer's existing opacity/blend wrapper. Color changes apply to all living
+rings at the current frame; rhythmic strengths still affect their opacity.
+An explicit mapped color takes precedence over the layer's normal pulse or
+accent palette. Include a beat source in the mix if that color should pulse.
+
+Omitted mappings are neutral: scale 1, rotation 0, no color override, and zero
+displacement. `modulation: null` clears inherited modulation; `{}` is also a
+neutral mapping. A supplied modulation object replaces its inherited object
+as a whole, rather than merging individual targets. Source patterns and
+divisions must fit the loop just like layer rhythms; errors identify the
+instance, target and source. Zero-weight sources skip musical checks, while
+structural schema constraints always apply. Disabled instances skip musical
+checks entirely.
+
+For custom layer properties, `src/beat/modulation.ts` exports `beatSignal`,
+`sampleSignal`, `mapRange`, `mapColor`, `modulateNumber`, `modulateColor`,
+`modulateDisplacement` and `resolveModulation`. Pass a context containing the
+`time` returned by `useBeat()`, the instance's `seed` function, and the layer's
+division, offset and pattern. Helpers are pure and do not introduce a clock.
+The shared `LayerModulation` wrapper already applies geometry; layers use
+`useLayerModulation().color` to paint the mapped color. Do not apply the same
+transform a second time inside the component. Background and Rings are the
+working examples.
+
 ## How time works
 
 ```
@@ -253,6 +329,8 @@ Every layer gets `enabled`, `opacity`, `blendMode`, `division`, and `offsetBeats
 The shared schema also exposes `pattern`, but a new layer must explicitly
 consume `patternPulse` or `patternEvents` to respond to it. Background and
 Rings demonstrate both approaches; the registry supplies validation.
+Shared modulation geometry is automatic for registered layers. Consume
+`useLayerModulation().color` if the new layer supports the shared color target.
 
 ## Loop verification
 
@@ -270,6 +348,9 @@ stable motion after reordering, duplicate-ID rejection, and legacy pixel
 equivalence when expressed as explicit instances.
 Rhythm fixtures check rests, visible accent strength, the exact frame of a
 triplet swing onset, silent rings, and swung tails spanning multiple loops.
+Modulation checks cover normalized sources, weighted mixes, output ranges,
+real rendered transforms/colors, source validation, identity after reorder,
+neutral overrides, and seam continuity of the combined preset.
 Frames are rendered out of order and
 repeated to check determinism. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.
@@ -318,11 +399,14 @@ src/
     BeatContext.tsx     <BeatProvider> + useBeat()
     envelopes.ts        step, pulse, lfo, loopNoise, stepRandom…
     patterns.ts         rhythm schema, reusable patterns, hit schedules and envelopes
+    divisions.ts        shared beat divisions and their schema (re-exported by envelopes)
+    modulation.ts       normalized sources, weighted mixes, target mappings and validation
   layers/
     base.ts             shared layer controls
     definition.ts       defineLayer: defaults, renderer, validation contract
     registry.ts         register once; derive schema, order and configured layers
     InstanceContext.tsx stable IDs and per-instance random seed channels
+    LayerModulation.tsx shared transforms and evaluated color context
     Layer.tsx           enabled / opacity / blend wrapper
     Background.tsx      gradient component + schema + defaults
     Rings.tsx           wrapped rings + schema + defaults
