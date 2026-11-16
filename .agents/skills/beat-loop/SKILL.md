@@ -189,15 +189,53 @@ In a sketch:
   `assets: (props) => [...]` when a param selects one.
 - `useAsset(ref)` in the component adds `src` to a clip and `fontFamily` to a
   font. It throws for an asset that was not declared.
-- `<ClipFrame clip frame width height fit? style? />` from
-  `src/assets/ClipFrame` draws exactly one source frame. Compute `frame` from
-  `useBeat()`: `((beat / n) % 1) * clip.frameCount` plays once every `n`
-  beats, `step(...).phase * clip.frameCount` restarts on each hit, and
-  `step(...).index` advances one frame per hit. `frame` is floored and wraps,
-  and absorbs floating-point error just below a whole frame, so pass the
-  product as it is.
-  A cycle of `n` beats must fit the loop a whole number of times; validate it
-  like any other division.
+- Prefer `<Clip>` from `src/assets/Clip.tsx` for named playback. From a brief:
+  “one wobble per bar” → `fit`, `duration: {bars: 1}` (or `{beats: n}`);
+  “restart on selected hits” → `retrigger`, division/pattern and durationBeats;
+  “stop-motion” → `step`, integer jump; “rock/wander through footage” →
+  `scrub`, a normalized signal from the existing modulation helpers.
+- Expose `clipPlaybackSchema` in the sketch schema. Declare every binding in
+  `defineSketch({clips: p => [{clip: ref, playback: p.playback, field: 'playback'}]})`.
+  This runs `clipPlaybackIssues` in both metadata paths before rendering, including
+  when timing or pattern controls change. Keep the asset in `assets` as well.
+  Custom frame logic can call `clipPlaybackIssues` from validate; a hook cannot
+  provide pre-render metadata validation by itself.
+- Fit requires a whole number of plays per loop; bars use the current meter.
+  Retrigger and step require complete rhythm/pattern cycles, including swing
+  pairs. Retrigger reads the youngest active pattern event, not the current
+  slot: rests never restart, the last hit carries across the seam, playback
+  runs once in durationBeats then holds. All-rest hit modes are invisible.
+- Step counts active hits, not rest slots. Hit ordinal zero shows startFrame
+  (default zero); each subsequent hit adds jump (default one, negatives allowed).
+  Active hits × jump must be a multiple of the source cycle length. Choose
+  `seam: 'wrap'` only for a deliberate reset at the first active slot of the shifted rhythm each loop.
+  Ping-pong uses 2×(frameCount−1) steps, or one for a still, so closure can
+  be more restrictive than forward playback.
+- Read `loop.seamless`. Non-looping forward fit/step require `cut: 'allow'`;
+  `direction: 'ping-pong'` avoids their endpoint cut. Fit also supports
+  `cut: 'fade'`, a sine-squared opacity envelope at cycle joins. Retrigger
+  requires fade or allow even for seamless media because a new hit can
+  interrupt anywhere. Its fade reaches zero at the previous/next active hit,
+  including across rests, swing and the seam. Ping-pong retrigger returns to
+  zero then holds but does not hide early interruption. No option repairs
+  cuts inside the source footage; inspect filmstrips and document intentional cuts.
+- Scrub samples existing weighted modulation signals and maps 0..1 to
+  0..last source frame. One selects the last frame, never wraps to zero.
+  Sine/triangle/looping noise avoid endpoint cuts; beat envelopes and saw/square
+  jumps require `cut: 'allow'`. Shared source validation rejects partial LFO
+  cycles and incompatible beat patterns. Distinct stable channel props seed
+  independent noise; no random values, effects or callbacks that update state.
+- Clip's x/y/width/height are canvas fractions (defaults 0/0/1/1). Derive
+  square boxes from useCanvas().vmin and divide by width/height; fitting is
+  contain, cover or fill. All source frames receive equal musical time even
+  for variable-delay GIFs; ClipFrame handles exact media addressing.
+- `useClipPlayback(ref, playback, channel)` returns frame, age, opacity and the
+  latest hit strength. Clip's style function receives the same sample for
+  accent-driven paint/transforms. Clip multiplies style opacity by its fade.
+  Keep Clip at sketch level until a second sketch needs a registered layer.
+  `clip-duet` is the real-media fit/retrigger reference; fixture rendered tests
+  verify all modes without public media. For custom selection use ClipFrame,
+  sourceFrameIndex and explicit sketch validation; do not duplicate flooring.
 - Never render `<AnimatedImage>`, `<Video>` or `<Gif>` directly in a sketch.
   They read Remotion's frame clock, which breaks the loop rules. `ClipFrame`
   freezes that clock at the frame you ask for. It also hides a difference

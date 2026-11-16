@@ -10,6 +10,8 @@ import React from 'react';
 import {AbsoluteFill, Composition, registerRoot} from 'remotion';
 import {z} from 'zod';
 import {createAssets} from '../../src/assets';
+import {Clip} from '../../src/assets/Clip';
+import {clipPlaybackSchema} from '../../src/assets/clipPlayback';
 import {ClipFrame} from '../../src/assets/ClipFrame';
 import {useCanvas} from '../../src/sketches/canvas';
 import {defineSketch, useAsset} from '../../src/sketches/define';
@@ -17,6 +19,7 @@ import {defineSketch, useAsset} from '../../src/sketches/define';
 const {clip, font} = createAssets(manifests);
 
 const schema = z.object({
+  playback: clipPlaybackSchema.nullable(),
   gif: z.string(),
   gifFrame: z.number().int().min(0),
   video: z.string(),
@@ -34,7 +37,7 @@ const Undeclared: React.FC = () => {
   return null;
 };
 
-const Probe: React.FC<Props> = ({gif, gifFrame, video, videoFrame, family, weight, italic, undeclared}) => {
+const Probe: React.FC<Props> = ({playback, gif, gifFrame, video, videoFrame, family, weight, italic, undeclared}) => {
   const {width, height} = useCanvas();
   const band = height / 3;
   const still = useAsset(clip('fixture', gif));
@@ -42,10 +45,13 @@ const Probe: React.FC<Props> = ({gif, gifFrame, video, videoFrame, family, weigh
   const type = useAsset(font('fixture', family));
   return (
     <AbsoluteFill>
-      <ClipFrame clip={still} frame={gifFrame} width={width} height={band} fit="fill"
+      {playback ? <>
+        <Clip clip={still} playback={playback} height={1 / 3} fit="fill" />
+        <Clip clip={moving} playback={playback} y={1 / 3} height={1 / 3} fit="fill" />
+      </> : <><ClipFrame clip={still} frame={gifFrame} width={width} height={band} fit="fill"
         style={{position: 'absolute', top: 0, left: 0}} />
       <ClipFrame clip={moving} frame={videoFrame} width={width} height={band} fit="fill"
-        style={{position: 'absolute', top: band, left: 0}} />
+        style={{position: 'absolute', top: band, left: 0}} /></>}
       <div style={{position: 'absolute', top: 2 * band, left: 0, fontFamily: type.fontFamily, fontSize: band,
         lineHeight: 1, color: 'white', fontWeight: weight, fontStyle: italic ? 'italic' : 'normal',
         fontVariationSettings: `"wght" ${weight}`}}>A</div>
@@ -59,8 +65,12 @@ const probe = defineSketch({
   title: 'Asset Probe',
   description: 'Shows one GIF frame, one video frame and one glyph from the fixture collection.',
   schema,
-  defaults: {gif: 'steps.gif', gifFrame: 0, video: 'clips/count.mp4', videoFrame: 0, family: 'Lab Block',
+  defaults: {playback: null, gif: 'steps.gif', gifFrame: 0, video: 'clips/count.mp4', videoFrame: 0, family: 'Lab Block',
     weight: 400, italic: false, undeclared: false},
+  clips: (p) => p.playback ? [
+    {clip: clip('fixture', p.gif), playback: p.playback, field: 'gifPlayback'},
+    {clip: clip('fixture', p.video), playback: p.playback, field: 'videoPlayback'},
+  ] : [],
   canvas: 'square',
   Component: Probe,
   assets: (props) => [clip('fixture', props.gif), clip('fixture', props.video), font('fixture', props.family)],

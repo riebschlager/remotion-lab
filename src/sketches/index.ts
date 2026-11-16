@@ -1,6 +1,7 @@
 import type {Sketch} from './define';
 import pulseGrid from './pulse-grid/sketch';
 import stickerSlap from './sticker-slap/sketch';
+import clipDuet from './clip-duet/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -9,6 +10,7 @@ import stickerSlap from './sticker-slap/sketch';
 export const sketches: Sketch[] = [
   pulseGrid,
   stickerSlap,
+  clipDuet,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);

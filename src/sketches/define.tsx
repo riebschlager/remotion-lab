@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useMemo, useRef, useState} 
 import {getStaticFiles} from '@remotion/studio';
 import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {z} from 'zod';
+import {clipPlaybackIssues, type ClipBinding} from '../assets/clipPlayback';
 import {assetKey, missingAssets, missingAssetsHint, type AssetRef, type ClipRef, type FontRef} from '../assets';
 import {cssFontFamily, loadCollectionFont} from '../assets/fonts';
 import {BeatProvider} from '../beat/BeatContext';
@@ -110,6 +111,8 @@ export const defineSketch = <S extends z.ZodObject>(definition: {
    * `clip()` and `font()`. Use the function form when a param chooses one.
    */
   assets?: AssetRef[] | ((props: z.output<S>) => AssetRef[]);
+  /** Declarative playback bindings: validated before rendering in both metadata paths. */
+  clips?: (props: z.output<S>) => ClipBinding[];
   /** Extra musical checks; return field-prefixed messages. */
   validate?: (props: z.output<S>, timing: TimingConfig) => string[];
   /** Divisions the debug overlay should check against the loop. */
@@ -146,6 +149,9 @@ export const defineSketch = <S extends z.ZodObject>(definition: {
       declared(props);
     } catch (error) {
       errors.push(`assets: ${(error as Error).message}`);
+    }
+    for (const binding of definition.clips?.(props as z.output<S>) ?? []) {
+      errors.push(...clipPlaybackIssues(binding.clip, binding.playback, props, binding.field));
     }
     errors.push(...(definition.validate?.(props as z.output<S>, props) ?? []));
     if (errors.length) throw new Error(`${label}: ${errors.join('; ')}`);

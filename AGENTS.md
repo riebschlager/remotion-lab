@@ -50,7 +50,7 @@ characters, plus hand-written descriptions and tags) and open the filmstrip
 image of each clip you are considering. Choose clips from that evidence, and
 name them in the brief. In code, get references with `clip()` and `font()`
 from `src/assets`, list every one in `defineSketch({assets})`, and read them
-with `useAsset()`. Draw clips only with `<ClipFrame>`, with `frame` derived
+with `useAsset()`. Draw clips with `<Clip>` or `<ClipFrame>`, with `frame` derived
 from `useBeat()`; never place `<AnimatedImage>` or `<Video>` directly, because
 they follow the frame clock. Use the returned `fontFamily` for type. If the
 user adds or changes media, run `npm run assets:scan`, then fill in
@@ -90,3 +90,21 @@ geometry twice. Beat sources inherit the instance rhythm unless overridden;
 their divisions and patterns receive shared validation too. Keep whole-cycle
 LFOs and stable noise channels. Omission/null must preserve legacy rendering.
 See the beat-loop skill for details and add appropriate loop tests.
+
+Beat-driven media uses `Clip` from `src/assets/Clip.tsx`. Choose `fit` for a
+whole clip per N beats/bars, `retrigger` for selected hits (rests keep playing,
+then hold), `step` for frame jumps, or `scrub` for a normalized modulation
+signal. Use `clipPlaybackSchema` in sketch props and declare the same settings
+in `defineSketch({clips: props => [{clip, playback, field}]})` so both metadata
+paths reject incompatible settings before rendering. Keep assets declared too.
+Fit duration must divide the loop. Step active hits × jump must close whole
+source cycles (ping-pong uses 2×(frames−1)), unless `seam: 'wrap'` deliberately
+resets. Grid/pattern/swing and scrub sources use shared musical validation.
+Non-looping forward fit/step need explicit `cut: 'allow'`, or ping-pong;
+fit/retrigger offer `cut: 'fade'` to hide resets. Retrigger always chooses fade
+or allow because even seamless media can be interrupted. Scrub beat/saw/square
+jumps require allow; smooth signals address 0..last without wrapping at 1.
+Read README's mode table and cut rules before choosing from a brief. Use
+`useClipPlayback` or Clip's style function for latest accent strength. Box
+coordinates are canvas fractions; derive square sizes from useCanvas().vmin.
+Clip remains a sketch building block until a second sketch needs a registry layer.

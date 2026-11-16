@@ -62,7 +62,7 @@ npx remotion render neon-rain out/neon-rain.mp4 --props='{"canvas":"square","bpm
 
 `brief.md` records the idea, rhythm, look and assets in plain language.
 `sketch.tsx` default-exports `defineSketch({id, title, description, schema,
-defaults, Component, assets?, validate?, timing?, canvas?, debugDivisions?})`. The `id`
+defaults, Component, assets?, clips?, validate?, timing?, canvas?, debugDivisions?})`. The `id`
 must equal the folder name. `schema` and `defaults` cover only the sketch's
 own params; every sketch also receives these shared controls:
 
@@ -96,8 +96,8 @@ Inside a sketch component:
   `divisionIssues('division', props.division, timing)` covers the common case.
 
 `pulse-grid` is the working example, and `sticker-slap` is the example that
-uses a video, a GIF and a font from a collection. When a piece of a sketch proves
-reusable, promote it to a registered layer (see "Adding a layer").
+uses a video, a GIF and a font from a collection. When a second sketch needs a
+piece, consider promoting it to a registered layer (see "Adding a layer").
 
 ### Previewing a sketch
 
@@ -219,16 +219,11 @@ export default defineSketch({/* … */ Component: Poster, assets: [spin, chunk]}
   the recipes below need no rounding of their own. Do not put `<AnimatedImage>`
   or `<Video>` in a sketch directly: they follow Remotion's frame clock, so
   the clip would drift off the beat and jump at the loop point. Derive `frame`
-  from `useBeat()` instead:
+  from `useBeat()` instead.
 
-  | Intent | `frame` |
-  | --- | --- |
-  | Play the clip once every `n` beats | `((beat / n) % 1) * clip.frameCount` |
-  | Restart it on every hit | `step(...).phase * clip.frameCount` |
-  | Advance one source frame per hit | `step(...).index` |
-
-  A clip only loops cleanly if `loop.seamless` is true and its cycle fits the
-  loop a whole number of times.
+  Prefer `Clip` for fit, retrigger, step or scrub playback; see the mode
+  guide below. Raw `ClipFrame` is for custom frame selection whose musical
+  validation and source cut handling the sketch owns.
 - Fonts are registered under a family name scoped to the collection, so use
   `type.fontFamily`, never the bare family name. Every face is loaded before
   the component first mounts and the render waits for it. Drive variable axes
@@ -236,8 +231,64 @@ export default defineSketch({/* … */ Component: Poster, assets: [spin, chunk]}
   inside the ranges in the manifest.
 - Size clips and type in `vmin` or canvas fractions like everything else.
 
-A dedicated beat-driven clip layer and a kinetic type layer are planned;
-`ClipFrame` and `fontVariationSettings` are the building blocks until then.
+### Choosing Clip playback from a brief
+
+`Clip` in `src/assets/Clip.tsx` is a sketch-level component above `ClipFrame`.
+It stays out of the registry until a second sketch needs a registered layer.
+Use `clipPlaybackSchema` for Studio controls and list bindings in
+`defineSketch({clips: (props) => [{clip: ref, playback: props.playback,
+field: 'playback'}]})`. Both metadata paths validate those bindings; a component
+cannot validate a sketch's props before mounting by itself. Keep `assets` too.
+For custom validation call `clipPlaybackIssues(ref, playback, timing, field)`.
+
+| Brief asks for | Mode and settings | Loop rule |
+| --- | --- | --- |
+| One wobble per bar | `fit`, `duration: {bars: 1}` (or `{beats: 2}`) | A whole number of plays per loop; bar lengths follow the meter |
+| Restart on selected hits | `retrigger`, `division`, optional `pattern`, `durationBeats`, `cut` | Complete grid/pattern cycles; rests never restart; the last hit carries across the seam |
+| Stop-motion or frame jumps | `step`, `division`, optional `pattern`, integer `jump` (default 1) | Active hits × jump must be a multiple of source cycle length, or choose `seam: 'wrap'` for a deliberate reset |
+| Rock or wander through footage | `scrub`, `division`, `signal` | Existing modulation rules: whole LFO cycles, circular noise, compatible beat patterns |
+
+```tsx
+const playback = {mode: 'fit', duration: {bars: 1}} as const;
+// ref is declared in assets; playback is also declared in clips above.
+<Clip clip={useAsset(ref)} playback={playback}
+  x={0.1} y={0.2} width={0.8} height={0.6} fit="contain" />
+```
+
+Box coordinates are fractions of `useCanvas()` width/height, with defaults
+`x=0, y=0, width=1, height=1`. For a square of 60 vmin, divide `60 * vmin`
+by canvas width and height. Fitting supports `contain`, `cover` and `fill`.
+All timing is beat-driven, independent of native fps; uneven GIF delays are
+addressed exactly but source frames receive equal musical time.
+
+`offsetBeats` wraps, including negative offsets. Retrigger plays once in
+`durationBeats`, then holds; it does not start again during a rest. The latest
+hit's `strength`, `age`, `frame` and `opacity` are available from
+`useClipPlayback(ref, playback, channel)` or `Clip`'s `style={(sample) => ...}`.
+All-rest hit modes render invisibly. Use stable, distinct `channel` names for
+independent scrub noise; defaults deliberately share a channel.
+
+Forward fit/step on `loop.seamless: false` require `cut: 'allow'`, or choose
+`direction: 'ping-pong'` to avoid last-to-first jumps. Ping-pong cycles have
+`2 * (frameCount - 1)` steps (one for a still), making step closure stricter.
+Fit also offers `cut: 'fade'`: a sine-squared envelope is zero at cycle joins.
+Retrigger always requires `cut: 'allow'` or `'fade'`, even for seamless media:
+a restart may interrupt the clip mid-frame sequence. Its fade is zero at the
+previous and next active hit, so it hides that reset even across rests/swing.
+Ping-pong retrigger returns to frame zero then holds, but can still be interrupted.
+
+Scrub maps normalized 0..1 to frames 0..last (1 never wraps to 0). Sine,
+triangle and noise avoid source wrapping; beat envelopes and saw/square LFOs
+can jump, so they require `cut: 'allow'`. Source lists retain the existing
+weighted-mean semantics. `seam: 'wrap'` on step deliberately resets at the
+first active slot of the shifted rhythm once per loop, rather than claiming frame advancement
+closes naturally. Skips and negative jumps are intentional stop-motion cuts.
+Neither the manifest flag, ping-pong nor a fade removes hard cuts *inside*
+a clip: inspect its filmstrip. `clip-duet` demonstrates fit plus faded,
+swung retrigger on real GIF/video media; CI verifies all modes on fixtures.
+
+A kinetic type building block is still planned; use `fontVariationSettings`
+until then.
 
 ### When the media is not there
 
@@ -640,6 +691,8 @@ src/
     index.ts            clip(), font(), missing-file checks, frame → time
     fonts.ts            collection font registration
     ClipFrame.tsx       one exact source frame of a GIF or video
+    Clip.tsx            beat-driven playback, relative layout and accent hook
+    clipPlayback.ts     pure fit/retrigger/step/scrub selection + validation
   sketches/
     index.ts            the list of sketches (maintained by sketch:new)
     define.tsx          defineSketch, shared controls, useSketch, divisionIssues

@@ -132,3 +132,51 @@ test('reading an asset the sketch did not declare is an error, not a broken fram
   await assert.rejects(session.still(composition, 0, path.join(artifacts, 'undeclared.png'), 0.2),
     /uses clip "pulse\.gif" from collection "fixture" without declaring it/);
 });
+
+test('Clip modes decode exact GIF and video frames at chosen beats, out of order', async () => {
+  // Eight beats at 120 BPM/60fps. Each explicit expectation is independent of sampleClip.
+  const cases = [
+    {playback: {mode: 'fit', duration: {beats: 2}, cut: 'allow'}, beats: [1.5, 0, 0.5, 239 / 30], gif: [6, 0, 2, 7], video: [9, 0, 3, 11]},
+    {playback: {mode: 'fit', duration: {beats: 2}, direction: 'ping-pong'}, beats: [1, 0.5, 1.5], gif: [7, 3, 4], video: [11, 5, 6]},
+    {playback: {mode: 'retrigger', division: '1/8', pattern: {steps: [0, 0.4, 0, 1], swing: 0.5},
+      offsetBeats: -0.25, durationBeats: 2, cut: 'allow'}, beats: [0, 0.5, 1, 1.5, 239 / 30], gif: [2, 0, 2, 0, 1], video: [3, 0, 3, 0, 2]},
+    {playback: {mode: 'step', division: '1/8', pattern: {steps: [1, 0, 0.5, 0]}, jump: 3, seam: 'wrap', cut: 'allow'},
+      beats: [2, 0, 0.5, 1, 7.5, 239 / 30], gif: [6, 0, 0, 3, 5, 5], video: [6, 0, 0, 3, 9, 9]},
+    {playback: {mode: 'scrub', division: '1/4', signal: {type: 'lfo', shape: 'triangle'}},
+      beats: [4, 0, 2, 6, 239 / 30], gif: [7, 0, 3, 3, 0], video: [11, 0, 5, 5, 0]},
+  ];
+  for (const [index, c] of cases.entries()) {
+    const composition = await session.select('asset-probe', {bars: 2, fps: 60, playback: c.playback});
+    for (const [i, beat] of c.beats.entries()) {
+      const png = await session.still(composition, Math.round(beat * 30), path.join(artifacts, `playback-${index}-${beat}.png`), 0.2);
+      assert.equal(gray(png, 0), fixtureLevels['steps.gif'][c.gif[i]], `GIF ${JSON.stringify(c.playback)} at ${beat}`);
+      assert.equal(nearest(fixtureLevels['clips/count.mp4'], gray(png, 1)), c.video[i], `video ${index} at ${beat}`);
+    }
+  }
+  // Scrub reaches the final source frames inside a 15-frame composition: clip length is no limit.
+  const short = await session.select('asset-probe', {bars: 1, beatsPerBar: 1,
+    playback: {mode: 'scrub', division: '1/4', signal: {type: 'lfo', cycles: 0, phaseOffset: 0.25}}});
+  const png = await session.still(short, 0, path.join(artifacts, 'playback-short.png'), 0.2);
+  assert.equal(gray(png, 0), fixtureLevels['steps.gif'][7]);
+  assert.equal(nearest(fixtureLevels['clips/count.mp4'], gray(png, 1)), 11);
+});
+
+test('Clip playback fails metadata before media is decoded', async () => {
+  await assert.rejects(session.select('asset-probe', {playback: {mode: 'fit', duration: {beats: 3}}}), /gifPlayback.duration/);
+  await assert.rejects(session.select('asset-probe', {playback: {mode: 'fit', duration: {beats: 4}}}), /gifPlayback.cut/);
+  await assert.rejects(session.select('asset-probe', {playback: {mode: 'step', division: '1\/4', cut: 'allow', jump: 1}}), /videoPlayback.jump/);
+});
+
+test('Clip fades hide a non-looping source reset on the actual rendered seam', async () => {
+  for (const playback of [
+    {mode: 'fit', duration: {beats: 2}, cut: 'fade'},
+    {mode: 'retrigger', division: '1/2', durationBeats: 2, cut: 'fade'},
+  ]) {
+    const composition = await session.select('asset-probe', {bars: 2, playback, fps: 60});
+    for (const frame of [239, 0, 1, 30]) {
+      const png = await session.still(composition, frame, path.join(artifacts, `fade-${playback.mode}-${frame}.png`), 0.2);
+      if (frame === 30) { assert(gray(png, 0) > 100); assert(gray(png, 1) > 100); }
+      else { assert(gray(png, 0) <= 1); assert(gray(png, 1) <= 1); }
+    }
+  }
+});

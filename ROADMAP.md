@@ -36,6 +36,25 @@ move it to "Done" so this file stays the source of truth.
     not show its later frames. `ClipFrame` now carries clip time through a
     negative `<Sequence from>` instead.
 
+- **Beat-driven Clip building block** (segment 2). `src/assets/Clip.tsx`
+  provides fit, retrigger, step and scrub above ClipFrame, with pure selection
+  in `clipPlayback.ts`, shared step/pattern/modulation helpers and declarative
+  `defineSketch({clips})` validation in both metadata paths. Canvas-relative
+  boxes support contain/cover/fill. Latest hit strength is exposed to sketches.
+  Non-looping source cuts require explicit handling; ping-pong and fit/retrigger
+  fades conceal endpoint/restart cuts. Clip stays sketch-level until a second
+  sketch needs a registered layer. `clip-duet` uses a real GIF fitted to a bar
+  over a swung, faded retrigger video; portrait/landscape contact sheets and
+  Studio are inspected. Fixtures verify exact decoded GIF/video source frames
+  for every mode; pure tests cover rests, swing, negative offsets, odd meters,
+  closure and seam behavior.
+  - Step closure counts active hits, not slots. Ping-pong has 2×(frames−1)
+    steps, so it is stricter; `seam: 'wrap'` explicitly permits a reset.
+  - Retrigger runs once then holds. Even a seamless source can cut when
+    interrupted early, so every retrigger chooses fade or allow.
+  - Scrub addresses 0..last without endpoint wrap; discontinuous beat/saw/square
+    sources require explicit cut permission. Internal footage cuts remain.
+
 ## Decisions already made
 
 These apply to every segment; the prompts do not repeat them.
@@ -79,57 +98,6 @@ should know:
   decoding; the rendered suite takes about 108 s with this sketch in it.
 - File names with spaces and capitals work as clip keys, filmstrip names and
   URLs. Names containing `#`, `%` or `?` have not been tried.
-
-## 2. Beat-driven Clip layer
-
-**Why:** `ClipFrame` draws one frame. An agent working from a brief needs
-named playback behaviours it can choose from and combine with patterns.
-
-**Done when:** all four modes work on GIFs and video, are validated before
-rendering, and pass the automatic seam checks in at least one sketch.
-
-```text
-Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
-roadmap segment 2: a beat-driven Clip building block on top of the existing ClipFrame
-(src/assets/ClipFrame.tsx), which draws one exact source frame.
-
-Build a Clip component, usable inside any sketch, that picks its source frame purely
-from useBeat(). It needs four playback modes:
-- fit: play the clip exactly once every N beats or bars, so it loops with the music.
-- retrigger: restart on every hit of the layer's division or pattern. Rests do not
-  restart it and accent strength is available to the sketch.
-- step: advance by one source frame, or a fixed jump, on each hit, holding in between.
-- scrub: take the playhead position from a normalized signal, using the existing
-  modulation sources (beat envelope, LFO, noise) in src/beat/modulation.ts.
-
-Requirements:
-- Every mode must be a pure function of beat position, reuse the existing step,
-  pattern and modulation helpers, and stay seamless at the loop point. For each mode,
-  work out what makes it loop (for example, fit needs a whole number of plays per loop;
-  step needs the total frames advanced per loop to be a whole number of clip lengths,
-  or a deliberate wrap) and reject settings that cannot loop with a field-specific
-  message before rendering.
-- Use the manifest's loops-on-its-own flag: when a clip that does not loop is used in a
-  mode that would show its cut, say so in validation or documentation, and offer at
-  least one way to hide the cut (for example ping-pong playback or an envelope fade).
-- Sizing and placement use useCanvas() units, with contain, cover and fill fitting.
-- Put pure frame-selection logic in its own module with unit tests covering each mode,
-  rests, swing, negative offsets, odd meters and the seam. Add rendered tests that
-  check the exact source frame shown at chosen beats, using the generated fixture
-  collection so CI can run them.
-- Decide whether Clip belongs in the layer registry or stays a sketch-level component,
-  and tell me which you chose and why. The roadmap's rule is that code moves into the
-  registry only when a second sketch needs it.
-
-Then build or extend a sketch that uses at least two modes on real clips from
-public/assets/, preview it on two canvases, and look at the contact sheets. If
-public/assets/ has no real collection, tell me and verify on fixtures only.
-
-Update the README, AGENTS.md and the beat-loop skill so an agent can choose a mode from
-a brief. Run npm run check and npm run test:visual. Report what was built, what was
-verified and how, and any mode whose looping rule turned out more restrictive than
-expected. Update ROADMAP.md. Commit only if I ask.
-```
 
 ## 3. Kinetic Type layer
 
