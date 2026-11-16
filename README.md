@@ -22,6 +22,9 @@ npm run dev          # opens Remotion Studio — edit props live in the right pa
 | `npm run presets` | List named looks, musical settings and durations |
 | `npm run render:preset` | Render `PresetLoop` → `out/preset.mp4` |
 | `npm run seamcheck:preset` | Render `PresetSeamCheck` → `out/preset-seamcheck.mp4` |
+| `npm run sketches` | List sketches with their tempo, canvas and duration |
+| `npm run sketch:new -- <id>` | Scaffold `src/sketches/<id>/` and register it |
+| `npm run preview -- <id>` | Contact sheet plus determinism and seam checks → `out/preview/<id>/` |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Timing, envelope, event identity, and configuration regression tests |
 | `npm run test:visual` | Rendered seam, determinism, clean defaults, and composition integration tests |
@@ -40,6 +43,78 @@ Enable the overlay in Studio or explicitly request it for a diagnostic render:
 ```bash
 npm run seamcheck -- --props='{"debug":{"enabled":true}}'
 ```
+
+## Sketches
+
+A sketch is one self-contained animation idea: a folder holding its brief and
+its code. Sketches are where new ideas start. They use the whole beat toolkit
+but do not touch the layer registry, shared schema or presets, so an
+experiment cannot disturb anything else and can be deleted by removing its
+folder and its line in `src/sketches/index.ts`.
+
+```bash
+npm run sketch:new -- neon-rain "Neon Rain"   # src/sketches/neon-rain/{brief.md,sketch.tsx}
+npm run dev                                   # Sketches → neon-rain (and Seams → neon-rain-seam)
+npm run preview -- neon-rain                  # look at out/preview/neon-rain/sheet.png
+npx remotion render neon-rain out/neon-rain.mp4 --props='{"canvas":"square","bpm":128}'
+```
+
+`brief.md` records the idea, rhythm, look and assets in plain language.
+`sketch.tsx` default-exports `defineSketch({id, title, description, schema,
+defaults, Component, validate?, timing?, canvas?, debugDivisions?})`. The `id`
+must equal the folder name. `schema` and `defaults` cover only the sketch's
+own params; every sketch also receives these shared controls:
+
+| Prop | Default | Meaning |
+| --- | --- | --- |
+| `bpm`, `bars`, `beatsPerBar`, `fps`, `timingMode` | 120, 4, 4, 30, `visual` | Same timing rules as `BeatLoop`; duration is derived |
+| `canvas` | `portrait` | `portrait` 1080×1920, `portrait-4x5` 1080×1350, `square` 1080×1080, `landscape` 1920×1080, or `custom` |
+| `customSize` | – | `{width, height}` in even pixels; required for `custom` |
+| `transparent` | `false` | Omit the black backdrop for alpha-capable exports |
+| `variant` | `0` | Re-rolls every seeded choice without changing the design |
+| `debug` | `{enabled: false}` | Beat overlay |
+
+A sketch may change the timing and canvas defaults through `timing` and
+`canvas`, but may not declare params with these names. Props are strict:
+unknown or invalid fields fail before rendering with a field-specific message.
+
+Inside a sketch component:
+
+- `useBeat()` is still the only clock, and all seven loop rules below apply.
+- `useCanvas()` returns `{width, height, vmin, vmax, cx, cy, aspect}`. Size
+  everything in `vmin` (1% of the shorter side) or as fractions of the canvas,
+  never literal pixels, so one sketch renders correctly on every canvas.
+- `useSketch().seed('channel')` namespaces `stepRandom` and `loopNoise` by
+  sketch and `variant`.
+- `<UseLayer id="backdrop" type="background" props={{…}} />` drops in a
+  registered layer with registry defaults and the usual validation. Rings
+  sizes are literal pixels tuned for 1080×1920.
+- Return extra musical checks from `validate(props, timing)`;
+  `divisionIssues('division', props.division, timing)` covers the common case.
+
+`pulse-grid` is the working example. When a piece of a sketch proves
+reusable, promote it to a registered layer (see "Adding a layer").
+
+### Previewing a sketch
+
+`npm run preview -- <id> [--props=<json|file>] [--scale=0.2] [--strict]`
+works for any composition ID, including `BeatLoop` and `PresetLoop`. It writes
+`out/preview/<id>/sheet.png`: one row of frames on the beat, one row half a
+beat later, and one row across the loop point with a red line at the seam.
+Each frame is labelled with its frame number (`F`) and beat position (`B`).
+`report.json` and the individual frames sit beside it.
+
+It also reports two checks. Determinism re-renders frame 0 after everything
+else and fails if a single pixel differs. The seam check compares the jump at
+the loop point with ordinary motion beside it and with intended hits elsewhere
+in the loop; it is a heuristic, so it warns unless `--strict` is given. The
+rendered suite runs both checks for every registered sketch on a tall and a
+wide canvas, with no per-sketch test code.
+
+Sketch defaults live in the sketch's own file, so Studio's "save default
+props" does not apply to them; edit `defaults` in `sketch.tsx` instead.
+
+Asset collections will live in `public/assets/`, which is gitignored.
 
 ## Named presets
 
@@ -281,8 +356,9 @@ frame ──► loopPhase (0→1) ──► beat (0→totalBeats) ──► step
 - `timingMode: "visual"` (default) rounds to whole frames, which can stretch the tempo slightly. The debug overlay shows effective BPM. `timingMode: "exact"` rejects settings that require rounding. For example, 128 BPM @ 30fps over 16 bars is exactly 900 frames. An exact loop duration does not imply that every beat falls on an integer frame, and audio is not yet part of this project.
 - **`useBeat()` is the only clock.** It returns `beat`, `beatIndex`, `beatPhase`, `bar`, `barPhase`, `loopPhase`, `totalBeats`, etc.
 
-All four compositions validate resolved props in `src/metadata.ts`
-before deriving duration. Invalid fields, incomplete nested CLI overrides,
+The four loop and preset compositions validate resolved props in
+`src/metadata.ts` before deriving duration; sketches do the same inside
+`defineSketch`. Invalid fields, incomplete nested CLI overrides,
 incompatible divisions on enabled layers, and inexact timing in exact mode
 fail with field-specific errors. Disabled layers may retain incompatible
 divisions; their other fields must still satisfy the schema.
@@ -411,4 +487,15 @@ src/
     Background.tsx      gradient component + schema + defaults
     Rings.tsx           wrapped rings + schema + defaults
     BeatDebug.tsx       optional grid overlay + timing diagnostics
+  sketches/
+    index.ts            the list of sketches (maintained by sketch:new)
+    define.tsx          defineSketch, shared controls, useSketch, divisionIssues
+    canvas.ts           canvas presets + useCanvas relative units
+    UseLayer.tsx        registered layers inside a sketch
+    <id>/brief.md       the idea in plain language
+    <id>/sketch.tsx     params, component and definition
+scripts/
+  preview.ts            contact sheet + loop checks for any composition
+  new-sketch.ts         scaffold and register a sketch
+  lib/render.ts         shared still rendering, checks and sheet layout
 ```

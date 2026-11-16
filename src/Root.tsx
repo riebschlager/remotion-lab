@@ -6,6 +6,7 @@ import {getLoopMetadata, getSeamMetadata, getPresetMetadata, getPresetSeamMetada
 import {LoopInput, loopSchema} from './schema';
 import {PresetComposition, PresetSeamComposition} from './PresetComposition';
 import {presetSchema, type PresetInput} from './presets';
+import {sketches} from './sketches';
 
 const presetMetadata: CalculateMetadataFunction<PresetInput> = ({props}) => getPresetMetadata(props);
 const presetSeamMetadata: CalculateMetadataFunction<PresetInput> = ({props}) => getPresetSeamMetadata(props);
@@ -113,6 +114,21 @@ export const RemotionRoot: React.FC = () => {
           fps={30}
           durationInFrames={1}
         />
+      </Folder>
+      {/* Sketches own their defaults in src/sketches/<id>/sketch.tsx. */}
+      <Folder name="Sketches">
+        {sketches.map((sketch) => (
+          <Composition key={sketch.id} id={sketch.id} component={sketch.Loop} schema={sketch.schema}
+            defaultProps={sketch.defaultProps} calculateMetadata={({props}) => sketch.metadata(props)}
+            width={1080} height={1920} fps={30} durationInFrames={1} />
+        ))}
+        <Folder name="Seams">
+          {sketches.map((sketch) => (
+            <Composition key={sketch.id} id={`${sketch.id}-seam`} component={sketch.Seam} schema={sketch.schema}
+              defaultProps={sketch.defaultProps} calculateMetadata={({props}) => sketch.seamMetadata(props)}
+              width={1080} height={1920} fps={30} durationInFrames={1} />
+          ))}
+        </Folder>
       </Folder>
     </>
   );

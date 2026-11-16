@@ -1,6 +1,6 @@
 ---
 name: beat-loop
-description: Add or change beat-locked layers, timing, envelopes, configuration validation and loop checks in remotion-lab.
+description: Create beat-locked sketches from an idea or brief, and add or change layers, timing, envelopes, configuration validation and loop checks in remotion-lab.
 ---
 
 # Beat-locked loops
@@ -106,6 +106,46 @@ ranges, weighted mixing, source rhythm inheritance, per-instance isolation,
 reorder-stable seeds, neutral output, actual rendered target effects, and
 seam continuity. Preserve deliberate source-editable preset defaults instead
 of assuming every composition starts with the same selection.
+
+## Sketches
+
+A sketch is the unit for a new idea: `src/sketches/<id>/` with `brief.md` and
+`sketch.tsx`. Start with `npm run sketch:new -- <id> ["Title"]`, which also
+registers it in `src/sketches/index.ts`. Use `src/sketches/pulse-grid` as the
+structural reference. Do not add a registry layer, preset or Root entry for a
+sketch.
+
+1. Write the brief first: idea, rhythm, look, assets, notes. Keep it current
+   when the design changes, so the sketch can be rebuilt or forked from it.
+2. Declare only the sketch's own params in `schema`, with complete `defaults`.
+   Timing, `canvas`, `customSize`, `transparent`, `variant` and `debug` are
+   supplied and reserved. Override starting tempo or canvas with `timing` and
+   `canvas` on the definition.
+3. Build the component from `useBeat()` and the helpers in `src/beat`. Read
+   sizes from `useCanvas()` and express them in `vmin` or canvas fractions.
+   Seed with `useSketch().seed('channel')`; choose per-item identity from a
+   wrapped step or event index plus a stable item number, never render order.
+   A delay is an `offsetBeats` on a wrapped grid, never a subtraction that can
+   go negative or a clamp that drops events near the seam.
+4. Return field-prefixed messages from `validate(props, timing)` for every
+   division, pattern or cycle count the sketch exposes. `divisionIssues` covers
+   divisions; `patternIssues` covers patterns.
+5. Reuse registered layers with `<UseLayer id type props />`. Rings measures
+   in literal pixels, so prefer it only on the portrait canvas.
+6. Run `npm run preview -- <id>` and read `out/preview/<id>/sheet.png`. The
+   top row is on the beat, the middle row half a beat later, the bottom row
+   crosses the loop point at the red line. Labels are frame (`F`) and beat
+   (`B`). Judge it against the brief: composition, legibility at phone size,
+   whether hits read as hits, and whether the seam row looks like any other
+   three consecutive frames. Iterate before reporting.
+7. Preview one more canvas (`--props='{"canvas":"landscape"}'`), then run
+   `npm run check`. `npm run test:visual` applies determinism and seam checks
+   to every registered sketch automatically; add sketch-specific tests only
+   for behavior those do not cover.
+
+The seam check is a heuristic. A hit that lands exactly on beat 0 is an
+intended jump and is compared with interior hits; anything larger is a
+warning. Determinism failures are always defects.
 
 ## Adding a layer
 
