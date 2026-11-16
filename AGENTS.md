@@ -133,3 +133,19 @@ unit assignment/offsets; sources with explicit rhythms use shared modulation
 rules. Measurement runs only after font loading. Layout slots use default
 axes and stay fixed; current glyphs shrink into their slots as needed, never
 reflow. See README for fitting tradeoffs and current typography limitations.
+
+Finished files come from `npm run export -- <id>`, never ad-hoc render flags:
+it names outputs predictably under `out/export/<id>/` and writes a tempo
+sidecar beside each. Profiles are `social` (H.264 MP4), `prores` (ProRes 4444
+with alpha) and `webm` (VP9 with alpha); `--canvas` takes several canvases and
+`--repeat` whole loops. Repeats are made by copying the encoded loop, so do
+not lengthen a composition to fill time. Options, names and the sidecar live
+in `scripts/lib/export.ts` (pure, unit-tested); rendering lives in
+`scripts/lib/export-render.ts`. Keep the sidecar truthful: a new field must be
+derived from the selected composition or measured from the output, and
+`npm run test:export` must still pass (run it after touching export code; it
+is not part of `npm run check` or CI). `transparent` only removes the shell's
+black fill, so a sketch intended for compositing must also skip its own
+backdrop when `props.transparent` is on; read the exporter's "nothing is
+transparent" note and the sidecar's `alphaSample` instead of assuming alpha.
+Use `--test-render` for verification exports. Export only when asked.

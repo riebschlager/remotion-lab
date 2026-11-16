@@ -130,7 +130,7 @@ const probeClip = async (file: string): Promise<Probe> => {
 };
 
 /** Decode every frame at thumbnail size, calling back with RGBA pixels in presentation order. */
-const decodeFrames = (file: string, width: number, height: number, decoder: string | null,
+export const decodeFrames = (file: string, width: number, height: number, decoder: string | null,
   onFrame: (index: number, rgba: Buffer) => void) => new Promise<number>((resolve, reject) => {
   const task = ff('ffmpeg', ['-v', 'error', ...(decoder ? ['-c:v', decoder] : []), '-i', file, '-map', '0:v:0',
     '-vf', `scale=${width}:${height}:flags=area`, '-fps_mode', 'passthrough',

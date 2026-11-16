@@ -23,6 +23,8 @@
     "sketches": "node --import tsx scripts/list-sketches.ts",
     "sketch:new": "node --import tsx scripts/new-sketch.ts",
     "preview": "node --import tsx scripts/preview.ts",
+    "export": "node --import tsx scripts/export.ts",
+    "test:export": "node --import tsx --test tests/export/*.test.ts",
     "assets:scan": "node --import tsx scripts/scan-assets.ts"
   },
   "dependencies": {

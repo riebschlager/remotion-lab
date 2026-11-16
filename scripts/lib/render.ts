@@ -4,7 +4,7 @@ import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {bundle} from '@remotion/bundler';
-import {openBrowser, renderStill, selectComposition} from '@remotion/renderer';
+import {openBrowser, renderMedia, renderStill, selectComposition, type RenderMediaOptions} from '@remotion/renderer';
 import {PNG} from 'pngjs';
 import {fill, stamp} from './pixels';
 import {missingAssets} from '../../src/assets';
@@ -45,6 +45,11 @@ export const openSession = async ({entryPoint = path.resolve('src/index.ts'), pu
         imageFormat: 'png', scale, puppeteerInstance: browser, isProduction: false});
       return PNG.sync.read(await readFile(output));
     },
+    /** Encode the whole composition to a video file. */
+    media: (composition: Composition, output: string,
+      options: Omit<RenderMediaOptions, 'serveUrl' | 'composition' | 'inputProps' | 'outputLocation' | 'puppeteerInstance'>) =>
+      renderMedia({serveUrl, composition, inputProps: composition.props, outputLocation: output,
+        puppeteerInstance: browser, overwrite: true, ...options}),
     close: async () => {
       try { await browser.close({silent: true}); }
       finally { await rm(bundleDir, {recursive: true, force: true}); }

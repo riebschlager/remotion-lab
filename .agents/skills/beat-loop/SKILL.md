@@ -387,3 +387,22 @@ equality alone as evidence of smoothness.
 Use Studio for aesthetic review. Render/export only within the user's requested
 scope; small test renders are part of verifying requested code changes. The
 visual suite is a regression check for its fixtures, not proof for all artwork.
+
+## Export
+
+`npm run export -- <id> [--props] [--profile=social|prores|webm|downstream|all]
+[--canvas=a,b] [--repeat=n] [--tag=x]` writes `out/export/<id>/<id>_<canvas>_<bpm>bpm[_xN][_tag].<ext>`
+and `<file>.json`. The sidecar's `effectiveBpm`, `loopFrameCount` and
+`loopDurationSeconds` are what downstream tools sync to. README "Exporting"
+documents fields and the transparent-format caveats.
+
+One loop is encoded once and repeats are stream copies, so joins are the loop
+point itself. Never extend a composition's duration to repeat it. Only whole
+loops export: seam views and compositions whose length differs from their
+tempo's loop are refused. Missing collection media fails before bundling.
+
+Alpha profiles switch on `transparent`, which removes only the shell's black
+fill. A sketch that paints its own backdrop exports opaque; the exporter says
+so and records `alphaSample`. For a compositing sketch, branch on
+`props.transparent` and skip the backdrop. WebM alpha needs `-c:v libvpx-vp9`
+to decode with ffmpeg. After changing export code run `npm run test:export`.

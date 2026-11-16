@@ -90,6 +90,34 @@ move it to "Done" so this file stays the source of truth.
   `dusk-tide`, `off-grid` and `happy-static`, with two canvases each. See
   [evaluation inputs, results and limitations](evaluations/brief-to-sketch/report.md).
 
+- **Export profiles and tempo sidecar** (segment 5). `npm run export -- <id>`
+  exports any sketch, `BeatLoop` or `PresetLoop` with preview's `--props`, to
+  `out/export/<id>/<id>_<canvas>_<bpm>bpm[_xN][_tag].<ext>` plus `<file>.json`.
+  Profiles: `social` (H.264 `yuv420p` MP4, CRF 18), `prores` (ProRes 4444,
+  `yuva444p10le`) and `webm` (VP9 `yuva420p`), the alpha settings taken from
+  the checked-in Remotion skill and current docs. `--canvas` takes several
+  canvases per run. `--repeat` copies the once-encoded loop end to end, so
+  repeats are whole loops and decode frame-identically. The sidecar records
+  requested and effective BPM, bars, meter, fps, frame counts, durations,
+  canvas, codec settings, repeat count, resolved props and a measured alpha
+  sample. Missing media, invalid props and options fail before bundling.
+  Verified on real renders with both Remotion's bundled ffprobe and a newer
+  system build: codec, pixel format, size, frame count, duration and even
+  frame spacing against each sidecar; every decoded frame hashed across
+  joins; alpha read from decoded frames of a fixture sketch and of
+  `clip-duet`. `npm run test:export` keeps the rendered checks (about 40 s)
+  out of the default suites and CI.
+  - `transparent` removes only the shell's black fill. Six of the seven
+    sketches paint their own full-frame backdrop and export fully opaque
+    alpha; only `clip-duet` is transparent. The exporter reports this per
+    export, but the sketches themselves are unchanged.
+  - ffprobe reports ProRes 4444 as `yuva444p12le`, and WebM as `yuv420p` with
+    `ALPHA_MODE=1` because ffmpeg's own VP9 decoder drops alpha; decode with
+    `-c:v libvpx-vp9`. The sidecar's `ffprobePixelFormat` records both.
+  - Cost on this machine at 1080×1920, 240 frames, after about 7 s of
+    startup (bundling and browser launch): social 7 s / 5.7 MB, ProRes 10 s / 268 MB, WebM 58 s / 2.9 MB
+    (`pulse-grid`); `clip-duet` ProRes is 477 MB per 8 s loop.
+
 ## Decisions already made
 
 These apply to every segment; the prompts do not repeat them.
@@ -134,51 +162,17 @@ should know:
 - File names with spaces and capitals work as clip keys, filmstrip names and
   URLs. Names containing `#`, `%` or `?` have not been tried.
 
-## 5. Export profiles and tempo sidecar
-
-**Why:** finished loops need to leave the repo in the right form for social
-posts and for downstream projects. Independent of segments 2 to 4; can run any time.
-
-**Done when:** one command exports any sketch or preset for either use, and
-each export says what tempo it is.
-
-```text
-Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
-roadmap segment 5: exporting finished loops. Outputs go two places: social posts, and
-downstream projects that composite or play the loops themselves.
-
-Build an export command, for example npm run export -- <composition-id>, that works
-for any sketch or preset and accepts the same --props as npm run preview. It needs:
-- A social profile: H.264 MP4, with a repeat count so a short loop can fill a longer
-  post. Repeats must be whole loops and the joins must be as clean as the loop itself.
-- A downstream profile with an alpha channel, for sketches rendered with the existing
-  transparent prop. Check the checked-in Remotion skills and docs for the current
-  recommended transparent codecs and pixel formats before choosing, offer at least one
-  editing-grade format and one web-friendly format, and tell me the trade-offs.
-- A canvas option, so one sketch can be exported to several canvases in one run.
-- A sidecar JSON beside every output recording composition id, props, requested and
-  effective BPM, bars, beats per bar, fps, frame count, duration, canvas size, codec
-  and repeat count, so a downstream tool never has to guess the tempo.
-- Predictable output names under out/ that include the id, canvas and tempo.
-- A clear failure before rendering when a sketch's asset files are missing, reusing
-  the existing check.
-
-Verify with real renders, not only by reading the command: confirm with ffprobe that
-each profile has the codec, pixel format, dimensions, frame count and duration the
-sidecar claims; confirm the alpha output has real transparency by reading pixels from a
-decoded frame; and confirm a repeated export is frame-identical across its joins. Add
-tests for the naming, sidecar contents and option validation. Keep long renders out of
-the default test suites.
-
-The existing render scripts in package.json should keep working. Update the README and
-AGENTS.md. Report what was built, what was verified and how, file sizes and render
-times for one sketch in each profile, and anything about the transparent formats I
-should know before using them downstream. Update ROADMAP.md. Commit only if I ask.
-```
-
 ## Later
 
 Not yet scheduled. Each is worth doing once sketches start asking for it.
+
+- **Sketches that honor `transparent`.** Most sketches paint a full-frame
+  backdrop of their own, so their alpha exports are opaque (see segment 5).
+  Decide a convention, such as skipping or exposing the backdrop when
+  `transparent` is on, apply it to the sketches worth compositing, and add it
+  to the scaffold and the brief-to-sketch skill.
+- **Not yet tried downstream:** the ProRes and WebM files have been decoded
+  with ffmpeg and libvpx only, not opened in an editor, a browser or Safari.
 
 - **Arrangement within the loop.** Bar-scoped cues such as "enters at bar 3"
   or "fill on bar 4", so loops feel composed instead of merely periodic.

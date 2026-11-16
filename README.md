@@ -25,10 +25,12 @@ npm run dev          # opens Remotion Studio — edit props live in the right pa
 | `npm run sketches` | List sketches with their tempo, canvas and duration |
 | `npm run sketch:new -- <id>` | Scaffold `src/sketches/<id>/` and register it |
 | `npm run preview -- <id>` | Contact sheet plus determinism and seam checks → `out/preview/<id>/` |
+| `npm run export -- <id>` | Finished video plus tempo sidecar → `out/export/<id>/`; see "Exporting" |
 | `npm run assets:scan` | Describe the collections in `public/assets/` → `collections/<name>/manifest.json` and filmstrips |
 | `npm run typecheck` | TypeScript check |
 | `npm test` | Timing, envelope, event identity, and configuration regression tests |
 | `npm run test:visual` | Rendered seam, determinism, clean defaults, and composition integration tests |
+| `npm run test:export` | Real exports checked with ffprobe and decoded pixels; not part of the suites above |
 | `npm run skills:check` | Check official skill versions, router references, and compatibility links |
 | `npm run check` | Skill setup + type check + unit tests |
 
@@ -124,7 +126,8 @@ The generated brief template records the original request, hierarchy, separate
 musical roles, asset evidence and treatment, copy, canvas criteria and review
 notes. A good handoff includes a Studio link, inspected contact sheets, reasons
 for the choices, verification results and any limitations. A preview is not an
-export; request an export separately when you want a finished video file. The
+export; request an export separately when you want a finished video file
+(see "Exporting"). The
 [three-brief evaluation](evaluations/brief-to-sketch/report.md) records the trials,
 the quiet-response failure, the skill revision and the fresh rerun.
 
@@ -404,6 +407,114 @@ before it bundles. CI has no media, so the rendered suite skips the loop
 checks of any sketch whose files are absent and says which files; it still
 checks that such a sketch fails with this message. The scanner and asset
 helpers are tested against a small collection generated at test time.
+
+## Exporting
+
+`npm run export -- <id>` writes a finished loop and a JSON sidecar that states
+its tempo. It works for any sketch, `BeatLoop` and `PresetLoop`, and takes the
+same `--props` as `npm run preview`.
+
+```bash
+npm run export -- pulse-grid                                   # social MP4, one loop
+npm run export -- pulse-grid --repeat=4 --canvas=portrait,square,landscape
+npm run export -- clip-duet --profile=downstream               # ProRes 4444 + WebM, with alpha
+npm run export -- PresetLoop --props='{"preset":"amber-echo"}' --repeat=2
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--props=<json\|file>` | Composition props, as for preview |
+| `--profile=<list>` | `social` (default), `prores`, `webm`; `downstream` is `prores,webm`; `all` is all three |
+| `--canvas=<list>` | Sketches only: `portrait`, `portrait-4x5`, `square`, `landscape`, `<W>x<H>` (even pixels) or `all`. One output per canvas. Omitted, the canvas comes from the props or the sketch |
+| `--repeat=<n>` | Whole loops in the file, 1–1000. Default 1 |
+| `--tag=<text>` | Extra name suffix (letters, digits, hyphens), e.g. to keep several `variant`s |
+| `--out=<dir>` | Default `out/export` |
+| `--test-render` | Marks the render as not production for Remotion; used by verification renders |
+
+| Profile | File | Encoder settings | Use |
+| --- | --- | --- | --- |
+| `social` | `.mp4` | H.264, `yuv420p`, CRF 18, JPEG frames at quality 95, fast start | Posts. Opaque |
+| `prores` | `.mov` | ProRes 4444, `yuva444p10le`, PNG frames | Editors and compositors; Remotion names Final Cut Pro, Premiere and DaVinci Resolve |
+| `webm` | `.webm` | VP9, `yuva420p`, CRF 28, PNG frames | Playing over a page in Chrome or Firefox |
+
+All three are converted and tagged as BT.709 and have no audio track. The alpha
+settings are the ones Remotion recommends (`.agents/skills/remotion-render/transparent-videos.md`).
+
+Files are named `out/export/<id>/<id>_<canvas>_<bpm>bpm[_x<repeat>][_<tag>].<ext>`,
+for example `pulse-grid_square_128bpm_x4.mp4`. `<canvas>` is the preset name,
+or `<width>x<height>` for a custom size and for compositions that are not
+sketches. `<bpm>` is the requested tempo. Exporting the same name again
+overwrites it; props that are not in the name, such as `variant` or `bars`,
+need a `--tag` to be kept side by side.
+
+### Repeats
+
+A loop is rendered and encoded once. `--repeat` then copies that encoded loop
+end to end without re-encoding, so the file is a whole number of loops, every
+repeat decodes to exactly the frames of the first, and a join is the loop
+point itself with nothing blended or re-compressed across it. Rendering time
+does not grow with the repeat count; file size grows in proportion.
+
+### The sidecar
+
+Every output has `<file>.json` beside it:
+
+| Field | Meaning |
+| --- | --- |
+| `compositionId`, `profile`, `file` | What was exported and the file this describes |
+| `inputProps`, `props` | Props passed in (including the canvas and `transparent` the exporter set), and the composition's fully resolved props |
+| `requestedBpm`, `effectiveBpm` | The tempo asked for, and the tempo of the rendered frames. They differ when `timingMode: "visual"` rounds the loop to whole frames; a downstream tool should sync to `effectiveBpm` |
+| `bars`, `beatsPerBar`, `totalBeats`, `fps` | Musical shape of one loop |
+| `repeat`, `loopFrameCount`, `loopDurationSeconds` | One loop; beat `b` of repeat `r` starts at `(r + b / totalBeats) × loopDurationSeconds` |
+| `frameCount`, `durationSeconds` | The whole file: one loop × `repeat` |
+| `canvas` | `{name, width, height}` |
+| `codec`, `container`, `pixelFormat`, `proResProfile`, `crf`, `colorSpace`, `frameImageFormat`, `jpegQuality` | Encoder settings |
+| `ffprobePixelFormat` | What ffprobe reports for the file, which differs from `pixelFormat` for both alpha formats (below) |
+| `alpha`, `transparent` | The file has an alpha channel; a sketch's `transparent` prop was on |
+| `alphaSample` | Measured from three rendered frames: `minAlpha` and `transparentFraction`. `minAlpha: 255` means nothing is transparent |
+| `fileSizeBytes`, `sidecarVersion` | Size on disk; format version, currently 1 |
+
+### Transparent formats
+
+Alpha profiles turn on a sketch's `transparent` prop unless `--props` sets it.
+`social` refuses `transparent: true`, since H.264 would flatten it to black.
+
+- **`transparent` only removes the black fill behind the sketch.** A sketch
+  that paints its own full-frame backdrop stays opaque: of the current
+  sketches only `clip-duet` leaves anything transparent. The exporter samples
+  three frames, prints a note when none has a transparent pixel, and records
+  the result in `alphaSample`. `BeatLoop` and `PresetLoop` always paint black.
+  A sketch meant for compositing should skip its backdrop when
+  `props.transparent` is on.
+- **ProRes 4444** is the editing-grade choice: intra-frame, so it scrubs and
+  cuts cleanly, with 4:4:4 color and a high-precision alpha plane. It is large
+  (about 270 MB for 8 s at 1080×1920; busy footage is far more) and browsers
+  cannot play it. Remotion encodes from `yuva444p10le`; ffprobe reports the
+  stored stream as `yuva444p12le`.
+- **VP9 WebM** is the web choice: small files, and Chrome and Firefox play its
+  alpha. It encodes about eight times slower than the other profiles, color is
+  subsampled to 4:2:0 (soft edges on fine colored detail) and it is lossy, so
+  do not re-edit from it. Remotion documents WebM alpha for Chrome and Firefox only, so treat
+  Safari as unsupported; its advice is to ship an opaque fallback beside the
+  WebM and choose with `<source>`. Editors
+  generally cannot import it.
+- **WebM alpha is stored beside the picture** and marked `ALPHA_MODE=1`.
+  ffmpeg's built-in VP9 decoder ignores it, so ffprobe says `yuv420p` and a
+  plain `ffmpeg -i file.webm` gives opaque frames on black. Put
+  `-c:v libvpx-vp9` before `-i` to decode the alpha.
+- Both formats are written by ffmpeg from PNG frames with straight
+  (unpremultiplied) alpha. If edges look dark or haloed in an editor, check
+  its alpha interpretation setting.
+- Repeats of a WebM are frame-identical to each other, like every profile.
+
+### When export refuses
+
+Before bundling, the command rejects unknown options, profiles and canvases,
+repeat counts that are not whole loops, seam views, a canvas for a
+composition that is not a sketch, invalid sketch props, and a sketch whose
+collection media is absent (the same check and message as preview). After
+selection it refuses any composition whose length is not exactly one loop of
+its own tempo.
 
 ## Named presets
 
@@ -723,7 +834,13 @@ transparency, variable-font weights and the errors for missing, unknown and
 undeclared assets. `sticker-slap` runs the same sketch checks on a real
 collection wherever `public/assets/test/` is present.
 Frames are rendered out of order and
-repeated to check determinism. A boundary between hits is compared to motion
+repeated to check determinism.
+Export naming, sidecar contents and option validation are unit tests in
+`npm test`. `npm run test:export` renders a small fixture sketch in every
+profile on two canvases and checks each file with ffprobe against its
+sidecar, hashes every decoded frame to confirm repeats are identical, reads
+decoded alpha, and exports a preset through the command. It takes about 40 s
+and is not part of `npm run check`, `npm run test:visual` or CI. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.
 
 The last frame and first frame are consecutive samples and need not match.
@@ -809,9 +926,12 @@ collections/
   <name>/filmstrips/    sampled frames of each clip
 scripts/
   preview.ts            contact sheet + loop checks for any composition
+  export.ts             finished videos + tempo sidecars
   new-sketch.ts         scaffold and register a sketch
   scan-assets.ts        write collection manifests and filmstrips
-  lib/render.ts         shared still rendering, checks and sheet layout
+  lib/render.ts         shared still and video rendering, checks and sheet layout
+  lib/export.ts         export options, profiles, names and sidecar (pure)
+  lib/export-render.ts  render, repeat without re-encoding, write sidecar
   lib/scan.ts           clip and font measurement
   lib/pixels.ts         labels for sheets and filmstrips
 ```
