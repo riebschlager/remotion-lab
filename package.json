@@ -35,6 +35,7 @@
     "@remotion/noise": "4.0.543",
     "@remotion/studio": "4.0.543",
     "@remotion/zod-types": "4.0.543",
+    "mediabunny": "1.64.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remotion": "4.0.543",
