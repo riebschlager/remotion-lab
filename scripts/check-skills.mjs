@@ -28,10 +28,17 @@ try {
     await access(path.resolve(root, router, target));
   }
   await access(path.join(root, 'AGENTS.md'));
-  await access(path.join(root, '.agents/skills/beat-loop/SKILL.md'));
-  assert.equal(await realpath(path.join(root, '.claude/skills/beat-loop')),
-    await realpath(path.join(root, '.agents/skills/beat-loop')), 'beat-loop: missing shared Claude link');
-  console.log(`Agent setup OK: ${expected.length} official skills, router references, local beat-loop skill and Claude links.`);
+  for (const name of ['beat-loop', 'brief-to-sketch']) {
+    const entry = `.agents/skills/${name}/SKILL.md`;
+    const content = await read(entry);
+    assert(content.includes(`name: ${name}\n`), `${entry}: unexpected skill name`);
+    assert.equal(await realpath(path.join(root, '.claude/skills', name)),
+      await realpath(path.join(root, '.agents/skills', name)), `${name}: missing shared Claude link`);
+    for (const [, target] of content.matchAll(/\]\((\.\.?\/[^)]+)\)/g)) {
+      await access(path.resolve(root, `.agents/skills/${name}`, target));
+    }
+  }
+  console.log(`Agent setup OK: ${expected.length} official skills, router references, local beat-loop/brief-to-sketch skills and Claude links.`);
 } catch (error) {
   console.error(`Agent setup check failed: ${error.message}\nRestore checked-in skills or run npm run skills:add, then review changes.`);
   process.exitCode = 1;

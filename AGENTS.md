@@ -26,6 +26,14 @@ the musical clock and periodic behavior are its core contract.
   `npm run skills:check`. Keep upstream skills intact; put local conventions
   in the beat-loop skill.
 
+For a creative brief or creative revision, use the local
+`.agents/skills/brief-to-sketch/SKILL.md` for interpretation, asset selection,
+visual hierarchy and critical preview review. Keep engine/API rules in beat-loop.
+Preserve supplied copy, tempo and required assets; infer ordinary design choices.
+Record the original request and assumptions in brief.md before implementation.
+Inspect both canvas sheets against the brief and fix aesthetic defects even when
+technical checks pass. Do not equate a PASS label with a finished design.
+
 New animation ideas start as sketches, not registry layers. Run
 `npm run sketch:new -- <id>`, write `src/sketches/<id>/brief.md`, and build
 `sketch.tsx` around `defineSketch`. Keep everything the sketch needs inside

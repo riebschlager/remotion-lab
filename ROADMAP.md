@@ -74,6 +74,22 @@ move it to "Done" so this file stays the source of truth.
   - The real collection has only a static font; variable axes remain verified
     on generated fixtures until real variable media is added.
 
+- **Brief-to-sketch creative workflow** (segment 4). Local `brief-to-sketch`
+  skill plus a shared Claude link; setup checks validate its name, link and
+  references. It routes engine details to beat-loop while covering brief
+  interpretation, hierarchy, musical roles, evidence-based Clip/Type choices,
+  relative composition, critical review and handoff. The scaffold brief now
+  records original commitments, copy, asset treatment and review criteria;
+  README includes a short guide to writing a brief.
+  Three fresh isolated agents tested quiet procedural, graphic type and real
+  media briefs at different tempos. All initial technical checks passed;
+  the parent rejected the quiet trial's near-invisible response. Guidance now
+  distinguishes quiet pacing from invisibility and requires inspecting peaks
+  missed by the default sheet. An unchanged quiet brief was rerun with a fourth
+  fresh agent; its stronger response was accepted after inspection. Kept
+  `dusk-tide`, `off-grid` and `happy-static`, with two canvases each. See
+  [evaluation inputs, results and limitations](evaluations/brief-to-sketch/report.md).
+
 ## Decisions already made
 
 These apply to every segment; the prompts do not repeat them.
@@ -117,56 +133,6 @@ should know:
   decoding; the rendered suite takes about 108 s with this sketch in it.
 - File names with spaces and capitals work as clip keys, filmstrip names and
   URLs. Names containing `#`, `%` or `?` have not been tried.
-
-## 4. Brief-to-sketch skill
-
-**Why:** this is the actual goal: hand an agent a brief and a collection and
-get a finished, verified sketch back. It comes after segments 2 and 3 so the
-skill describes building blocks that exist.
-
-**Done when:** a fresh agent given only a brief produces a sketch that passes
-its checks, with a report of what it chose and why, without further guidance.
-
-```text
-Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
-roadmap segment 4: a skill that takes an agent from a creative brief to a finished,
-verified sketch.
-
-The reader of this skill is a capable agent in a fresh conversation that knows nothing
-about this repo. I will give it a brief in loose, creative language, sometimes naming
-an asset collection, and I want a sketch back that I would be willing to post.
-
-1. Create a local skill in .agents/skills/ with a .claude/skills link, following how
-   beat-loop is set up, and extend scripts/check-skills.mjs to cover it. The beat-loop
-   skill stays the reference for engine rules; this one is about the creative workflow
-   and should point to beat-loop, not repeat it.
-2. The skill should explain the purpose and the judgment involved, not only list
-   steps. It needs to cover: reading the brief and asking me only when something is
-   truly undecidable; reading a collection's manifest and filmstrips before designing;
-   translating mood words into tempo, pattern, palette, motion and the Clip and Type
-   options; writing brief.md first so the intent is on record; building in relative
-   units; using npm run preview and critically reading its own contact sheet against
-   the brief; iterating before reporting; checking a second canvas; and what the final
-   report to me should contain.
-3. Describe what good looks like in this medium and where agents tend to go wrong:
-   everything hitting on the same beat, hits that are too subtle to read at phone size,
-   motion that ignores the loop length, clips shown without regard to whether they
-   loop, text that is unreadable for the time it is on screen.
-4. Revise the brief template in scripts/new-sketch.ts if writing the skill shows it is
-   missing something, and add a short guide for me on how to write a brief that gets
-   good results.
-
-Then test it for real. Write three briefs that differ in mood, tempo and asset use, and
-for each one start a fresh subagent with only the brief and an instruction to use the
-skill. Read what each produced: the sketch, its contact sheets and its report. Where an
-agent went wrong, work out what in the skill led it there, fix the skill's explanation
-instead of adding a special-case rule, and re-run that brief. Keep the three sketches
-if they are good; delete any that are not.
-
-Report what the skill covers, how the three trial runs went including the failures,
-what you changed as a result, and what kinds of brief you expect it to handle badly.
-Update ROADMAP.md. Commit only if I ask.
-```
 
 ## 5. Export profiles and tempo sidecar
 

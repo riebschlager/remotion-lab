@@ -1,12 +1,15 @@
 ---
 name: beat-loop
-description: Create beat-locked sketches from an idea or brief, and add or change layers, timing, envelopes, configuration validation and loop checks in remotion-lab.
+description: Implement and validate beat-locked timing, envelopes, layers, Clip and Type behavior in remotion-lab. Engine reference for sketch work; use brief-to-sketch for creative interpretation and visual review.
 ---
 
 # Beat-locked loops
 
 Read README.md and AGENTS.md at the repository root. Use the official
 `remotion-best-practices` skill alongside this project-specific guidance.
+
+For creative briefs, use [brief-to-sketch](../brief-to-sketch/SKILL.md) for
+interpretation and visual review; this skill owns engine rules and API recipes.
 
 ## Clock and continuity
 

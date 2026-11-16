@@ -1,3 +1,6 @@
+import offGrid from './off-grid/sketch';
+import happyStatic from './happy-static/sketch';
+import duskTide from './dusk-tide/sketch';
 import type {Sketch} from './define';
 import pulseGrid from './pulse-grid/sketch';
 import stickerSlap from './sticker-slap/sketch';
@@ -9,6 +12,9 @@ import typeBeat from './type-beat/sketch';
  * lines for you, and tests/sketches.test.ts fails if a folder is missing.
  */
 export const sketches: Sketch[] = [
+  duskTide,
+  offGrid,
+  happyStatic,
   pulseGrid,
   stickerSlap,
   clipDuet,

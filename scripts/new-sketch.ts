@@ -65,31 +65,48 @@ export default defineSketch({
 
 const brief = `# ${title}
 
-## Idea
+## Original brief
 
-What should this feel like? What is the one thing a viewer remembers?
+Preserve the request, exact copy and must-haves here. Separate supplied facts
+from assumptions made while designing.
+
+## Idea and hierarchy
+
+What should this feel like? What does the viewer notice first and remember?
+What supports it, and what stays quiet?
 
 ## Rhythm
 
-Tempo, bars and meter. What hits on which division; anything that rests or swings.
+Tempo, bars and meter. Give each element a musical role: its division or
+pattern, rests, accents, offset and motion between hits. Explain why they
+belong together and where they deliberately differ.
 
-## Look
+## Look and copy
 
-Palette, shapes, type, texture, references.
+Palette, shapes, texture, type treatment. Exact words and explicit line breaks;
+how long important copy stays readable. What must not appear?
 
-## Assets
+## Assets and treatment
 
-"None", or the collection this sketch draws on. Read
-collections/<collection>/manifest.json and the clips' filmstrips before
-choosing, then list each asset with the facts that shaped the design:
+"None", or the collection this sketch draws on. Read its manifest and open
+each candidate clip's filmstrip before choosing. Record the evidence:
 
-- clip \`<collection>/<path>\`: frames, native fps, size, alpha, loops on its own?
-  How it is driven (once every N beats, restarted per hit, one frame per hit).
-- font \`<collection>/<Family>\`: weights or variable axes used.
+- clip \`<collection>/<path>\`: frame count, native fps, shape, alpha,
+  loop flag and internal cuts. Chosen Clip mode, phrase length, and cut handling.
+- font \`<collection>/<Family>\`: actual face/axes and supported copy.
+  Type split and all/sequence/stagger treatment, with fitting margins.
 
-## Notes
+## Canvas and success criteria
 
-Constraints, target canvases, things to avoid.
+Primary canvas and a second shape. What must remain legible, prominent or
+uncropped on both? Describe observable signs the rhythm and mood are working.
+
+## Review notes
+
+After previewing, record what the contact sheets showed, what changed and why,
+and any intended seam hit or remaining compromise. Link preserved sheets for
+both canvases; the preview command overwrites the same output directory.
+
 `;
 
 await mkdir(dir, {recursive: true});

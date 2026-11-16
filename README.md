@@ -99,6 +99,35 @@ Inside a sketch component:
 uses a video, a GIF and a font from a collection. When a second sketch needs a
 piece, consider promoting it to a registered layer (see "Adding a layer").
 
+### From a creative brief
+
+Use `$brief-to-sketch` (the local `.agents/skills/brief-to-sketch/SKILL.md`)
+when you want an agent to turn an idea into a finished sketch. It reads the
+collection, chooses musical and visual roles, writes the sketch brief, builds,
+previews, inspects two canvases and revises before reporting. The beat-loop
+skill remains the reference for engine rules and building-block APIs.
+
+A useful brief says what the viewer should feel and notice, gives exact words
+if there are any, names a collection or specific assets when they matter, and
+states the canvas and things to avoid. Supply tempo/meter if they are part of
+the idea; otherwise the agent can choose. Distinguish must-haves from suggestions.
+You do not need to specify schema fields or playback math.
+
+For example: “Make a spare, nocturnal loop with one warm shape floating over
+indigo. I should feel a pulse without everything blinking together. No text
+or media. Choose a slow tempo. Portrait first, but it must also look composed
+in landscape.” For a media piece, add the collection and whether the footage
+or the typography should lead. For text, provide the exact copy and say whether
+it must stay readable throughout or can appear phrase by phrase.
+
+The generated brief template records the original request, hierarchy, separate
+musical roles, asset evidence and treatment, copy, canvas criteria and review
+notes. A good handoff includes a Studio link, inspected contact sheets, reasons
+for the choices, verification results and any limitations. A preview is not an
+export; request an export separately when you want a finished video file. The
+[three-brief evaluation](evaluations/brief-to-sketch/report.md) records the trials,
+the quiet-response failure, the skill revision and the fresh rerun.
+
 ### Previewing a sketch
 
 `npm run preview -- <id> [--props=<json|file>] [--scale=0.2] [--strict]`
