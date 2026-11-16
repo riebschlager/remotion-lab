@@ -1,0 +1,294 @@
+# Roadmap
+
+The goal: a playground where an agent turns a creative brief, plus a
+collection of GIFs, video clips and fonts, into a beat-matched loop that
+follows this repo's conventions.
+
+Each segment below has a prompt that starts it in a fresh conversation. Run
+them in order unless a segment says otherwise. When a segment is finished,
+move it to "Done" so this file stays the source of truth.
+
+## Done
+
+- **Sketches.** `defineSketch`, canvas presets, relative units, `npm run sketch:new`.
+- **Preview.** `npm run preview` writes a labelled contact sheet and runs
+  determinism and seam checks; the rendered suite applies both to every sketch.
+- **Asset collections.** `npm run assets:scan`, committed manifests and
+  filmstrips, typed `clip()` and `font()`, font loading, and `ClipFrame` for
+  drawing one exact source frame. Built and tested against synthetic fixtures only.
+
+## Decisions already made
+
+These apply to every segment; the prompts do not repeat them.
+
+- Tempo-only sync. No audio work.
+- Outputs are both finished social videos and material for downstream
+  projects, so everything must work on every canvas.
+- Media lives in `public/assets/<collection>/` and is gitignored. Manifests
+  and filmstrips in `collections/` are committed.
+- New ideas start as sketches. Code moves into the layer registry only when a
+  second sketch needs it.
+- `useBeat()` is the only clock. No state between frames, no unseeded randomness.
+
+## 1. Prove the asset pipeline on real media
+
+**Why first:** the scanner has never seen a real GIF, video or font, and no
+sketch uses an asset yet. Everything later builds on the manifest being right.
+
+**Before starting:** put a small collection in `public/assets/<name>/`: a few
+GIFs, a few video clips (ideally one with alpha and one phone-shot clip), and
+at least one static and one variable font.
+
+**Done when:** a manifest for the real collection is committed, and one
+sketch that uses a clip and a font passes preview on two canvases.
+
+```text
+Read README.md (especially "Sketches" and "Asset collections"), AGENTS.md, ROADMAP.md
+and the beat-loop skill first. This session is roadmap segment 1: prove the asset
+pipeline on real media. It has only ever run on synthetic fixtures.
+
+I have put a real collection in public/assets/. If that folder is empty, stop and tell
+me; do not substitute generated fixtures.
+
+1. Run npm run assets:scan on it. Open the manifest and several filmstrips and check
+   them against the actual files: frame counts, frame rates, durations, sizes, alpha,
+   the loops-on-its-own flag, font families, weights and variable axes. Use ffprobe or
+   another independent tool to confirm a sample of the numbers. Do not trust the
+   scanner's own output as its verification.
+2. Fix whatever the real files expose in the scanner or helpers, and add a regression
+   test for each fix using a small generated fixture that reproduces the problem.
+3. Build one sketch with npm run sketch:new that uses at least one clip through
+   ClipFrame, driven from useBeat(), and one font from the collection. Keep it simple:
+   its job is to exercise the path from brief to manifest to render, not to be
+   impressive. Write its brief.md, including the Assets section.
+4. Run npm run preview on it for portrait and landscape and look at both contact
+   sheets. Confirm the clip frames shown match the source frames you expect at those
+   beats, and that the font is the collection's font and not a fallback.
+5. Run npm run check and npm run test:visual.
+
+Report what the scan got right, what it got wrong and how you fixed it, anything in the
+collection the pipeline still cannot handle, and how long the scan and one preview
+took. Then update ROADMAP.md: move this segment to Done and note any change that
+affects later segments. Commit only if I ask.
+```
+
+## 2. Beat-driven Clip layer
+
+**Why:** `ClipFrame` draws one frame. An agent working from a brief needs
+named playback behaviours it can choose from and combine with patterns.
+
+**Done when:** all four modes work on GIFs and video, are validated before
+rendering, and pass the automatic seam checks in at least one sketch.
+
+```text
+Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
+roadmap segment 2: a beat-driven Clip building block on top of the existing ClipFrame
+(src/assets/ClipFrame.tsx), which draws one exact source frame.
+
+Build a Clip component, usable inside any sketch, that picks its source frame purely
+from useBeat(). It needs four playback modes:
+- fit: play the clip exactly once every N beats or bars, so it loops with the music.
+- retrigger: restart on every hit of the layer's division or pattern. Rests do not
+  restart it and accent strength is available to the sketch.
+- step: advance by one source frame, or a fixed jump, on each hit, holding in between.
+- scrub: take the playhead position from a normalized signal, using the existing
+  modulation sources (beat envelope, LFO, noise) in src/beat/modulation.ts.
+
+Requirements:
+- Every mode must be a pure function of beat position, reuse the existing step,
+  pattern and modulation helpers, and stay seamless at the loop point. For each mode,
+  work out what makes it loop (for example, fit needs a whole number of plays per loop;
+  step needs the total frames advanced per loop to be a whole number of clip lengths,
+  or a deliberate wrap) and reject settings that cannot loop with a field-specific
+  message before rendering.
+- Use the manifest's loops-on-its-own flag: when a clip that does not loop is used in a
+  mode that would show its cut, say so in validation or documentation, and offer at
+  least one way to hide the cut (for example ping-pong playback or an envelope fade).
+- Sizing and placement use useCanvas() units, with contain, cover and fill fitting.
+- Put pure frame-selection logic in its own module with unit tests covering each mode,
+  rests, swing, negative offsets, odd meters and the seam. Add rendered tests that
+  check the exact source frame shown at chosen beats, using the generated fixture
+  collection so CI can run them.
+- Decide whether Clip belongs in the layer registry or stays a sketch-level component,
+  and tell me which you chose and why. The roadmap's rule is that code moves into the
+  registry only when a second sketch needs it.
+
+Then build or extend a sketch that uses at least two modes on real clips from
+public/assets/, preview it on two canvases, and look at the contact sheets. If
+public/assets/ has no real collection, tell me and verify on fixtures only.
+
+Update the README, AGENTS.md and the beat-loop skill so an agent can choose a mode from
+a brief. Run npm run check and npm run test:visual. Report what was built, what was
+verified and how, and any mode whose looping rule turned out more restrictive than
+expected. Update ROADMAP.md. Commit only if I ask.
+```
+
+## 3. Kinetic Type layer
+
+**Why:** fonts are one of the three asset kinds, and text is what most social
+pieces need. Can run before or after segment 2.
+
+**Done when:** a sketch can set words in a collection font, animate them per
+word or per letter on a pattern, and pulse a variable-font axis on the beat.
+
+```text
+Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
+roadmap segment 3: a kinetic Type building block for sketches, using fonts from asset
+collections (see "Asset collections" in the README and src/assets/fonts.ts).
+
+Build a Type component that:
+- Sets one or more lines of text in a collection font, sized in useCanvas() units, and
+  fits text to a box so it never overflows on any canvas. Check the checked-in Remotion
+  skills for the recommended text measuring and fitting approach before writing one.
+- Splits text into lines, words or letters, and gives each unit a stable identity so
+  hits can address them: all at once, one unit per hit in order, or staggered with a
+  per-unit beat offset. Per-unit timing must use wrapped offsets on the beat grid so it
+  is seamless, the way src/sketches/pulse-grid delays its tiles.
+- Exposes per-unit energy from the existing pattern and envelope helpers so a sketch
+  can map it to scale, opacity, position, color or blur.
+- Supports variable-font axes as animation targets: map a normalized signal from
+  src/beat/modulation.ts to an axis range taken from the manifest, and reject ranges
+  outside what the font supports before rendering.
+- Uses the manifest's missing-character information to fail validation, with the
+  characters named, when the text cannot be set in the chosen font.
+
+Text measurement must be deterministic across frames and must not run before the font
+has loaded. Layout must not shift when an axis animates unless the sketch asks for
+that; decide how to handle width changes from a weight or width axis and tell me the
+choice.
+
+Put layout and timing logic in pure modules with unit tests. Add rendered tests using
+the fixture fonts in tests/fixtures/fonts so CI can run them, including one that
+proves the collection font was used and not a fallback, and one that shows a
+variable axis changing between two beats.
+
+Then build a sketch that uses Type with a real font from public/assets/, preview it on
+portrait and landscape, and look at the contact sheets for legibility at phone size.
+If there is no real collection, tell me and verify on fixtures only.
+
+Update the README, AGENTS.md and the beat-loop skill. Run npm run check and
+npm run test:visual. Report what was built, what was verified and how, and what kinds
+of typography it cannot do yet. Update ROADMAP.md. Commit only if I ask.
+```
+
+## 4. Brief-to-sketch skill
+
+**Why:** this is the actual goal: hand an agent a brief and a collection and
+get a finished, verified sketch back. It comes after segments 2 and 3 so the
+skill describes building blocks that exist.
+
+**Done when:** a fresh agent given only a brief produces a sketch that passes
+its checks, with a report of what it chose and why, without further guidance.
+
+```text
+Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
+roadmap segment 4: a skill that takes an agent from a creative brief to a finished,
+verified sketch.
+
+The reader of this skill is a capable agent in a fresh conversation that knows nothing
+about this repo. I will give it a brief in loose, creative language, sometimes naming
+an asset collection, and I want a sketch back that I would be willing to post.
+
+1. Create a local skill in .agents/skills/ with a .claude/skills link, following how
+   beat-loop is set up, and extend scripts/check-skills.mjs to cover it. The beat-loop
+   skill stays the reference for engine rules; this one is about the creative workflow
+   and should point to beat-loop, not repeat it.
+2. The skill should explain the purpose and the judgment involved, not only list
+   steps. It needs to cover: reading the brief and asking me only when something is
+   truly undecidable; reading a collection's manifest and filmstrips before designing;
+   translating mood words into tempo, pattern, palette, motion and the Clip and Type
+   options; writing brief.md first so the intent is on record; building in relative
+   units; using npm run preview and critically reading its own contact sheet against
+   the brief; iterating before reporting; checking a second canvas; and what the final
+   report to me should contain.
+3. Describe what good looks like in this medium and where agents tend to go wrong:
+   everything hitting on the same beat, hits that are too subtle to read at phone size,
+   motion that ignores the loop length, clips shown without regard to whether they
+   loop, text that is unreadable for the time it is on screen.
+4. Revise the brief template in scripts/new-sketch.ts if writing the skill shows it is
+   missing something, and add a short guide for me on how to write a brief that gets
+   good results.
+
+Then test it for real. Write three briefs that differ in mood, tempo and asset use, and
+for each one start a fresh subagent with only the brief and an instruction to use the
+skill. Read what each produced: the sketch, its contact sheets and its report. Where an
+agent went wrong, work out what in the skill led it there, fix the skill's explanation
+instead of adding a special-case rule, and re-run that brief. Keep the three sketches
+if they are good; delete any that are not.
+
+Report what the skill covers, how the three trial runs went including the failures,
+what you changed as a result, and what kinds of brief you expect it to handle badly.
+Update ROADMAP.md. Commit only if I ask.
+```
+
+## 5. Export profiles and tempo sidecar
+
+**Why:** finished loops need to leave the repo in the right form for social
+posts and for downstream projects. Independent of segments 2 to 4; can run any time.
+
+**Done when:** one command exports any sketch or preset for either use, and
+each export says what tempo it is.
+
+```text
+Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. This session is
+roadmap segment 5: exporting finished loops. Outputs go two places: social posts, and
+downstream projects that composite or play the loops themselves.
+
+Build an export command, for example npm run export -- <composition-id>, that works
+for any sketch or preset and accepts the same --props as npm run preview. It needs:
+- A social profile: H.264 MP4, with a repeat count so a short loop can fill a longer
+  post. Repeats must be whole loops and the joins must be as clean as the loop itself.
+- A downstream profile with an alpha channel, for sketches rendered with the existing
+  transparent prop. Check the checked-in Remotion skills and docs for the current
+  recommended transparent codecs and pixel formats before choosing, offer at least one
+  editing-grade format and one web-friendly format, and tell me the trade-offs.
+- A canvas option, so one sketch can be exported to several canvases in one run.
+- A sidecar JSON beside every output recording composition id, props, requested and
+  effective BPM, bars, beats per bar, fps, frame count, duration, canvas size, codec
+  and repeat count, so a downstream tool never has to guess the tempo.
+- Predictable output names under out/ that include the id, canvas and tempo.
+- A clear failure before rendering when a sketch's asset files are missing, reusing
+  the existing check.
+
+Verify with real renders, not only by reading the command: confirm with ffprobe that
+each profile has the codec, pixel format, dimensions, frame count and duration the
+sidecar claims; confirm the alpha output has real transparency by reading pixels from a
+decoded frame; and confirm a repeated export is frame-identical across its joins. Add
+tests for the naming, sidecar contents and option validation. Keep long renders out of
+the default test suites.
+
+The existing render scripts in package.json should keep working. Update the README and
+AGENTS.md. Report what was built, what was verified and how, file sizes and render
+times for one sketch in each profile, and anything about the transparent formats I
+should know before using them downstream. Update ROADMAP.md. Commit only if I ask.
+```
+
+## Later
+
+Not yet scheduled. Each is worth doing once sketches start asking for it.
+
+- **Arrangement within the loop.** Bar-scoped cues such as "enters at bar 3"
+  or "fill on bar 4", so loops feel composed instead of merely periodic.
+- **Variants from one brief.** Render several `variant` values on one contact
+  sheet and pick a direction.
+- **Gallery.** A generated index of every sketch with thumbnail, brief and
+  render command, so the playground is browsable and agents can find prior art.
+- **Modulation on any numeric param.** Today it targets scale, rotation,
+  color and displacement only.
+- **Palettes.** Shared palette tokens, including palettes extracted from a collection.
+- **More building blocks.** Particles, grids, masks, and post effects such as
+  glow and blur, promoted from sketches as they recur.
+- **Resolution-independent Rings.** It still measures in literal pixels
+  tuned for 1080×1920.
+- **Split AGENTS.md.** Separate the hard rules from the recipes.
+
+Prompt for picking one of these up:
+
+```text
+Read README.md, AGENTS.md, ROADMAP.md and the beat-loop skill first. I want to take on
+"<item>" from the Later list in ROADMAP.md. Look at the existing sketches and building
+blocks to see what the item needs to work with, then propose a design: what I would be
+able to do afterwards, how it stays seamless and deterministic, what it changes for
+existing sketches and presets, and how you would test it. Give me your recommendation
+and wait for my go-ahead before building.
+```
