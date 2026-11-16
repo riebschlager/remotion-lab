@@ -69,6 +69,10 @@ const cases: Array<{name: string; props: LoopProps}> = [
   {name: 'rounded-60fps', props: {...fixture, bpm: 127, fps: 60, bars: 2,
     background: {...fixture.background, offsetBeats: 0.5},
     rings: {...fixture.rings, offsetBeats: 0.5}}},
+  {name: 'swung-tails-across-two-loops', props: {...fixture, bars: 1,
+    background: {...fixture.background, offsetBeats: 0.5},
+    rings: {...fixture.rings, division: '1/8', offsetBeats: 0.5, lifeSteps: 16,
+      pattern: {steps: [1, 0.25, 0, 0.6], swing: 1 / 3}}}},
 ];
 
 for (const {name, props} of cases) {
@@ -241,5 +245,57 @@ test('all entry points reject duplicate IDs and per-instance division errors', a
   for (const id of ['PresetLoop', 'PresetSeamCheck']) {
     await expectInvalid(id, {preset: 'prism-stack', overrides: {layers: duplicates}}, /Duplicate layer ID/);
     await expectInvalid(id, {preset: 'prism-stack', overrides: {bars: 1, layers: invalid}}, /too-slow.*division/);
+  }
+});
+
+test('pattern rests suppress background attacks and accent strength changes visible brightness', async () => {
+  const background = {...fixture.background, colorA: '#000000', colorB: '#ffffff',
+    pulseAmount: 1, rotationsPerLoop: 0, pattern: {steps: [0.25, 0, 1, 0]}};
+  const composition = await select('BeatLoop', {background, rings: {...fixture.rings, enabled: false}});
+  const weak = await image(composition, 0, 'pattern-weak');
+  const rest = await image(composition, 15, 'pattern-rest');
+  const strong = await image(composition, 30, 'pattern-accent');
+  const center = (png: PNG) => png.data[(Math.floor(png.height / 2) * png.width + Math.floor(png.width / 2)) * 4];
+  assert(center(strong) > center(weak) + 50);
+  assert(center(weak) > center(rest) + 20);
+  const silent = await select('BeatLoop', {background: {...background, pattern: {steps: [0, 0]}},
+    rings: {...fixture.rings, enabled: false}});
+  assert.equal(difference(rest, await image(silent, 15, 'pattern-no-hit')), 0);
+});
+
+test('a triplet swing attack appears on its exact frame and stays absent just before it', async () => {
+  const composition = await select('BeatLoop', {
+    background: {...fixture.background, colorA: '#000000', colorB: '#ffffff', pulseAmount: 1,
+      rotationsPerLoop: 0, division: '1/8', pattern: {steps: [0, 1, 0, 0], swing: 1 / 3}},
+    rings: {...fixture.rings, enabled: false},
+  });
+  const silent = await image(composition, 0, 'swing-silent');
+  const before = await image(composition, 9, 'swing-before');
+  const onset = await image(composition, 10, 'swing-onset');
+  assert.equal(difference(silent, before), 0);
+  assert(difference(before, onset) > 0.01);
+});
+
+test('resting ring slots spawn no ring or core while existing tails remain visible', async () => {
+  const composition = await select('BeatLoop', {layers: [{id: 'rests', type: 'rings', props: {
+    division: '1/4', lifeSteps: 1, pattern: {steps: [1, 0, 0, 0]},
+  }}]});
+  const hit = await image(composition, 0, 'ring-hit');
+  const rest = await image(composition, 30, 'ring-rest');
+  const allRest = await select('BeatLoop', {layers: [{id: 'rests', type: 'rings', props: {pattern: {steps: [0, 0]}}}]});
+  const silent = await image(allRest, 0, 'ring-all-rest');
+  assert(difference(hit, silent) > 0.001);
+  assert.equal(difference(rest, silent), 0);
+  const tails = await select('BeatLoop', {layers: [{id: 'rests', type: 'rings', props: {
+    division: '1/4', lifeSteps: 8, pattern: {steps: [1, 0, 0, 0]},
+  }}]});
+  assert(difference(await image(tails, 30, 'ring-rest-with-tail'), silent) > 0.001);
+});
+
+test('all entry points reject incompatible pattern cycles with the instance ID', async () => {
+  const layers = [{id: 'bad-pattern', type: 'rings', props: {pattern: {steps: [1, 0, 0]}}}];
+  for (const id of ['BeatLoop', 'SeamCheck']) await expectInvalid(id, {layers}, /bad-pattern.*pattern.steps/);
+  for (const id of ['PresetLoop', 'PresetSeamCheck']) {
+    await expectInvalid(id, {preset: 'swing-session', overrides: {layers}}, /bad-pattern.*pattern.steps/);
   }
 });

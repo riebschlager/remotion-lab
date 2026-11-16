@@ -3,17 +3,19 @@ import {AbsoluteFill} from 'remotion';
 import {useBeat} from '../beat/BeatContext';
 import {divisionBeats, divisionFitsLoop, Division} from '../beat/envelopes';
 import {isFrameExact} from '../beat/timing';
+import type {BeatPattern} from '../beat/patterns';
 
 type Props = {
   /** Divisions in use by other layers, checked against the loop length */
   divisions: Division[];
+  patterns?: Array<{id: string; division: Division; pattern: BeatPattern}>;
 };
 
 /**
  * Overlay showing where you are on the grid, plus warnings for anything that
  * will break the loop. Turn off before final renders.
  */
-export const BeatDebug: React.FC<Props> = ({divisions}) => {
+export const BeatDebug: React.FC<Props> = ({divisions, patterns = []}) => {
   const b = useBeat();
 
   const warnings: string[] = [];
@@ -42,6 +44,19 @@ export const BeatDebug: React.FC<Props> = ({divisions}) => {
       {warnings.map((w) => (
         <div key={w} style={{fontSize: 26, color: '#ff6b6b'}}>
           ⚠ {w}
+        </div>
+      ))}
+      {patterns.map(({id, division, pattern}) => (
+        <div key={id} style={{fontSize: 22}}>
+          <div>{id} · {division} · swing {Math.round((pattern.swing ?? 0) * 100)}%</div>
+          <div style={{display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6}}>
+            {pattern.steps.map((strength, index) => (
+              <span key={index} style={{minWidth: 28, textAlign: 'center', padding: 4,
+                background: `rgba(255,255,255,${strength * 0.35})`, borderRadius: 4}}>
+                {strength === 0 ? '·' : strength}
+              </span>
+            ))}
+          </div>
         </div>
       ))}
       <div style={{fontSize: 40}}>

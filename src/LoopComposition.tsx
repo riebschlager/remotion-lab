@@ -28,7 +28,9 @@ export const LoopComposition: React.FC<Props> = (props) => {
         ))}
         <Layer enabled={props.debug.enabled}>
           <BeatDebug divisions={layers.filter(({props: layer}) => layer.enabled)
-            .map(({props: layer}) => layer.division)} />
+            .map(({props: layer}) => layer.division)}
+            patterns={layers.flatMap(({id, props: layer}) => layer.enabled && layer.pattern
+              ? [{id, division: layer.division, pattern: layer.pattern}] : [])} />
         </Layer>
       </AbsoluteFill>
     </BeatProvider>

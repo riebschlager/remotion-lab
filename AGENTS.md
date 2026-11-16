@@ -38,4 +38,12 @@ Namespace randomness with `useLayerInstance().seed('channel')`, never an array
 index, so reordering preserves motion. All enabled instances receive shared
 and local musical validation. Edit these procedural stacks through props
 rather than authoring independent timeline clips.
+Layers can use `pattern: {steps, swing?}` (0 = rest, 1 = accent) or `null` for
+the fixed division. Use `patternPulse` for modulation and `patternEvents` for
+living objects. Keep event indices tied to full-loop slots, and measure tails
+in beats, so rests do not reset them. Complete pattern cycles must fit the
+loop; nonzero swing requires even slot counts and delays odd slots without
+changing pair duration. The shared validator handles these constraints.
+When adding a layer, explicitly consume its pattern; schema exposure alone
+does not make rendering rhythm-aware. Preserve the legacy path when omitted.
 See the beat-loop skill for details and add appropriate loop tests.

@@ -6,6 +6,7 @@ import {divisionBeats, pulse, step} from '../beat/envelopes';
 import {zColor} from '@remotion/zod-types';
 import {baseLayerSchema} from './base';
 import {defineLayer} from './definition';
+import {patternPulse} from '../beat/patterns';
 
 export const backgroundSchema = baseLayerSchema.extend({
   colorA: zColor(),
@@ -19,8 +20,8 @@ export const backgroundSchema = baseLayerSchema.extend({
 type Props = z.infer<typeof backgroundSchema>;
 
 /**
- * Example layer 1: a gradient that pulses from colorA toward colorB on every
- * step and rotates a whole number of times per loop.
+ * A gradient that pulses from colorA toward colorB on rhythm hits and rotates
+ * a whole number of times per loop.
  */
 export const Background: React.FC<Props> = ({
   colorA,
@@ -29,11 +30,14 @@ export const Background: React.FC<Props> = ({
   rotationsPerLoop,
   division,
   offsetBeats,
+  pattern,
 }) => {
   const {beat, totalBeats, beatsPerBar, loopPhase} = useBeat();
 
-  const s = step(beat, divisionBeats(division, beatsPerBar), totalBeats, offsetBeats);
-  const hit = pulse(s.phase, {decay: 0.7, curve: 3}) * pulseAmount;
+  const stepLen = divisionBeats(division, beatsPerBar);
+  const hit = (pattern
+    ? patternPulse(beat, stepLen, totalBeats, pattern, offsetBeats, {decay: 0.7, curve: 3})
+    : pulse(step(beat, stepLen, totalBeats, offsetBeats).phase, {decay: 0.7, curve: 3})) * pulseAmount;
 
   const center = interpolateColors(hit, [0, 1], [colorA, colorB]);
   const angle = loopPhase * 360 * rotationsPerLoop;

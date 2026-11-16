@@ -2,6 +2,7 @@ import {z} from 'zod';
 import {layerInstancesSchema, layerNames, layerOrderSchema, layerOverrideShape} from './layers/registry';
 import {createLoopDefaults, debugSchema, timingSchema} from './schema';
 import {validateLoopProps} from './validation';
+import {beatPatterns} from './beat/patterns';
 
 /** Explicit two-level overrides: merge individual layer parameters, replace
  * arrays wholesale, reject misspellings instead of silently ignoring them.
@@ -59,6 +60,23 @@ export const loopPresets = {
           color: '#ffcf69', accentColor: '#fff1b8', division: '1/8', offsetBeats: 0.25,
           blendMode: 'screen', opacity: 0.5, lifeSteps: 3, thickness: 6, maxRadius: 600, drift: 140,
         }},
+      ],
+    },
+  },
+  'swing-session': {
+    title: 'Swing Session',
+    description: 'Soft shuffled cyan hits and accented amber backbeats, with rests and wrapped tails.',
+    overrides: {
+      background: {colorA: '#070b1e', colorB: '#35234f', division: '1/4', offsetBeats: 0.5,
+        pattern: {steps: [1, 0, 0.4, 0]}, pulseAmount: 0.4},
+      layers: [
+        {id: 'backdrop', type: 'background'},
+        {id: 'shuffle', type: 'rings', props: {color: '#61d8ff', accentColor: '#b5efff',
+          division: '1/8', offsetBeats: 0.25, pattern: beatPatterns.shuffle,
+          lifeSteps: 5, thickness: 10, opacity: 0.7, blendMode: 'screen'}},
+        {id: 'backbeat', type: 'rings', props: {color: '#ffa967', accentColor: '#ffdb99',
+          division: '1/4', offsetBeats: 0.5, pattern: {...beatPatterns.backbeat, swing: 0.2},
+          lifeSteps: 3, maxRadius: 700, thickness: 18, opacity: 0.7, blendMode: 'plus-lighter'}},
       ],
     },
   },

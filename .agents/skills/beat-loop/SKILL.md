@@ -30,6 +30,41 @@ Visual timing rounds duration to whole frames and reports effective BPM in
 debug mode. Exact timing rejects rounding. Even an exact loop can have beats
 between frames; do not promise sample-accurate audio or frame-exact onsets.
 
+## Rhythms
+
+`pattern: {steps: number[], swing?: number}` repeats strengths over the
+layer's `division`. Zero is a rest, one is a full accent, and intermediate
+values are softer hits. `pattern: null` clears an inherited pattern; omission
+preserves the original fixed division. Each instance can supply its own
+pattern. Pattern objects and arrays replace as a whole when overridden.
+
+Use `patternPulse(beat, stepBeats, totalBeats, pattern, offsetBeats, options)`
+for intensity and `patternEvents(beat, stepBeats, totalBeats, pattern,
+offsetBeats, lifeBeats)` for living objects. Both derive history solely from
+beat position. Rests skip births without truncating previous tails; event
+lifetimes are measured in beats, not the number of active hits. Long tails
+include prior loop generations. Seed randomness from `event.index`, which
+retains the full-loop slot index across rests, and namespace by instance ID.
+
+Swing delays odd slots by a fraction of a division and preserves pair length.
+Zero is straight; 1/3 yields a 2:1 feel. Values must be finite and in [0, 1).
+Nonzero swing requires even slot counts. Straight odd-length patterns work
+when their total duration fits evenly inside the loop. The registry validates
+complete pattern duration and pairing for every enabled instance; structural
+constraints apply even when disabled. All-rest patterns are valid.
+
+Background weights its pulse by strength. Rings weight opacity and core pulse,
+use accentColor for strength 1, and retain accentEvery only for fixed-grid mode.
+Ring lifeSteps remains a count of base divisions. New layers must explicitly
+consume the rhythm helpers; adding the shared schema field alone is insufficient.
+Preserve legacy output when pattern is absent or null.
+
+`beatPatterns` in `src/beat/patterns.ts` exports reusable examples. The
+`swing-session` preset demonstrates independent shuffle and backbeat layers;
+BeatDebug lists strengths and swing amounts. Test zero-strength silence,
+weighted accents, exact onsets for fractional swing, negative offsets, stable
+identity, odd meters, loop compatibility, and tails through rests and seams.
+
 ## Adding a layer
 
 1. In `src/layers/MyLayer.tsx`, extend `baseLayerSchema` from `layers/base.ts`,

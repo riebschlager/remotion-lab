@@ -52,6 +52,7 @@ Open **Presets → PresetLoop** in Studio and choose a `preset`. Use
 | `amber-echo` | Gold and coral rings on the offbeat, with longer echoes | 100 BPM, 4 bars |
 | `midnight-drift` | Quiet rotating blue gradient, rings disabled | 90 BPM, 8 bars |
 | `prism-stack` | Three pink, cyan and gold ring instances with independent timing and blending | 120 BPM, 4 bars |
+| `swing-session` | Shuffled cyan hits, accented amber backbeats, rests and trailing rings | 120 BPM, 4 bars |
 
 Presets are defined once in `src/presets.ts`. Each stores a title, description
 and overrides of the registry defaults. Adding a preset there automatically
@@ -137,6 +138,63 @@ JSON array rather than duplicating independent Studio timeline clips. Timing and
 preset defaults on the root registrations remain source-editable in Studio;
 shared layer defaults live beside each layer's implementation.
 
+## Beat patterns, accents and swing
+
+Every layer accepts an optional `pattern`. Its `steps` array repeats over the
+layer's `division`: `0` is a rest, `1` is a full accent, and values between
+them are softer hits. This example uses eight eighth-note slots over one
+4/4 bar, with swing on the alternate slots:
+
+```json
+{
+  "preset": "neon-orbit",
+  "overrides": {
+    "rings": {
+      "division": "1/8",
+      "pattern": {"steps": [1, 0, 0.45, 0.25, 0.75, 0, 1, 0.35], "swing": 0.25}
+    }
+  }
+}
+```
+
+Choose `swing-session` in Studio for a complete multi-instance example, or run:
+
+```bash
+npm run render:preset -- --props='{"preset":"swing-session"}'
+npm run seamcheck:preset -- --props='{"preset":"swing-session","overrides":{"debug":{"enabled":true}}}'
+```
+
+Swing delays slots 1, 3, 5, … by `swing × divisionBeats` while leaving the
+pair's total duration unchanged. `0` is straight; `1/3` produces a 2:1
+long-short feel. The allowed range is `0 ≤ swing < 1`. Swung patterns need
+an even number of slots so each repeat contains complete pairs; straight
+patterns may have odd lengths, including patterns for odd meters.
+
+The full pattern (`steps.length × divisionBeats`) must fit a whole number of
+times inside the loop. Enabled instances validate this independently, with
+errors identifying the instance. Empty arrays, nonfinite strengths, values
+outside 0–1, and invalid swing values are rejected. An all-zero array is a
+valid silent rhythm.
+
+Rests skip new pulses and ring births; existing tails keep moving. Strength
+scales background pulse intensity, ring opacity and the core pulse. In
+pattern mode, full-strength rings use `accentColor`; softer rings use `color`.
+`accentEvery` continues to control colors only in fixed-division mode. Ring
+`lifeSteps` counts base divisions rather than active hits, so rests and swing
+do not stretch a ring's lifetime. Overlapping tails, including tails longer
+than the loop, are rebuilt from wrapped hit ages on every frame.
+
+`offsetBeats` shifts the complete rhythm. Each instance can author its own
+pattern in `layers[i].props`, inherit its type's pattern, or set `pattern: null`
+to clear that inheritance and return to the fixed division. Pattern objects
+replace as a whole when overridden; their `steps` arrays do not merge. Omit
+the field (or use `null`) to retain the original fixed-grid rendering.
+
+Reusable `syncopated`, `backbeat` and `shuffle` examples are exported as
+`beatPatterns` from `src/beat/patterns.ts`. The optional debug overlay displays
+each enabled instance's strengths, rests and swing amount. Generated pattern
+controls remain part of composition props, including the JSON editor.
+
 ## How time works
 
 ```
@@ -157,10 +215,10 @@ divisions; their other fields must still satisfy the schema.
 
 1. **Layers never call `useCurrentFrame()`.** Use `useBeat()`.
 2. **No state between frames.** Remotion renders frames in parallel and out of order, so there's no feedback and no accumulators. Every frame is a pure function of beat position.
-3. **No `Math.random()`.** Use `stepRandom(seed, step.index)`. It's deterministic and repeats every loop.
+3. **No `Math.random()`.** Use `stepRandom(seed, step.index)` or a pattern event's full-loop `index`. Preserve slot identities across rests; never renumber only the active hits.
 4. **LFOs use whole cycles per loop.** `lfo(loopPhase, cycles)` rejects fractional or negative cycles. Zero holds a constant. Saw/square waves have intentional discontinuities.
 5. **Noise must loop.** Use `loopNoise(seed, loopPhase, radius)`, which samples 3D noise around a circle.
-6. **Divisions must fit the loop.** "4 bars" in a 2-bar loop is rejected for an enabled layer. The `step()` helper also rejects incompatible divisions.
+6. **Divisions and patterns must fit the loop.** "4 bars" in a 2-bar loop is rejected for an enabled layer. A pattern's complete cycle must also repeat evenly. The pure helpers reject incompatible settings too.
 7. **Long tails wrap.** Use `step()` ages or `decaySince()`. A single `decaySince()` tail must be positive and no longer than the loop. For longer lifetimes, render overlapping generations as Rings does, preserving wrapped birth identity.
 
 ## Toolkit (`src/beat/envelopes.ts`)
@@ -176,6 +234,15 @@ divisions; their other fields must still satisfy the schema.
 | `loopNoise(seed, loopPhase, radius, z)` | Seamless noise, ~−1→1 |
 | `stepRandom(seed, index, channel)` | Seeded 0→1 per step |
 
+Pattern helpers in `src/beat/patterns.ts`:
+
+| Function | Use |
+| --- | --- |
+| `patternHits(pattern, stepBeats, totalBeats, offsetBeats)` | Active hits with stable slot indices, strengths and swung beat positions |
+| `patternEvents(beat, stepBeats, totalBeats, pattern, offsetBeats, lifeBeats)` | Living events and wrapped ages, including prior loop generations |
+| `patternPulse(beat, stepBeats, totalBeats, pattern, offsetBeats, options)` | Strength-weighted pulse; overlapping envelopes combine by maximum |
+| `patternIssues(pattern, stepBeats, totalBeats)` | Field-specific pattern compatibility checks |
+
 ## Adding a layer
 
 1. **Define** – in `src/layers/MyLayer.tsx`, extend `baseLayerSchema` from `layers/base.ts`, build a component using `useBeat()`, and export a `defineLayer` definition with its schema, defaults and component. Use `Background.tsx` as the template. Keep defaults in the definition, rather than attaching defaults to individual schema fields, so partial preset overrides stay sparse.
@@ -183,6 +250,9 @@ divisions; their other fields must still satisfy the schema.
 3. **Constrain and test** – standard division validation is automatic and runs independently for every instance. For additional musical constraints, add `validate(props, timing)` to the definition, returning messages such as `['radius: exceeds the supported range']`. Disabled instances skip these extra checks; schema constraints always apply. Use `useLayerInstance().seed` to namespace random channels, then add fixtures and run `npm run check` and `npm run test:visual`.
 
 Every layer gets `enabled`, `opacity`, `blendMode`, `division`, and `offsetBeats` for free. Per-layer offsets are what make a stack feel composed instead of everything hitting at once.
+The shared schema also exposes `pattern`, but a new layer must explicitly
+consume `patternPulse` or `patternEvents` to respond to it. Background and
+Rings demonstrate both approaches; the registry supplies validation.
 
 ## Loop verification
 
@@ -198,6 +268,8 @@ partial overrides, invalid selections and actual layer stacking order.
 Multi-instance checks verify independent colors, timing and blend modes,
 stable motion after reordering, duplicate-ID rejection, and legacy pixel
 equivalence when expressed as explicit instances.
+Rhythm fixtures check rests, visible accent strength, the exact frame of a
+triplet swing onset, silent rings, and swung tails spanning multiple loops.
 Frames are rendered out of order and
 repeated to check determinism. A boundary between hits is compared to motion
 on either side; an intentional beat attack is compared to an interior attack.
@@ -245,6 +317,7 @@ src/
     timing.ts           pure frame → beat math
     BeatContext.tsx     <BeatProvider> + useBeat()
     envelopes.ts        step, pulse, lfo, loopNoise, stepRandom…
+    patterns.ts         rhythm schema, reusable patterns, hit schedules and envelopes
   layers/
     base.ts             shared layer controls
     definition.ts       defineLayer: defaults, renderer, validation contract
