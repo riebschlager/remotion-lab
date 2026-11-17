@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {BoxGeometry, Group, Mesh, MeshStandardMaterial, Vector3} from 'three';
-import {bakeModel, sliceBounce, sliceModel} from '../src/sketches/milhouse-slices/sliceGeometry';
+import {bakeModel, sliceBounce, sliceModel, sliceMotionPhase} from '../src/sketches/milhouse-slices/sliceGeometry';
 import sketch from '../src/sketches/milhouse-slices/sketch';
 import {portalDefaults} from '../src/sketches/milhouse-slices/Portal';
 
@@ -64,6 +64,28 @@ test('slice bounce launches, rebounds, settles and closes continuously', () => {
     const before = sliceBounce((join - 1e-6 + 1) % 1);
     const after = sliceBounce((join + 1e-6) % 1);
     assert.ok(Math.abs(before - after) < 1e-8);
+  }
+});
+
+test('a split hold keeps the slices at peak and fits the rebound and rest before the next hit', () => {
+  const hold = 0.4;
+  const start = 0.32 * (1 - hold);
+  const end = start + hold;
+  const sample = (phase: number) => sliceBounce(sliceMotionPhase(phase, hold), 'ease-out', 'ease-in');
+  for (const phase of [start, (start + end) / 2, end]) {
+    assert.equal(sliceMotionPhase(phase, hold), 0.32);
+    assert.equal(sample(phase), 1);
+  }
+  assert.ok(sample(start / 2) > 0.5, 'Ease out accelerates the opening early');
+  assert.ok(sample(end + start / 2) > 0.5, 'Ease in delays reassembly');
+  assert.ok(Math.abs(sample(hold + 0.76 * (1 - hold)) - 0.13) < 1e-10);
+  assert.equal(sample(0.99), 0);
+  assert.equal(sample(0), 0);
+  for (const metadata of [sketch.metadata, sketch.seamMetadata]) {
+    const legacy = metadata({...sketch.defaultProps, holdOpen: undefined, openEase: undefined, closeEase: undefined}).props;
+    assert.deepEqual([legacy.holdOpen, legacy.openEase, legacy.closeEase], [0, 'smooth', 'smooth']);
+    assert.doesNotThrow(() => metadata({...sketch.defaultProps, holdOpen: 0.8}));
+    assert.throws(() => metadata({...sketch.defaultProps, holdOpen: 1}), /holdOpen/);
   }
 });
 

@@ -170,9 +170,34 @@ export function sliceModel(model: Model, count: number): Section[] {
   });
 }
 
-/** One launched arc and a smaller rebound; zero position/velocity at both joins. */
-export function sliceBounce(phase: number): number {
-  if (phase < 0.64) return Math.sin(Math.PI * phase / 0.64) ** 2;
+const peakPhase = 0.32;
+const smooth = (t: number) => Math.sin(Math.PI * t / 2) ** 2;
+const sliceEasing = {
+  smooth,
+  'ease-in': (t: number) => smooth(t * t),
+  'ease-out': (t: number) => 1 - smooth((1 - t) ** 2),
+  linear: (t: number) => t,
+};
+export const sliceEaseOptions = ['smooth', 'ease-in', 'ease-out', 'linear'] as const;
+
+/** Insert a plateau at the launch peak and fit the other stages around it. */
+export function sliceMotionPhase(phase: number, holdOpen: number): number {
+  if (holdOpen === 0) return phase;
+  const movingTime = 1 - holdOpen;
+  const holdStart = peakPhase * movingTime;
+  if (phase < holdStart) return phase / movingTime;
+  if (phase <= holdStart + holdOpen) return peakPhase;
+  return (phase - holdOpen) / movingTime;
+}
+
+/** Opening, closing, and a smaller rebound after reassembly. */
+export function sliceBounce(
+  phase: number,
+  openEase: keyof typeof sliceEasing = 'smooth',
+  closeEase: keyof typeof sliceEasing = 'smooth',
+): number {
+  if (phase < peakPhase) return sliceEasing[openEase](phase / peakPhase);
+  if (phase < 0.64) return 1 - sliceEasing[closeEase]((phase - peakPhase) / peakPhase);
   if (phase < 0.88) return 0.13 * Math.sin(Math.PI * (phase - 0.64) / 0.24) ** 2;
   return 0;
 }

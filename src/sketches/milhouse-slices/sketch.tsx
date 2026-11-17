@@ -11,7 +11,7 @@ import {divisionBeats, step, stepRandom} from '../../beat/envelopes';
 import {divisionSchema} from '../../beat/divisions';
 import {useCanvas} from '../canvas';
 import {defineSketch, divisionIssues, useSketch, type SketchBaseProps} from '../define';
-import {sliceBounce, sliceModel} from './sliceGeometry';
+import {sliceBounce, sliceEaseOptions, sliceModel, sliceMotionPhase} from './sliceGeometry';
 import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler} from './poses';
 import {StudioFloor} from './StudioFloor';
 import {Portal, portalSchema, leakSchema, portalDefaults, leakDefaults} from './Portal';
@@ -23,6 +23,9 @@ const schema = z.object({
     .describe('Four source animation times in seconds, one pose reached on each beat'),
   slices: z.number().int().min(2).max(20).describe('Horizontal mesh sections'),
   spread: z.number().min(0).max(2.5).step(0.05).describe('Vertical separation at peak'),
+  holdOpen: z.number().min(0).max(0.8).step(0.01).default(0).describe('Fraction of each slice division spent fully apart'),
+  openEase: z.enum(sliceEaseOptions).default('smooth').describe('Easing as the slices break apart'),
+  closeEase: z.enum(sliceEaseOptions).default('smooth').describe('Easing as the slices reassemble'),
   kick: z.number().min(0).max(0.5).step(0.01).describe('Alternating sideways bounce'),
   twist: z.number().min(0).max(30).step(1).describe('Slice twist in degrees'),
   viewAngle: z.number().min(-60).max(60).step(1).describe('Character viewing angle'),
@@ -151,8 +154,9 @@ const MilhouseSlices: React.FC<Props> = (props) => {
   const {width, height, aspect} = useCanvas();
   const sampler = useMilhouse(props.poseTimes);
   const {transparent, variant} = props as Props & SketchBaseProps;
-  const {phase} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
-  const energy = sliceBounce(phase);
+  const {phase: stepPhase} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
+  const phase = sliceMotionPhase(stepPhase, props.holdOpen);
+  const energy = sliceBounce(phase, props.openEase, props.closeEase);
   // A canvas-fraction camera: keep the whole silhouette and its bounce visible
   // even on very wide or narrow custom canvases. World model height is five.
   const frustumHeight = Math.max(7.1 + props.spread, 4.5 / aspect);
@@ -182,7 +186,7 @@ const MilhouseSlices: React.FC<Props> = (props) => {
           shadow-camera-far={25} shadow-bias={-0.0002} shadow-normalBias={0.015} shadow-radius={3} />
         <Sections sampler={sampler} props={props} energy={energy} phase={phase} />
         {!transparent ? <StudioFloor color={props.floorColor}
-          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}`} /> : null}
+          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}/${phase}/${energy}`} /> : null}
       </ThreeCanvas> : null}
     </AbsoluteFill>
   );
@@ -193,7 +197,8 @@ export default defineSketch({
   title: 'Milhouse Slices',
   description: 'Satin Milhouse opens into neon echo portals with aurora interiors and escaping light.',
   schema,
-  defaults: {division: '1/4', poseTimes: [...DEFAULT_POSE_TIMES], slices: 8, spread: 1.5, kick: 0.15, twist: 10,
+  defaults: {division: '1/4', poseTimes: [...DEFAULT_POSE_TIMES], slices: 8, spread: 1.5,
+    holdOpen: 0, openEase: 'smooth', closeEase: 'smooth', kick: 0.15, twist: 10,
     portal: portalDefaults, lightLeak: leakDefaults,
     viewAngle: -15, backdrop: '#302139', cutColor: '#00efef', floorColor: '#403246',
     ambientIntensity: 0.28, keyIntensity: 7.5, fillIntensity: 3.3, rimIntensity: 9, roughness: 0.46},

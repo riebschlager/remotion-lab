@@ -312,3 +312,30 @@ light off); raised only the preview's aurora strength to the new 0.85 default.
   including repeatability, visible control changes and clear transparent corners.
 - Full `npm run test:visual`: all 84 rendered checks pass, no failures or
   skips, including both Milhouse canvases and exact seam-view correspondence.
+
+## Adjustable split timing
+
+User request: “let's update the spread animation so that we can configure how
+long milhouse stays split apart with each slice-up. let's also add controls for
+the easing of that break apart and reassemble animation”
+
+Hold at peak separation for a configurable fraction of each slice division.
+Fit the launch, close, rebound and rest in the remaining time. Let opening and
+closing have distinct curves. Default to zero hold and the existing smooth
+curve. Hold the separation and tilt at their peak pose while character poses
+and portal currents continue on their own beat timing. Review a longer hold
+with different opening and closing curves on both canvases.
+
+Studio controls are `holdOpen` (0–80% of the selected division) and
+`openEase` and `closeEase` (smooth, ease-in, ease-out, or linear).
+The hold leaves at least 20% of the division for movement and rest. Existing
+props without the new controls resolve to zero hold and smooth easing.
+
+Reviewed a 40% hold with ease-out opening and ease-in closing in
+`out/preview/milhouse-hold-portrait/sheet.png`,
+`out/preview/milhouse-hold-landscape/sheet.png`, and
+`out/preview/milhouse-hold-detail/sheet.png`. The detailed sheet shows peak
+separation at frames 3–8 and full reassembly by frame 14. Both canvas previews
+pass determinism and seam checks. All 99 code checks pass.
+All 84 visual regressions pass. The 29 sampled default portrait frames match
+the previous color revision pixel for pixel.
