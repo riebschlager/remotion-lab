@@ -2,78 +2,175 @@ import React, {useLayoutEffect, useRef} from 'react';
 import type {FacePixels} from './textures';
 
 /**
- * Draws every cube face of a frame into one WebGL canvas.
+ * Draws the whole street, sky included, in one WebGL canvas.
  *
- * As DOM elements the faces cost the browser several composited layers each,
- * a few hundred in all, which is what exhausted GPU memory in Studio. Here a
- * face is one textured quad. The sketch supplies corners already projected to
- * clip space, so perspective, depth order and texture mapping are exact.
+ * As DOM elements the cube faces cost the browser several composited layers
+ * each, which exhausted GPU memory in Studio. Here every quad (road, markings,
+ * slabs, cube faces) is drawn from its four corners, which the sketch supplies
+ * already projected to clip space by an ordinary perspective camera.
  *
- * Paint order inside a face, bottom to top: `ground`, the texture recoloured
- * through `stops` by luminance, `shade`, `fog`, then the border. Colours are
- * mixed as sRGB values, as CSS does.
+ * Fisheye: each quad is drawn as a grid of small cells, and the vertex shader
+ * moves every grid point through the lens, so straight edges bend. The lens
+ * is centred on the frame: a point the flat camera puts at radius s (in
+ * half-diagonals) is drawn at atan(c·s)/c. The centre keeps its scale; the
+ * edges gather a wider field, up to tan(c)/c half-diagonals at the corners.
+ * The camera roll, about the vanishing point, is applied before the lens. The
+ * sky runs the inverse mapping per pixel, so the horizon curves with the rest.
+ *
+ * Paint order inside a quad, bottom to top: `ground`, the premultiplied
+ * texture, the border, `shade`, then fog. Fog is computed per pixel from the
+ * distance ahead of the eye. Colours are mixed as sRGB values, as CSS does.
  */
 export type Rgb = [number, number, number];
+/** Haze over a quad: `floor + (1 - floor) * max * smoothstep(start, end, distance)`, distance in cube sizes. */
+export type Fog = {floor: number; start: number; end: number; max: number};
 export type Face = {
   /** Clip-space x, y, z, w of the top-left, top-right, bottom-left and bottom-right corners. */
   corners: number[];
   ground: Rgb;
-  /** Luminance and alpha at `textureSize`; leave out for a flat face or while textures load. */
+  /** Premultiplied RGBA at `textureSize`; leave out for a flat face or while textures load. */
   pixels?: FacePixels;
-  /** Four colours from dark to light that the texture's luminance is sent through. */
-  stops?: Rgb[];
-  /** Opacity of the `shadeColor` and `fogColor` washes over the picture. */
+  /** Opacity of the `shadeColor` wash. */
   shade: number;
-  fog: number;
-  /** Opacity of the whole face. */
+  fog: Fog;
+  /** Opacity of the whole quad. */
   opacity: number;
+  /** Border width as a fraction of the quad; 0 or omitted for none. */
+  border?: number;
+  /** Large quads (the road) need a finer grid to bend smoothly. */
+  fine?: boolean;
+};
+export type Sky = {
+  /** Four colours from the top of the sky down to the horizon. */
+  stops: Rgb[];
+  /** Frame y, in pixels, of each stop; the last is the horizon. */
+  at: number[];
+  /** Ground colour below the horizon, where the road ends. */
+  below: Rgb;
 };
 
 /** `#rrggbb` as 0..1 channels. */
 export const rgb = (hex: string): Rgb =>
   [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16) / 255) as Rgb;
 
-const vertexSource = `#version 300 es
-in vec4 position;
-in vec2 texcoord;
-out vec2 uv;
-void main() { uv = texcoord; gl_Position = position; }`;
+/** Lens constant for a fisheye strength of 0..1. Kept below π/2 so the corners stay finite. */
+export const lensCurve = (fisheye: number) => 1.3 * fisheye;
+/** How far out, in half-diagonals of the flat view, the lensed frame reaches at its corners. */
+export const lensReach = (fisheye: number) => {
+  const c = lensCurve(fisheye);
+  return c > 1e-4 ? Math.tan(c) / c : 1;
+};
 
-const fragmentSource = `#version 300 es
+const sceneVertex = `#version 300 es
+in vec2 grid;
+out vec2 uv;
+out float dist;
+uniform mat4 corners;
+uniform float distScale, curve, roll;
+uniform vec2 frame, pivot;
+void main() {
+  vec4 p = mix(mix(corners[0], corners[1], grid.x), mix(corners[2], corners[3], grid.x), grid.y);
+  uv = grid;
+  dist = p.w * distScale;
+  vec2 px = vec2(p.x / p.w + 1.0, 1.0 - p.y / p.w) * 0.5 * frame;
+  vec2 d = px - pivot;
+  px = pivot + vec2(d.x * cos(roll) - d.y * sin(roll), d.x * sin(roll) + d.y * cos(roll));
+  vec2 c = frame * 0.5;
+  float R = length(c);
+  vec2 q = (px - c) / R;
+  float s = length(q);
+  if (curve > 0.0 && s > 0.0) q *= atan(curve * s) / (curve * s);
+  px = c + q * R;
+  gl_Position = vec4((px.x / frame.x * 2.0 - 1.0) * p.w, (1.0 - px.y / frame.y * 2.0) * p.w, p.z, p.w);
+}`;
+
+const sceneFragment = `#version 300 es
 precision highp float;
 in vec2 uv;
+in float dist;
 out vec4 color;
 uniform sampler2D picture;
 uniform bool textured;
-uniform vec3 ground, stops[4], shadeColor, fogColor, borderColor;
-uniform float shade, fog, opacity, border;
+uniform vec3 ground, shadeColor, fogColor, borderColor;
+uniform float shade, opacity, border;
+uniform vec4 fog;
 void main() {
   vec3 c = ground;
   if (textured) {
-    vec2 la = texture(picture, uv).rg;
-    float t = clamp(la.r, 0.0, 1.0) * 3.0;
-    int i = min(int(t), 2);
-    c = mix(c, mix(stops[i], stops[i + 1], t - float(i)), la.g);
+    vec4 t = texture(picture, uv);
+    c = c * (1.0 - t.a) + t.rgb;
   }
-  c = mix(mix(c, shadeColor, shade), fogColor, fog);
-  // Border of constant width just inside the edge, antialiased where it meets the picture.
-  float inside = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-  float soft = fwidth(inside);
-  c = mix(borderColor, c, smoothstep(border - soft, border + soft, inside));
+  if (border > 0.0) {
+    // Border of constant width just inside the edge, antialiased where it meets the picture.
+    float inside = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+    float soft = fwidth(inside);
+    c = mix(borderColor, c, smoothstep(border - soft, border + soft, inside));
+  }
+  float haze = fog.x + (1.0 - fog.x) * fog.w * smoothstep(fog.y, fog.z, dist);
+  c = mix(mix(c, shadeColor, shade), fogColor, haze);
   color = vec4(c * opacity, opacity);
 }`;
 
+const skyVertex = `#version 300 es
+void main() {
+  vec2 p = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);
+  gl_Position = vec4(p, 0.0, 1.0);
+}`;
+
+const skyFragment = `#version 300 es
+precision highp float;
+out vec4 color;
+uniform vec2 frame, pivot;
+uniform float curve, roll;
+uniform vec3 skyStops[4], below;
+uniform float skyAt[4];
+void main() {
+  // Undo the lens, then the roll, to find where this pixel looks in the flat view.
+  vec2 c = frame * 0.5;
+  float R = length(c);
+  vec2 q = (vec2(gl_FragCoord.x, frame.y - gl_FragCoord.y) - c) / R;
+  float r = length(q);
+  if (curve > 0.0 && r > 0.0) q *= tan(curve * r) / (curve * r);
+  vec2 d = c + q * R - pivot;
+  float y = pivot.y - d.x * sin(roll) + d.y * cos(roll);
+  vec3 sky = skyStops[3];
+  if (y >= skyAt[3]) sky = below;
+  else if (y <= skyAt[0]) sky = skyStops[0];
+  else if (y < skyAt[1]) sky = mix(skyStops[0], skyStops[1], (y - skyAt[0]) / (skyAt[1] - skyAt[0]));
+  else if (y < skyAt[2]) sky = mix(skyStops[1], skyStops[2], (y - skyAt[1]) / (skyAt[2] - skyAt[1]));
+  else sky = mix(skyStops[2], skyStops[3], (y - skyAt[2]) / (skyAt[3] - skyAt[2]));
+  color = vec4(sky, 1.0);
+}`;
+
+// Grid cells per side: cube faces are small, the road and its markings run the length of the street.
+const COARSE = 6;
+const FINE = 48;
 // Textures in use are re-uploaded from memory as needed, so the GPU holds a
 // bounded number however many frames the clips have.
 const MAX_TEXTURES = 160;
-const uniformNames = ['picture', 'textured', 'ground', 'stops', 'shadeColor', 'fogColor', 'borderColor',
-  'shade', 'fog', 'opacity', 'border'] as const;
+const sceneUniforms = ['corners', 'distScale', 'curve', 'roll', 'frame', 'pivot', 'picture', 'textured',
+  'ground', 'shadeColor', 'fogColor', 'borderColor', 'shade', 'opacity', 'border', 'fog'] as const;
+const skyUniforms = ['frame', 'pivot', 'curve', 'roll', 'skyStops', 'below', 'skyAt'] as const;
 
 type Renderer = {
   gl: WebGL2RenderingContext;
-  uniforms: Record<(typeof uniformNames)[number], WebGLUniformLocation | null>;
-  vertices: WebGLBuffer;
+  scene: {program: WebGLProgram; vao: WebGLVertexArrayObject;
+    uniforms: Record<(typeof sceneUniforms)[number], WebGLUniformLocation | null>};
+  sky: {program: WebGLProgram; vao: WebGLVertexArrayObject;
+    uniforms: Record<(typeof skyUniforms)[number], WebGLUniformLocation | null>};
   textures: Map<FacePixels, WebGLTexture>;
+};
+
+/** Two triangles per cell of an n × n grid over the unit square. */
+const gridVertices = (n: number) => {
+  const out: number[] = [];
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const [u0, u1, v0, v1] = [i / n, (i + 1) / n, j / n, (j + 1) / n];
+      out.push(u0, v0, u1, v0, u0, v1, u1, v0, u1, v1, u0, v1);
+    }
+  }
+  return out;
 };
 
 const createRenderer = (canvas: HTMLCanvasElement): Renderer => {
@@ -81,41 +178,49 @@ const createRenderer = (canvas: HTMLCanvasElement): Renderer => {
   const gl = canvas.getContext('webgl2', {alpha: true, antialias: true, depth: true, premultipliedAlpha: true,
     preserveDrawingBuffer: true});
   if (!gl) {
-    throw new Error('Rando Wando needs WebGL 2 to draw its cubes, and this browser did not provide it. '
+    throw new Error('Rando Wando needs WebGL 2 to draw its street, and this browser did not provide it. '
       + 'In Studio, check that hardware acceleration is on; for renders, pass --gl=angle.');
   }
   const compile = (type: number, source: string) => {
     const shader = gl.createShader(type)!;
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(`Face shader: ${gl.getShaderInfoLog(shader)}`);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(`Street shader: ${gl.getShaderInfoLog(shader)}`);
     return shader;
   };
-  const program = gl.createProgram()!;
-  gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
-  gl.bindAttribLocation(program, 0, 'position');
-  gl.bindAttribLocation(program, 1, 'texcoord');
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`Face shader: ${gl.getProgramInfoLog(program)}`);
-  gl.useProgram(program);
+  const link = (vertex: string, fragment: string) => {
+    const program = gl.createProgram()!;
+    gl.attachShader(program, compile(gl.VERTEX_SHADER, vertex));
+    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragment));
+    gl.bindAttribLocation(program, 0, 'grid');
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`Street shader: ${gl.getProgramInfoLog(program)}`);
+    return program;
+  };
+  const locate = <N extends string>(program: WebGLProgram, names: readonly N[]) =>
+    Object.fromEntries(names.map((name) => [name, gl.getUniformLocation(program, name)])) as Record<N, WebGLUniformLocation | null>;
 
-  const vertices = gl.createBuffer()!;
-  gl.bindBuffer(gl.ARRAY_BUFFER, vertices);
+  const sceneProgram = link(sceneVertex, sceneFragment);
+  const sceneVao = gl.createVertexArray()!;
+  gl.bindVertexArray(sceneVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([...gridVertices(COARSE), ...gridVertices(FINE)]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 24, 0);
-  gl.enableVertexAttribArray(1);
-  gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
+  const skyProgram = link(skyVertex, skyFragment);
+  const skyVao = gl.createVertexArray()!;
+  gl.bindVertexArray(null);
 
-  gl.enable(gl.DEPTH_TEST);
-  gl.depthFunc(gl.LEQUAL);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);   // premultiplied
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.activeTexture(gl.TEXTURE0);
-  const uniforms = Object.fromEntries(uniformNames.map((name) => [name, gl.getUniformLocation(program, name)])) as Renderer['uniforms'];
-  gl.uniform1i(uniforms.picture, 0);
-  return {gl, uniforms, vertices, textures: new Map()};
+  gl.useProgram(sceneProgram);
+  gl.uniform1i(gl.getUniformLocation(sceneProgram, 'picture'), 0);
+  return {
+    gl,
+    scene: {program: sceneProgram, vao: sceneVao, uniforms: locate(sceneProgram, sceneUniforms)},
+    sky: {program: skyProgram, vao: skyVao, uniforms: locate(skyProgram, skyUniforms)},
+    textures: new Map(),
+  };
 };
 
 /** Bind the texture for `pixels`, uploading it first if the GPU does not have it. */
@@ -127,7 +232,7 @@ const bindPicture = ({gl, textures}: Renderer, pixels: FacePixels, size: number)
   } else {
     texture = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8, size, size, 0, gl.RG, gl.UNSIGNED_BYTE, pixels);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -137,41 +242,82 @@ const bindPicture = ({gl, textures}: Renderer, pixels: FacePixels, size: number)
   textures.set(pixels, texture);
 };
 
-const draw = (renderer: Renderer, faces: Face[], textureSize: number,
-  look: {shadeColor: Rgb; fogColor: Rgb; borderColor: Rgb; border: number}) => {
-  const {gl, uniforms, textures} = renderer;
+type DrawInput = {
+  width: number;
+  height: number;
+  /** Drawn first, in order, without depth: they never stand in front of a cube. */
+  backdrop: Face[];
+  /** Depth-tested; give them far to near so see-through faces blend over what is behind. */
+  faces: Face[];
+  /** Side length of every `pixels` array. */
+  textureSize: number;
+  look: {shadeColor: Rgb; fogColor: Rgb; borderColor: Rgb};
+  /** Clip-space w to distance ahead of the eye, in cube sizes. */
+  distScale: number;
+  fisheye: number;
+  rollDeg: number;
+  /** The vanishing point, in frame pixels: the roll turns about it. */
+  pivot: [number, number];
+  /** Null leaves the background transparent. */
+  sky: Sky | null;
+};
+
+const draw = (renderer: Renderer, input: DrawInput) => {
+  const {gl, scene, sky, textures} = renderer;
+  const curve = lensCurve(input.fisheye);
+  const roll = input.rollDeg * Math.PI / 180;
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.disable(gl.DEPTH_TEST);
+  gl.disable(gl.BLEND);
 
-  const data = new Float32Array(faces.length * 24);
-  const corner = [[0, 0], [1, 0], [0, 1], [1, 1]];
-  faces.forEach((face, index) => {
-    for (let k = 0; k < 4; k++) {
-      data.set(face.corners.slice(k * 4, k * 4 + 4), index * 24 + k * 6);
-      data.set(corner[k], index * 24 + k * 6 + 4);
-    }
-  });
-  gl.bindBuffer(gl.ARRAY_BUFFER, renderer.vertices);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+  if (input.sky) {
+    gl.useProgram(sky.program);
+    gl.bindVertexArray(sky.vao);
+    const s = sky.uniforms;
+    gl.uniform2f(s.frame, input.width, input.height);
+    gl.uniform2f(s.pivot, input.pivot[0], input.pivot[1]);
+    gl.uniform1f(s.curve, curve);
+    gl.uniform1f(s.roll, roll);
+    gl.uniform3fv(s.skyStops, input.sky.stops.flat());
+    gl.uniform1fv(s.skyAt, input.sky.at);
+    gl.uniform3fv(s.below, input.sky.below);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
 
-  gl.uniform3fv(uniforms.shadeColor, look.shadeColor);
-  gl.uniform3fv(uniforms.fogColor, look.fogColor);
-  gl.uniform3fv(uniforms.borderColor, look.borderColor);
-  gl.uniform1f(uniforms.border, look.border);
-  faces.forEach((face, index) => {
-    const textured = Boolean(face.pixels && face.stops);
-    if (textured) {
-      bindPicture(renderer, face.pixels!, textureSize);
-      gl.uniform3fv(uniforms.stops, face.stops!.flat());
-    }
-    gl.uniform1i(uniforms.textured, textured ? 1 : 0);
-    gl.uniform3fv(uniforms.ground, face.ground);
-    gl.uniform1f(uniforms.shade, face.shade);
-    gl.uniform1f(uniforms.fog, face.fog);
-    gl.uniform1f(uniforms.opacity, face.opacity);
-    gl.drawArrays(gl.TRIANGLE_STRIP, index * 4, 4);
+  gl.useProgram(scene.program);
+  gl.bindVertexArray(scene.vao);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);   // premultiplied
+  const u = scene.uniforms;
+  gl.uniform1f(u.distScale, input.distScale);
+  gl.uniform1f(u.curve, curve);
+  gl.uniform1f(u.roll, roll);
+  gl.uniform2f(u.frame, input.width, input.height);
+  gl.uniform2f(u.pivot, input.pivot[0], input.pivot[1]);
+  gl.uniform3fv(u.shadeColor, input.look.shadeColor);
+  gl.uniform3fv(u.fogColor, input.look.fogColor);
+  gl.uniform3fv(u.borderColor, input.look.borderColor);
+  const coarse = COARSE * COARSE * 6;
+  const fine = FINE * FINE * 6;
+  [...input.backdrop, ...input.faces].forEach((face, index) => {
+    if (index === input.backdrop.length) { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); }
+    const textured = Boolean(face.pixels);
+    if (textured) bindPicture(renderer, face.pixels!, input.textureSize);
+    gl.uniformMatrix4fv(u.corners, false, face.corners);
+    gl.uniform1i(u.textured, textured ? 1 : 0);
+    gl.uniform3fv(u.ground, face.ground);
+    gl.uniform1f(u.shade, face.shade);
+    gl.uniform4f(u.fog, face.fog.floor, face.fog.start, face.fog.end, face.fog.max);
+    gl.uniform1f(u.opacity, face.opacity);
+    gl.uniform1f(u.border, face.border ?? 0);
+    if (face.fine) gl.drawArrays(gl.TRIANGLES, coarse, fine);
+    else gl.drawArrays(gl.TRIANGLES, 0, coarse);
   });
+  gl.disable(gl.DEPTH_TEST);
+  gl.disable(gl.BLEND);
+  gl.bindVertexArray(null);
 
   // Drop the textures that have gone unused the longest.
   for (const [pixels, texture] of textures) {
@@ -181,21 +327,7 @@ const draw = (renderer: Renderer, faces: Face[], textureSize: number,
   }
 };
 
-export const FaceCanvas: React.FC<{
-  /** Drawing buffer size, in composition pixels. */
-  width: number;
-  height: number;
-  /** Drawn in order; give them far to near so see-through faces blend over what is behind. */
-  faces: Face[];
-  /** Side length of every `pixels` array. */
-  textureSize: number;
-  shadeColor: Rgb;
-  fogColor: Rgb;
-  borderColor: Rgb;
-  /** Border width as a fraction of the face. */
-  border: number;
-  style?: React.CSSProperties;
-}> = ({width, height, faces, textureSize, shadeColor, fogColor, borderColor, border, style}) => {
+export const FaceCanvas: React.FC<DrawInput & {style?: React.CSSProperties}> = ({style, ...input}) => {
   const ref = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<{canvas: HTMLCanvasElement; renderer: Renderer} | null>(null);
   // No dependency list: the faces change with every beat position, and the draw is cheap.
@@ -205,7 +337,7 @@ export const FaceCanvas: React.FC<{
     if (renderer.current?.canvas !== canvas || renderer.current.renderer.gl.isContextLost()) {
       renderer.current = {canvas, renderer: createRenderer(canvas)};
     }
-    draw(renderer.current.renderer, faces, textureSize, {shadeColor, fogColor, borderColor, border});
+    draw(renderer.current.renderer, input);
   });
-  return <canvas ref={ref} width={width} height={height} style={style} />;
+  return <canvas ref={ref} width={input.width} height={input.height} style={style} />;
 };

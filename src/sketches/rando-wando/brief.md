@@ -4,6 +4,22 @@
 
 Create a video that looks like driving down a city street with tall buildings on either side. The buildings are made of cubes. the faces of these cubes have random gifs from the public assets collection. the blocks hop and settle with the beat, as if they are shaken by a seismic wave of the music.
 
+## Revision request (2026-11-16)
+
+> let's make some updates to rando-wando. first off, i'd like to get rid of the hood and the sun. let's also make sure the lines in the street are going the right way, let's also use the gif-dancimal assets instead. and color-wise, let's use colors that complement those assets. let's also make this have a fisheye lense view. give me a controllable parameter for the lensing effect.
+
+What changed, and the choices made for the open parts:
+
+- Hood and sun are gone (the `hood` prop with them). The hit thump now only bobs the camera.
+- Lane dashes were sliding away from the viewer: the CSS background offset ran the wrong way. Dashes are now quads fixed in the world every `PITCH`, so they rush toward the viewer with the buildings by construction.
+- Faces use all 25 clips of `gif-dancimal` (Neil Sanders dancing-character stickers) in their own colours; the gradient maps are gone. Every clip is a seamless transparent loop, so each plays forward continuously at close to native speed: its pass length is the power-of-two number of beats (1, 2, 4 or 8) nearest its native duration, then rounded to whole passes per loop. Each sticker is fitted whole inside its face (not cropped) on a flat ground.
+- Palette: the stickers are mostly saturated orange, yellow, lime and red, so the world goes to their complement: indigo, violet, cobalt and lilac. Warm stickers sit on violet/cobalt/indigo grounds; the few cool ones (blue bird, teal, small blue dancer) on plum, magenta-plum or pale lilac; the light ones (white cat, pale blue frog) on dark grounds only. Sky runs night indigo to violet to a lilac horizon; distance fades into a lavender haze. The lane dashes are sticker yellow, the one warm note in the street, so the road answers the characters.
+- Fisheye: `fisheye` (0 to 1, default 0.7) is an atan-style fisheye centred on the frame. A point the flat camera puts at radius s (in half-diagonals) is drawn at atan(c·s)/c, with c = 1.3 × fisheye. The centre keeps its scale. The edges gather a wider field (up to tan(c)/c half-diagonals at the corners), so the curbs curve, the horizon bends and the facades bow. 0 is the old flat view. A plain polynomial barrel (r(1 + k r²)) was tried first. It barely bent the street, because the street's lines radiate from near the frame centre.
+- Implementation: road, curbs, dashes and slabs moved into the WebGL canvas with the cubes. Every quad is drawn as a grid (6×6 cells for cube faces, 48×48 for the road and its markings), and the vertex shader moves each grid point through the camera roll and then the lens, so straight edges bend without an offscreen buffer. The sky is a full-screen pass that runs the inverse lens and roll per pixel, so it curves and rolls with the street. Fog is computed per pixel from distance. Culling uses the lens's wider reach.
+- With the bonnet gone the bottom of the frame was an empty road, so the horizon moved up from 0.6 to 0.56 of the height. Back slabs carry less base haze (0.12, was 0.3): a near slab used to show as a pale ghost against the dark sky.
+
+Sections below describe the original version; where they mention the sun, bonnet, gradient maps or `test` clips, the notes above supersede them.
+
 ## Idea and hierarchy
 
 We aren't trying to make a realistic street scene here. This is mean to be a highly stylized and abstract geometric scene. The viewer should read it as driving down the street with buildings, but it can veer into the abstract when necessary.

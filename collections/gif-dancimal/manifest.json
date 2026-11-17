@@ -1,0 +1,772 @@
+{
+  "version": 1,
+  "collection": "gif-dancimal",
+  "description": "",
+  "tags": [],
+  "clips": {
+    "Angry Feelings Sticker by Neil Sanders.gif": {
+      "description": "Small red creature with a huge open-mouthed purple face stomping side to side in a tantrum.",
+      "tags": [
+        "character",
+        "red",
+        "angry",
+        "stomp"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 370,
+      "frameCount": 20,
+      "fps": 12.5,
+      "fpsRational": [25, 2],
+      "durationSeconds": 1.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0308,
+        "neighborDifference": 0.091
+      },
+      "filmstrip": {
+        "file": "filmstrips/Angry Feelings Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 4, 8, 11, 15, 19]
+      },
+      "bytes": 95930
+    },
+    "Big Dog Dancing Sticker by Neil Sanders.gif": {
+      "description": "Big orange floppy-eared dog sways and shuffles, arms folded over its belly.",
+      "tags": [
+        "character",
+        "orange",
+        "dog",
+        "sway"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 600,
+      "frameCount": 32,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 1.28,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0395,
+        "neighborDifference": 0.0566
+      },
+      "filmstrip": {
+        "file": "filmstrips/Big Dog Dancing Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 6, 12, 19, 25, 31]
+      },
+      "bytes": 497901
+    },
+    "Dance Dancing Sticker by Neil Sanders.gif": {
+      "description": "Peach squatting figure swings one long arm over its head in a wide circle.",
+      "tags": [
+        "character",
+        "peach",
+        "arm-swing",
+        "dance"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 402,
+      "height": 480,
+      "frameCount": 16,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1312,
+        "neighborDifference": 0.1289
+      },
+      "filmstrip": {
+        "file": "filmstrips/Dance Dancing Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 3, 6, 9, 12, 15]
+      },
+      "bytes": 180315
+    },
+    "Dance Love Sticker by Neil Sanders.gif": {
+      "description": "Hot-pink squat creature wiggles on bent legs, small wide frame.",
+      "tags": [
+        "character",
+        "pink",
+        "wiggle",
+        "dance"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 286,
+      "frameCount": 20,
+      "fps": 20,
+      "fpsRational": [20, 1],
+      "durationSeconds": 1,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.088,
+        "neighborDifference": 0.0915
+      },
+      "filmstrip": {
+        "file": "filmstrips/Dance Love Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 4, 8, 11, 15, 19]
+      },
+      "bytes": 239000
+    },
+    "Dance Party Sticker by Neil Sanders.gif": {
+      "description": "Tall lime-green blob in black trousers bops and sways; tall narrow frame.",
+      "tags": [
+        "character",
+        "lime",
+        "bop",
+        "tall"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 317,
+      "height": 601,
+      "frameCount": 24,
+      "fps": 30,
+      "fpsRational": null,
+      "durationSeconds": 0.8,
+      "timing": "variable",
+      "frameStarts": [0, 0.05, 0.08, 0.11, 0.14, 0.17, 0.2, 0.25, 0.28, 0.31, 0.34, 0.37, 0.4, 0.45, 0.48, 0.51, 0.54, 0.57, 0.6, 0.65, 0.68, 0.71, 0.74, 0.77],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0463,
+        "neighborDifference": 0.0682
+      },
+      "filmstrip": {
+        "file": "filmstrips/Dance Party Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 5, 9, 14, 18, 23]
+      },
+      "bytes": 164098
+    },
+    "Excited Dance Party Sticker by Neil Sanders.gif": {
+      "description": "Yellow-to-green-to-cyan gradient creature screams and flails, ducking and popping up.",
+      "tags": [
+        "character",
+        "gradient",
+        "excited",
+        "flail"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 522,
+      "frameCount": 20,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0463,
+        "neighborDifference": 0.104
+      },
+      "filmstrip": {
+        "file": "filmstrips/Excited Dance Party Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 4, 8, 11, 15, 19]
+      },
+      "bytes": 323354
+    },
+    "Freak Out Dancing Sticker by Neil Sanders.gif": {
+      "description": "Green figure jumps between a crouch and arms flung wide, fast loop.",
+      "tags": [
+        "character",
+        "green",
+        "jump",
+        "fast"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 600,
+      "frameCount": 12,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.48,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0467,
+        "neighborDifference": 0.0776
+      },
+      "filmstrip": {
+        "file": "filmstrips/Freak Out Dancing Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 2, 4, 7, 9, 11]
+      },
+      "bytes": 118839
+    },
+    "Happy Dance Party Sticker by Neil Sanders.gif": {
+      "description": "Blue bird with a yellow beak on very long yellow legs sways and flaps; tall narrow frame.",
+      "tags": [
+        "character",
+        "blue",
+        "bird",
+        "sway",
+        "tall"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 263,
+      "height": 599,
+      "frameCount": 20,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0935,
+        "neighborDifference": 0.0678
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Party Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 4, 8, 11, 15, 19]
+      },
+      "bytes": 125342
+    },
+    "Happy Dance Sticker by Neil Sanders copy 2.gif": {
+      "description": "Yellow figure bends and twists through stretchy poses, arms looping over its head.",
+      "tags": [
+        "character",
+        "yellow",
+        "stretch",
+        "dance"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 520,
+      "frameCount": 36,
+      "fps": 20,
+      "fpsRational": [20, 1],
+      "durationSeconds": 1.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0413,
+        "neighborDifference": 0.1089
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders copy 2.gif.jpg",
+        "frames": [0, 7, 14, 21, 28, 35]
+      },
+      "bytes": 257503
+    },
+    "Happy Dance Sticker by Neil Sanders copy.gif": {
+      "description": "Small blue-violet figure kicks and waves its arms; wide frame with a small subject.",
+      "tags": [
+        "character",
+        "blue",
+        "kick",
+        "small"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 270,
+      "frameCount": 22,
+      "fps": 20,
+      "fpsRational": [20, 1],
+      "durationSeconds": 1.1,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0572,
+        "neighborDifference": 0.0782
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders copy.gif.jpg",
+        "frames": [0, 4, 8, 13, 17, 21]
+      },
+      "bytes": 159323
+    },
+    "Happy Dance Sticker by Neil Sanders.gif": {
+      "description": "Yellow-orange puppy shuffles and squats, hugging itself.",
+      "tags": [
+        "character",
+        "yellow",
+        "dog",
+        "shuffle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 567,
+      "height": 600,
+      "frameCount": 20,
+      "fps": 21.73913,
+      "fpsRational": null,
+      "durationSeconds": 0.92,
+      "timing": "variable",
+      "frameStarts": [0, 0.04, 0.09, 0.14, 0.19, 0.24, 0.29, 0.34, 0.38, 0.42, 0.46, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.84, 0.88],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.059,
+        "neighborDifference": 0.0724
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 4, 8, 11, 15, 19]
+      },
+      "bytes": 204396
+    },
+    "Happy Dance Sticker by Neil Sanders(1).gif": {
+      "description": "Crawling figure that changes colour every few frames (yellow, green, cyan, lilac, pink, orange).",
+      "tags": [
+        "character",
+        "multicolour",
+        "crawl",
+        "colour-change"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 437,
+      "frameCount": 24,
+      "fps": 17.391304,
+      "fpsRational": null,
+      "durationSeconds": 1.38,
+      "timing": "variable",
+      "frameStarts": [0, 0.05, 0.1, 0.15, 0.2, 0.26, 0.33, 0.41, 0.48, 0.54, 0.59, 0.64, 0.69, 0.74, 0.79, 0.84, 0.9, 0.97, 1.05, 1.12, 1.18, 1.23, 1.28, 1.33],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1822,
+        "neighborDifference": 0.1284
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders(1).gif.jpg",
+        "frames": [0, 5, 9, 14, 18, 23]
+      },
+      "bytes": 128009
+    },
+    "Happy Dance Sticker by Neil Sanders(2) copy.gif": {
+      "description": "Content yellow blob with closed eyes bounces, raising and lowering its arms.",
+      "tags": [
+        "character",
+        "yellow",
+        "bounce",
+        "happy"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 588,
+      "height": 600,
+      "frameCount": 40,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 1.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.044,
+        "neighborDifference": 0.0626
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders(2) copy.gif.jpg",
+        "frames": [0, 8, 16, 23, 31, 39]
+      },
+      "bytes": 646434
+    },
+    "Happy Dance Sticker by Neil Sanders(2).gif": {
+      "description": "Orange-red floppy-eared dog hops and kicks, ears flying up.",
+      "tags": [
+        "character",
+        "orange",
+        "dog",
+        "hop"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 554,
+      "height": 600,
+      "frameCount": 36,
+      "fps": 29.032258,
+      "fpsRational": null,
+      "durationSeconds": 1.24,
+      "timing": "variable",
+      "frameStarts": [0, 0.04, 0.08, 0.12, 0.15, 0.18, 0.21, 0.24, 0.27, 0.31, 0.35, 0.39, 0.43, 0.46, 0.49, 0.52, 0.55, 0.58, 0.62, 0.66, 0.7, 0.73, 0.76, 0.79, 0.82, 0.85, 0.89, 0.93, 0.97, 1.01, 1.04, 1.07, 1.1, 1.13, 1.16, 1.2],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.031,
+        "neighborDifference": 0.0644
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders(2).gif.jpg",
+        "frames": [0, 7, 14, 21, 28, 35]
+      },
+      "bytes": 410343
+    },
+    "Happy Dance Sticker by Neil Sanders(3).gif": {
+      "description": "Orange figure with arms and legs spread wide rocks side to side; wide frame.",
+      "tags": [
+        "character",
+        "orange",
+        "rock",
+        "wide"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 280,
+      "frameCount": 24,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.96,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0518,
+        "neighborDifference": 0.055
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Dance Sticker by Neil Sanders(3).gif.jpg",
+        "frames": [0, 5, 9, 14, 18, 23]
+      },
+      "bytes": 236336
+    },
+    "Happy Fun Sticker by Neil Sanders copy.gif": {
+      "description": "White raccoon-like creature with a toothy grin waves and sways; outline drawing on transparency.",
+      "tags": [
+        "character",
+        "white",
+        "raccoon",
+        "wave"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 450,
+      "height": 600,
+      "frameCount": 16,
+      "fps": 33.333333,
+      "fpsRational": [100, 3],
+      "durationSeconds": 0.48,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0428,
+        "neighborDifference": 0.0513
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Fun Sticker by Neil Sanders copy.gif.jpg",
+        "frames": [0, 3, 6, 9, 12, 15]
+      },
+      "bytes": 236953
+    },
+    "Happy Fun Sticker by Neil Sanders.gif": {
+      "description": "Big orange dog with goggly white eyes bobs up and down; fills the frame.",
+      "tags": [
+        "character",
+        "orange",
+        "dog",
+        "bob"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 347,
+      "height": 601,
+      "frameCount": 16,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0671,
+        "neighborDifference": 0.0801
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Fun Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 3, 6, 9, 12, 15]
+      },
+      "bytes": 78275
+    },
+    "Happy Good Boy Sticker by Neil Sanders.gif": {
+      "description": "Orange dog with closed eyes sways gently, paws on belly.",
+      "tags": [
+        "character",
+        "orange",
+        "dog",
+        "calm",
+        "sway"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 588,
+      "frameCount": 30,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 1.2,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.042,
+        "neighborDifference": 0.0565
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Good Boy Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 6, 12, 17, 23, 29]
+      },
+      "bytes": 162584
+    },
+    "Happy Side To Side Sticker by Neil Sanders.gif": {
+      "description": "Teal long-legged figure leans and bends side to side.",
+      "tags": [
+        "character",
+        "teal",
+        "lean",
+        "side-to-side"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 489,
+      "height": 600,
+      "frameCount": 48,
+      "fps": 27.272727,
+      "fpsRational": null,
+      "durationSeconds": 1.76,
+      "timing": "variable",
+      "frameStarts": [0, 0.07, 0.13, 0.18, 0.22, 0.25, 0.28, 0.31, 0.34, 0.37, 0.4, 0.43, 0.46, 0.49, 0.52, 0.55, 0.58, 0.61, 0.64, 0.67, 0.7, 0.73, 0.77, 0.82, 0.88, 0.95, 1.01, 1.06, 1.1, 1.13, 1.16, 1.19, 1.22, 1.25, 1.28, 1.31, 1.34, 1.37, 1.4, 1.43, 1.46, 1.49, 1.52, 1.55, 1.58, 1.61, 1.65, 1.7],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0393,
+        "neighborDifference": 0.0517
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Side To Side Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 9, 19, 28, 38, 47]
+      },
+      "bytes": 585768
+    },
+    "Jump Around Halloween Sticker by Neil Sanders.gif": {
+      "description": "Red spidery figure with a cyan skull face leaps around the frame, sometimes leaving it nearly empty.",
+      "tags": [
+        "character",
+        "red",
+        "skull",
+        "jump",
+        "halloween"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 500,
+      "frameCount": 44,
+      "fps": 20,
+      "fpsRational": [20, 1],
+      "durationSeconds": 2.2,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0274,
+        "neighborDifference": 0.0724
+      },
+      "filmstrip": {
+        "file": "filmstrips/Jump Around Halloween Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 9, 17, 26, 34, 43]
+      },
+      "bytes": 234067
+    },
+    "Jump Bouncing Sticker by Neil Sanders.gif": {
+      "description": "Pale blue frog flops, flips and bounces; soft shading.",
+      "tags": [
+        "character",
+        "light-blue",
+        "frog",
+        "bounce"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 520,
+      "frameCount": 30,
+      "fps": 16.666667,
+      "fpsRational": null,
+      "durationSeconds": 1.8,
+      "timing": "variable",
+      "frameStarts": [0, 0.12, 0.21, 0.28, 0.34, 0.39, 0.43, 0.47, 0.51, 0.55, 0.59, 0.64, 0.7, 0.77, 0.86, 0.98, 1.07, 1.14, 1.2, 1.25, 1.29, 1.33, 1.37, 1.41, 1.45, 1.49, 1.53, 1.58, 1.64, 1.71],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0302,
+        "neighborDifference": 0.0866
+      },
+      "filmstrip": {
+        "file": "filmstrips/Jump Bouncing Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 6, 12, 17, 23, 29]
+      },
+      "bytes": 282279
+    },
+    "Mad Revenge Sticker by Neil Sanders.gif": {
+      "description": "Red-to-plum gradient figure with a gritted-teeth face lunges with one arm raised.",
+      "tags": [
+        "character",
+        "red",
+        "gradient",
+        "angry",
+        "lunge"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 16,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 0.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0364,
+        "neighborDifference": 0.0687
+      },
+      "filmstrip": {
+        "file": "filmstrips/Mad Revenge Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 3, 6, 9, 12, 15]
+      },
+      "bytes": 254727
+    },
+    "Relaxed Rainbow Sticker by Neil Sanders.gif": {
+      "description": "Lounging figure that changes colour (green, cyan, violet, pink, yellow) as it rolls and stretches.",
+      "tags": [
+        "character",
+        "multicolour",
+        "roll",
+        "colour-change"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 381,
+      "frameCount": 38,
+      "fps": 25,
+      "fpsRational": [25, 1],
+      "durationSeconds": 1.52,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0774,
+        "neighborDifference": 0.0655
+      },
+      "filmstrip": {
+        "file": "filmstrips/Relaxed Rainbow Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 7, 15, 22, 30, 37]
+      },
+      "bytes": 134822
+    },
+    "Scream Omg Sticker by Neil Sanders.gif": {
+      "description": "Yellow-to-red gradient creature with a huge screaming mouth squashes down and springs back up.",
+      "tags": [
+        "character",
+        "gradient",
+        "scream",
+        "squash"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 310,
+      "height": 480,
+      "frameCount": 25,
+      "fps": 19.230769,
+      "fpsRational": null,
+      "durationSeconds": 1.3,
+      "timing": "variable",
+      "frameStarts": [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0378,
+        "neighborDifference": 0.1043
+      },
+      "filmstrip": {
+        "file": "filmstrips/Scream Omg Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 5, 10, 14, 19, 24]
+      },
+      "bytes": 198105
+    },
+    "Shocked Freak Out Sticker by Neil Sanders.gif": {
+      "description": "Small orange creature freaks out, then falls flat and writhes on the ground; long 5 s loop with a small subject.",
+      "tags": [
+        "character",
+        "orange",
+        "shocked",
+        "fall",
+        "long"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 500,
+      "frameCount": 94,
+      "fps": 18.687873,
+      "fpsRational": null,
+      "durationSeconds": 5.03,
+      "timing": "variable",
+      "frameStarts": [0, 0.12, 0.2, 0.26, 0.3, 0.34, 0.38, 0.44, 0.56, 0.62, 0.66, 0.72, 0.84, 0.9, 0.94, 0.98, 1.04, 1.16, 1.22, 1.26, 1.3, 1.34, 1.38, 1.42, 1.46, 1.52, 1.64, 1.7, 1.74, 1.78, 1.82, 1.86, 1.9, 1.94, 1.98, 2.02, 2.06, 2.1, 2.14, 2.18, 2.22, 2.26, 2.38, 2.42, 2.46, 2.5, 2.54, 2.6, 2.68, 2.74, 2.78, 2.82, 2.86, 2.9, 2.94, 2.98, 3.02, 3.1, 3.16, 3.22, 3.26, 3.3, 3.34, 3.38, 3.42, 3.46, 3.5, 3.54, 3.59, 3.64, 3.69, 3.74, 3.79, 3.85, 3.91, 3.97, 4.03, 4.09, 4.15, 4.21, 4.27, 4.33, 4.38, 4.43, 4.47, 4.51, 4.55, 4.59, 4.67, 4.71, 4.79, 4.83, 4.89, 4.95],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.013,
+        "neighborDifference": 0.0625
+      },
+      "filmstrip": {
+        "file": "filmstrips/Shocked Freak Out Sticker by Neil Sanders.gif.jpg",
+        "frames": [0, 19, 37, 56, 74, 93]
+      },
+      "bytes": 500988
+    }
+  },
+  "fonts": {}
+}
