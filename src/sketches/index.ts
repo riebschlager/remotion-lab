@@ -7,6 +7,7 @@ import stickerSlap from './sticker-slap/sketch';
 import clipDuet from './clip-duet/sketch';
 import typeBeat from './type-beat/sketch';
 import randoWando from './rando-wando/sketch';
+import milhouseSlices from './milhouse-slices/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -21,6 +22,7 @@ export const sketches: Sketch[] = [
   clipDuet,
   typeBeat,
   randoWando,
+  milhouseSlices,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);

@@ -28,17 +28,20 @@
     "assets:scan": "node --import tsx scripts/scan-assets.ts"
   },
   "dependencies": {
+    "@react-three/fiber": "^9.8.2",
     "@remotion/cli": "4.0.543",
     "@remotion/fonts": "4.0.543",
     "@remotion/layout-utils": "4.0.543",
     "@remotion/media": "4.0.543",
     "@remotion/noise": "4.0.543",
     "@remotion/studio": "4.0.543",
+    "@remotion/three": "4.0.543",
     "@remotion/zod-types": "4.0.543",
     "mediabunny": "1.64.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remotion": "4.0.543",
+    "three": "^0.187.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -48,6 +51,7 @@
     "@types/node": "^26.6.6",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.0.0",
+    "@types/three": "^0.187.0",
     "fontkit": "^3.0.0",
     "pngjs": "^7.0.0",
     "tsx": "^4.23.15",

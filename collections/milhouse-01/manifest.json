@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "collection": "milhouse-01",
+  "description": "Milhouse FBX model with embedded palette texture. FBX is skipped by the clip/font scanner; milhouse-slices loads the model directly.",
+  "tags": ["milhouse", "3d", "fbx", "character"],
+  "clips": {},
+  "fonts": {}
+}
