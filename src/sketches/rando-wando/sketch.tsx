@@ -40,9 +40,12 @@ const NIGHT = '#0d0a2e';
 const INK = '#0e0a2c';           // edges and shade
 const HAZE = '#a48cf6';
 const DASH = '#ffd23f';
+// The road fades into a deeper haze than the buildings do, and the ground below the horizon
+// matches it, so the band under the skyline sits darker than the city and its glow.
+const GROUND_HAZE = rgb('#7a62d4');
 const sky = {
   stops: ['#0d0a2e', '#2a1f86', '#6a4cf0', '#d2b8ff'].map(rgb),
-  below: rgb(HAZE),
+  below: GROUND_HAZE,
 };
 // Stars are mostly cool white, a few sticker-warm. The distant skyline sits just darker than the
 // horizon glow (far row) and a step darker again (near row), with faint lilac windows.
@@ -273,7 +276,7 @@ const RandoWando: React.FC<Props> = (props) => {
   const ROAD_HALF = 20;
   const ground = (x0: number, x1: number, d0: number, d1: number, color: Rgb): Face => ({
     corners: quad([[x0, 0, d1], [x1, 0, d1], [x0, 0, d0], [x1, 0, d0]]),
-    ground: color, shade: 0, fog: roadFog, opacity: 1, fine: true,
+    ground: color, shade: 0, fog: roadFog, fogColor: GROUND_HAZE, opacity: 1, fine: true,
   });
   const backdrop: Face[] = [
     ground(-ROAD_HALF, ROAD_HALF, ROAD_NEAR, FAR, ROAD),

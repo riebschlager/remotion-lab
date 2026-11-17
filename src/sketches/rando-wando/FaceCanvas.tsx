@@ -33,6 +33,8 @@ export type Face = {
   /** Opacity of the `shadeColor` wash. */
   shade: number;
   fog: Fog;
+  /** Colour this quad fades into, in place of the shared `fogColor`. */
+  fogColor?: Rgb;
   /** Opacity of the whole quad. */
   opacity: number;
   /** Border width as a fraction of the quad; 0 or omitted for none. */
@@ -247,7 +249,7 @@ void main() {
       front = mix(front, skylineLights, 0.45 * lit);
       vec3 city = mix(mix(sky, skylineColors[0], far), front, near);
       // Mist at its feet: toward the horizon glow, then below the horizon gone into the haze.
-      float mist = 0.55 * (1.0 - smoothstep(0.0, 0.5 * skylineHeight, el));
+      float mist = 0.55 * (1.0 - smoothstep(0.0, 0.5 * skylineHeight, el)) * smoothstep(-0.05, 0.035, el);
       city = mix(city, mix(city, skylineMist, mist), max(far, near));
       sky = mix(sky, city, smoothstep(-0.07, 0.005, el));
     }
@@ -431,7 +433,6 @@ const draw = (renderer: Renderer, input: DrawInput) => {
   gl.uniform2f(u.frame, input.width, input.height);
   gl.uniform2f(u.pivot, input.pivot[0], input.pivot[1]);
   gl.uniform3fv(u.shadeColor, input.look.shadeColor);
-  gl.uniform3fv(u.fogColor, input.look.fogColor);
   gl.uniform3fv(u.borderColor, input.look.borderColor);
   const coarse = COARSE * COARSE * 6;
   const fine = FINE * FINE * 6;
@@ -442,6 +443,7 @@ const draw = (renderer: Renderer, input: DrawInput) => {
     gl.uniformMatrix4fv(u.corners, false, face.corners);
     gl.uniform1i(u.textured, textured ? 1 : 0);
     gl.uniform3fv(u.ground, face.ground);
+    gl.uniform3fv(u.fogColor, face.fogColor ?? input.look.fogColor);
     gl.uniform1f(u.shade, face.shade);
     gl.uniform4f(u.fog, face.fog.floor, face.fog.start, face.fog.end, face.fog.max);
     gl.uniform1f(u.opacity, face.opacity);
