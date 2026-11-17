@@ -3,6 +3,7 @@ import {test} from 'node:test';
 import {BoxGeometry, Group, Mesh, MeshStandardMaterial, Vector3} from 'three';
 import {bakeModel, sliceBounce, sliceModel} from '../src/sketches/milhouse-slices/sliceGeometry';
 import sketch from '../src/sketches/milhouse-slices/sketch';
+import {portalDefaults} from '../src/sketches/milhouse-slices/Portal';
 
 const boxModel = () => {
   const root = new Group();
@@ -143,4 +144,52 @@ test('FBX pose baking preserves source rig and produces repeatable distinct mesh
     assert.throws(() => bakePoses(root, [99]), /poseTimes/);
     models[0].material.dispose(); reverse[0].material.dispose();
   } finally {TextureLoader.prototype.load = originalLoad;}
+});
+
+test('portal distance fields follow disconnected cap silhouettes without mutating source UVs', async () => {
+  const {portalGeometry, FIELD_SIZE} = await import('../src/sketches/milhouse-slices/portalGeometry');
+  const root = new Group();
+  for (const x of [-0.75, 0.75]) {
+    const mesh = new Mesh(new BoxGeometry(0.5, 1, 0.5), new MeshStandardMaterial());
+    mesh.position.set(x, 0.5, 0); root.add(mesh);
+  }
+  const sections = sliceModel(bakeModel(root), 2);
+  for (const section of sections) {
+    const source = [...section.caps.getAttribute('uv').array];
+    const a = portalGeometry(section.caps), b = portalGeometry(section.caps);
+    assert.ok(a.texture.image.data && b.texture.image.data);
+    assert.deepEqual([...a.texture.image.data], [...b.texture.image.data]);
+    assert.deepEqual([...section.caps.getAttribute('uv').array], source);
+    const data = a.texture.image.data;
+    assert.ok(data);
+    // Scan rows through the islands: normalized depth reaches 1 in each,
+    // while the space between the two independent windows stays empty.
+    let occupiedRows = 0;
+    for (let y = 0; y < FIELD_SIZE * 2; y++) {
+      const left: number[] = [], right: number[] = [];
+      for (let x = 0; x < FIELD_SIZE; x++) {
+        const i = (y * FIELD_SIZE + x) * 4;
+        if (data[i + 2]) (x < FIELD_SIZE / 2 ? left : right).push(data[i]);
+      }
+      if (left.length && right.length) {
+        occupiedRows++;
+        assert.equal(data[(y * FIELD_SIZE + FIELD_SIZE / 2) * 4 + 2], 0);
+      }
+    }
+    assert.ok(occupiedRows > 5);
+    assert.ok([...data].includes(255));
+    assert.ok(a.rays.getAttribute('position').count > 0);
+    for (const field of [a, b]) {field.geometry.dispose(); field.rays.dispose(); field.texture.dispose();}
+    section.surface.dispose(); section.caps.dispose();
+  }
+});
+
+test('portal travel closes musically in both metadata paths and controls allow quiet/off treatments', () => {
+  for (const metadata of [sketch.metadata, sketch.seamMetadata]) {
+    assert.throws(() => metadata({...sketch.defaultProps, portal: {...portalDefaults, echoTravel: 0.2}}), /portal.echoTravel/);
+    assert.doesNotThrow(() => metadata({...sketch.defaultProps, portal: {...portalDefaults, echoTravel: 0.25}}));
+    assert.doesNotThrow(() => metadata({...sketch.defaultProps,
+      portal: {...portalDefaults, glow: 0, aurora: 0, echoTravel: 0},
+      lightLeak: {strength: 0, reach: 0, definition: 0, surfaceSpill: 0}}));
+  }
 });

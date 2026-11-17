@@ -2,7 +2,7 @@ import React, {useLayoutEffect, useMemo, useRef} from 'react';
 import {useThree} from '@react-three/fiber';
 import {
   Color, DoubleSide, Group, Mesh, MeshDepthMaterial, NoBlending,
-  OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, WebGLRenderTarget,
+  Object3D, OrthographicCamera, PlaneGeometry, Scene, ShaderMaterial, WebGLRenderTarget,
 } from 'three';
 import {HorizontalBlurShader} from 'three/addons/shaders/HorizontalBlurShader.js';
 import {VerticalBlurShader} from 'three/addons/shaders/VerticalBlurShader.js';
@@ -49,7 +49,10 @@ export const StudioFloor: React.FC<{color: string; revision: string}> = ({color,
     const clearAlpha = gl.getClearAlpha();
     const previousXr = gl.xr.enabled;
     const previousShadowUpdate = gl.shadowMap.autoUpdate;
+    const leaks: Object3D[] = [];
+    scene.traverse(object => {if (object.userData.portalLeak && object.visible) leaks.push(object);});
     try {
+      for (const leak of leaks) leak.visible = false;
       floor.current.visible = false;
       scene.background = null;
       scene.overrideMaterial = pass.depth;
@@ -76,6 +79,7 @@ export const StudioFloor: React.FC<{color: string; revision: string}> = ({color,
         gl.render(pass.blurScene, pass.blurCamera);
       }
     } finally {
+      for (const leak of leaks) leak.visible = true;
       scene.overrideMaterial = previousOverride;
       scene.background = previousBackground;
       floor.current.visible = true;

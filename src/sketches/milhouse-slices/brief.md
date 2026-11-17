@@ -205,3 +205,110 @@ surface retention through blended poses.
 Final verification: `npm run check` passed all 96 checks; `npm run test:visual`
 passed all 83 rendered checks, with no failures or skips. Lighting, material,
 slice bounce, timing defaults and source media are preserved. No export made.
+
+## Neon echo portal revision
+
+Original requests: “in the milhouse sketch, let's update the cutColor look.
+instead of a solid color. let's create what looks like a neon portal to another
+universe. maybe there are edge reverberations that radiate inward. it should look
+like each slice is a colorful magic portal. let's add some reasonable parameters
+we can control to dial in this look.” Also: “could we also incorporate a light
+leak effect? ... some rays or glow that make it seem that there is light emerging
+from the cracks as milhouse gets sliced up.” Approved direction: “let's build
+the neon echo portal with the aurora interior and light leaks. go with your
+recommended defaults and expose those controls so we can dial it in.”
+
+Keep pose interpolation, bounce, tempo, satin exterior, camera and studio intact.
+Replace the flat cut treatment with cyan silhouette rims, inward traveling contour
+echoes, magenta aurora currents and dark violet depth. Use each actual cap's shape,
+including disconnected islands, rather than generic circles. Add outward feathered
+rays and localized colored surface spill; light squeezes into narrow cracks at
+opening/closing and spreads at peak. The spill is an art-directed material response,
+not a costly volumetric/global illumination simulation. No new media is needed.
+
+Controls: cutColor (primary rim), portal secondary/deep colors, glow, rim width,
+echo count/travel, depth, turbulence, aurora strength, beat response and slice
+variation; leak strength, ray reach/definition and surface spill. Timing uses beats
+and whole-loop motion; reject echo travel rates that do not close over the loop.
+Defaults prioritize recognizable face/silhouette, crisp rims and restrained rays.
+All effects vanish at rest, when spread is zero, and on uncut extremities. Keep
+transparent mode free of the backdrop/floor, with transparent leak geometry.
+Review opening, peak, late closure and loop seam, both canvases, plus controls off.
+
+### Portal controls and review
+
+`cutColor` now controls the cyan primary rim. `portal` groups secondary/deep
+colors, glow, rim width, echo count/travel, depth, turbulence, aurora, beat
+response and slice variation. `lightLeak` groups strength, reach, definition and
+surface spill. Width/reach use fractions of the normalized character height;
+echo travel is waves per beat in quarter-wave increments. No source clips,
+new fonts, dependencies or registry changes are involved.
+
+Final defaults: cyan #46fff0, magenta #ff43d5, deep violet #10072d; glow 0.95,
+rim width 0.005, four echoes, one inward wave per beat, depth 0.7, turbulence
+0.25, aurora 0.55, beat response 0.65 and slice variation 0.35. Leak strength
+0.75, reach 0.15, definition 0.45, surface spill 0.55. Initial broad white rims
+were narrowed and the halo reduced so the colored interior remains visible.
+
+The distance field is rasterized from each moving cap with separate top/bottom
+atlas regions, then normalized per disconnected island. The cut mesh clips all
+portal paint. Outward boundary ribbons provide feathered rays and a close halo;
+they are omitted from the floor's contact-shadow capture. A localized emissive
+band adds stylized colored spill to real internal cuts. Stable shader programs
+are retained while the pose replaces its distance texture. All movement is
+independently derived from beat/loop phase, with no temporal history.
+
+Inspected opening, peak, closing, all four poses, Studio playback, portrait and
+landscape contact sheets, plus a landscape peak. At rest the original whole
+silhouette returns. Fine contour echoes and aurora stay inside the cap while
+light rays extend beyond it; face, glasses and hands remain readable. Portrait
+seam jump 0.000713 versus neighboring motion 0.019089; landscape 0.000218 versus
+0.00600. Both previews pass seam and out-of-order determinism checks.
+
+- Portrait: `out/preview/milhouse-portal-portrait/sheet.png`
+- Landscape: `out/preview/milhouse-portal-landscape/sheet.png`
+- Opening / closing / four poses: `out/preview/milhouse-portal-detail/sheet.png`
+- Peak: `out/preview/milhouse-portal-detail/peak.png`
+- `npm run check`: all 98 checks pass.
+- Four final Milhouse loop/seam/metadata rendered checks pass.
+- Active-portal regression passes: a peak frame repeats exactly after another
+  pose, portal/leak controls visibly change pixels, and transparent corners
+  remain clear. No finished video export was made.
+- Full `npm run test:visual`: all 83 rendered regression checks pass, no
+  failures or skips. The final tuned defaults additionally pass the four
+  targeted Milhouse checks and the new active-portal test above.
+
+## Saturated portal color revision
+
+User request: “let's push the color a bit more. the rims look pretty white right
+now—can we get more saturated cyan and magenta, and make the aurora inside the
+portals more visible?”
+
+Preserve all geometry, motion, tempo, camera, satin finish and existing controls.
+Keep distinct saturated cyan/magenta regions around each rim, with a softer
+colored leak halo that does not add into white. Broaden and brighten the interior
+aurora so its flowing ribbons read at phone size, while retaining the inward
+echoes and violet depth. Review peak/opening frames and both canvas sheets.
+
+Color treatment: use saturated cyan #00efef and magenta #ff00ce, with violet
+#160435 depth. Keep broad palette endpoint regions around the rim instead of
+mixing complementary energy colors evenly everywhere. Compose cap layers with
+weighted blends and compress the full RGB vector together at high intensity so
+its hue survives. Use a transparent colored halo instead of additive rays that
+wash out the cap. Limit localized spill so high glow cannot bleach the satin edge.
+
+Aurora strength now defaults to 0.85, with broader flowing curtains, a visible
+base current and less center attenuation. Echo lines remain distinct over the
+interior. No new parameters or timing changes. Inspected default peak, both
+canvas sheets, and the existing Studio settings with glow 3 / rim width 0.105.
+Preserved the user's other Studio overrides (including one-bar bounce and fill
+light off); raised only the preview's aurora strength to the new 0.85 default.
+
+- Revised peak: `out/preview/milhouse-color-peak.png`
+- Portrait: `out/preview/milhouse-color-portrait/sheet.png`
+- Landscape: `out/preview/milhouse-color-landscape/sheet.png`
+- Both canvas previews pass determinism and seam checks.
+- `npm run check`: 98 passed. Active-portal rendered regression passes,
+  including repeatability, visible control changes and clear transparent corners.
+- Full `npm run test:visual`: all 84 rendered checks pass, no failures or
+  skips, including both Milhouse canvases and exact seam-view correspondence.

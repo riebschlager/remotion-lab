@@ -1,7 +1,7 @@
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
-import {DoubleSide, Group, LoadingManager} from 'three';
+import {Color, Float32BufferAttribute, Group, LoadingManager} from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
@@ -14,6 +14,7 @@ import {defineSketch, divisionIssues, useSketch, type SketchBaseProps} from '../
 import {sliceBounce, sliceModel} from './sliceGeometry';
 import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler} from './poses';
 import {StudioFloor} from './StudioFloor';
+import {Portal, portalSchema, leakSchema, portalDefaults, leakDefaults} from './Portal';
 
 const poseTimeSchema = z.number().min(0).max(SOURCE_DURATION).step(0.05);
 const schema = z.object({
@@ -26,7 +27,9 @@ const schema = z.object({
   twist: z.number().min(0).max(30).step(1).describe('Slice twist in degrees'),
   viewAngle: z.number().min(-60).max(60).step(1).describe('Character viewing angle'),
   backdrop: zColor(),
-  cutColor: zColor(),
+  cutColor: zColor().describe('Primary neon portal rim'),
+  portal: portalSchema,
+  lightLeak: leakSchema,
   floorColor: zColor(),
   ambientIntensity: z.number().min(0).max(2).step(0.01).describe('Ambient studio fill'),
   keyIntensity: z.number().min(0).max(15).step(0.1).describe('Large warm softbox'),
@@ -72,20 +75,51 @@ function useMilhouse(times: readonly number[]) {
 const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; phase: number}> = ({sampler, props, energy, phase}) => {
   const {beat, totalBeats} = useBeat();
   const {seed} = useSketch();
-  const sections = useMemo(() => sliceModel(sampler.sample(beat, totalBeats), props.slices),
-    [sampler, beat, totalBeats, props.slices]);
+  const sections = useMemo(() => {
+    const result = sliceModel(sampler.sample(beat, totalBeats), props.slices);
+    // Only real internal cuts illuminate the exterior; no glowing feet or scalp.
+    result.forEach((section, index) => {
+      const flags = new Float32Array(section.surface.getAttribute('position').count * 2);
+      for (let i = 0; i < flags.length; i += 2) {
+        flags[i] = index > 0 ? 1 : 0; flags[i + 1] = index < props.slices - 1 ? 1 : 0;
+      }
+      section.surface.setAttribute('portalCuts', new Float32BufferAttribute(flags, 2));
+    });
+    return result;
+  }, [sampler, beat, totalBeats, props.slices]);
+  const opening = Math.min(1, energy * props.spread * 9);
+  const spill = useMemo(() => ({
+    strength: {value: 0}, primary: {value: new Color()}, secondary: {value: new Color()},
+  }), []);
+  spill.strength.value = opening * props.lightLeak.surfaceSpill * props.portal.glow;
+  spill.primary.value.set(props.cutColor); spill.secondary.value.set(props.portal.secondaryColor);
   const material = useMemo(() => {
     const satin = sampler.material.clone();
     satin.roughness = props.roughness;
     // The embedded palette distinguishes blue hair from the satin yellow body.
     satin.onBeforeCompile = shader => {
+      shader.uniforms.portalSpill = spill.strength;
+      shader.uniforms.portalPrimary = spill.primary;
+      shader.uniforms.portalSecondary = spill.secondary;
+      shader.uniforms.portalHalf = {value: 2.5 / props.slices};
+      shader.vertexShader = 'attribute vec2 portalCuts; varying vec3 portalLocal; varying vec2 cutFlags;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>',
+        '#include <begin_vertex>\nportalLocal = position; cutFlags = portalCuts;');
+      shader.fragmentShader = 'uniform float portalSpill, portalHalf; uniform vec3 portalPrimary, portalSecondary; varying vec3 portalLocal; varying vec2 cutFlags;\n' + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        float lower = exp(-abs(portalLocal.y + portalHalf) * 26.0) * cutFlags.x;
+        float upper = exp(-abs(portalLocal.y - portalHalf) * 26.0) * cutFlags.y;
+        float hue = smoothstep(0.3, 0.7, 0.5 + 0.5 * sin(portalLocal.x * 4.5 + portalLocal.z * 5.0));
+        totalEmissiveRadiance += mix(portalPrimary, portalSecondary, hue)
+          * (lower + upper) * min(portalSpill, 1.2) * 0.45;`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
         float hairFinish = smoothstep(0.02, 0.18, diffuseColor.b - diffuseColor.r);
         roughnessFactor *= mix(1.0, 0.65, hairFinish);`);
     };
     return satin;
-  }, [sampler, props.roughness]);
+  }, [sampler, props.roughness, props.slices, spill]);
   useEffect(() => () => material.dispose(), [material]);
   useEffect(() => () => { for (const section of sections) { section.surface.dispose(); section.caps.dispose(); } }, [sections]);
   return (
@@ -101,10 +135,10 @@ const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; ph
           <group key={index} position={[x, section.center + lift, 0]}
             rotation={[0, yaw, direction * Math.sin(phase * Math.PI * 2) * energy * 0.035]}>
             <mesh geometry={section.surface} material={material} castShadow receiveShadow />
-            {/* Hide caps at rest so coincident internal surfaces cannot z-fight. */}
-            <mesh geometry={section.caps} visible={energy > 0.00001} castShadow receiveShadow>
-              <meshStandardMaterial color={props.cutColor} side={DoubleSide} roughness={0.88} />
-            </mesh>
+            <Portal caps={section.caps} color={props.cutColor} settings={props.portal} leaks={props.lightLeak}
+              energy={energy} opening={opening} clock={beat * props.portal.echoTravel}
+              drift={beat / totalBeats * Math.PI * 2}
+              variation={stepRandom(seed('portal-phase'), index) * props.portal.sliceVariation} />
           </group>
         );
       })}
@@ -148,7 +182,7 @@ const MilhouseSlices: React.FC<Props> = (props) => {
           shadow-camera-far={25} shadow-bias={-0.0002} shadow-normalBias={0.015} shadow-radius={3} />
         <Sections sampler={sampler} props={props} energy={energy} phase={phase} />
         {!transparent ? <StudioFloor color={props.floorColor}
-          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}`} /> : null}
+          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}`} /> : null}
       </ThreeCanvas> : null}
     </AbsoluteFill>
   );
@@ -157,15 +191,18 @@ const MilhouseSlices: React.FC<Props> = (props) => {
 export default defineSketch({
   id: 'milhouse-slices',
   title: 'Milhouse Slices',
-  description: 'Milhouse smoothly moves through four source poses while horizontal slices bounce on the beat.',
+  description: 'Satin Milhouse opens into neon echo portals with aurora interiors and escaping light.',
   schema,
   defaults: {division: '1/4', poseTimes: [...DEFAULT_POSE_TIMES], slices: 8, spread: 1.5, kick: 0.15, twist: 10,
-    viewAngle: -15, backdrop: '#302139', cutColor: '#ffca9e', floorColor: '#403246',
+    portal: portalDefaults, lightLeak: leakDefaults,
+    viewAngle: -15, backdrop: '#302139', cutColor: '#00efef', floorColor: '#403246',
     ambientIntensity: 0.28, keyIntensity: 7.5, fillIntensity: 3.3, rimIntensity: 9, roughness: 0.46},
   timing: {bpm: 120, bars: 4, beatsPerBar: 4},
   Component: MilhouseSlices,
   validate: (props, timing) => [
     ...divisionIssues('division', props.division, timing),
+    ...(Math.abs(timing.bars * timing.beatsPerBar * props.portal.echoTravel - Math.round(timing.bars * timing.beatsPerBar * props.portal.echoTravel)) < 1e-8
+      ? [] : ['portal.echoTravel: inward waves must complete whole cycles over the loop.']),
     ...((timing.bars * timing.beatsPerBar) % 4 === 0 ? [] : ['poseTimes: loop must contain complete four-beat pose phrases.']),
   ],
   debugDivisions: (props) => [props.division],
