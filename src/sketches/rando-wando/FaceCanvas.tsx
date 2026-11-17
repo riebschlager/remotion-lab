@@ -72,7 +72,10 @@ void main() {
   vec4 p = mix(mix(corners[0], corners[1], grid.x), mix(corners[2], corners[3], grid.x), grid.y);
   uv = grid;
   dist = p.w * distScale;
-  vec2 px = vec2(p.x / p.w + 1.0, 1.0 - p.y / p.w) * 0.5 * frame;
+  // A point at or behind the eye (looking around brings near cubes into play) is pushed far out
+  // on its own side; its depth puts it beyond the near plane, so the GPU clips it away.
+  float w = max(p.w, 1e-4);
+  vec2 px = vec2(p.x / w + 1.0, 1.0 - p.y / w) * 0.5 * frame;
   vec2 d = px - pivot;
   px = pivot + vec2(d.x * cos(roll) - d.y * sin(roll), d.x * sin(roll) + d.y * cos(roll));
   vec2 c = frame * 0.5;
@@ -81,7 +84,7 @@ void main() {
   float s = length(q);
   if (curve > 0.0 && s > 0.0) q *= atan(curve * s) / (curve * s);
   px = c + q * R;
-  gl_Position = vec4((px.x / frame.x * 2.0 - 1.0) * p.w, (1.0 - px.y / frame.y * 2.0) * p.w, p.z, p.w);
+  gl_Position = vec4((px.x / frame.x * 2.0 - 1.0) * w, (1.0 - px.y / frame.y * 2.0) * w, p.z, w);
 }`;
 
 const sceneFragment = `#version 300 es
@@ -121,7 +124,7 @@ const skyFragment = `#version 300 es
 precision highp float;
 out vec4 color;
 uniform vec2 frame, pivot;
-uniform float curve, roll;
+uniform float curve, roll, yaw, pitch, focal;
 uniform vec3 skyStops[4], below;
 uniform float skyAt[4];
 void main() {
@@ -132,7 +135,13 @@ void main() {
   float r = length(q);
   if (curve > 0.0 && r > 0.0) q *= tan(curve * r) / (curve * r);
   vec2 d = c + q * R - pivot;
-  float y = pivot.y - d.x * sin(roll) + d.y * cos(roll);
+  d = vec2(d.x * cos(roll) + d.y * sin(roll), -d.x * sin(roll) + d.y * cos(roll));
+  // Then undo the pitch and yaw, and read the sky by the ray's elevation: the y at which an
+  // unturned camera would see that elevation, so the gradient stays level as the camera looks.
+  vec3 ray = vec3(d, -focal);
+  ray = vec3(ray.x, ray.y * cos(pitch) + ray.z * sin(pitch), -ray.y * sin(pitch) + ray.z * cos(pitch));
+  ray = vec3(ray.x * cos(yaw) - ray.z * sin(yaw), ray.y, ray.x * sin(yaw) + ray.z * cos(yaw));
+  float y = pivot.y + focal * ray.y / length(ray.xz);
   vec3 sky = skyStops[3];
   if (y >= skyAt[3]) sky = below;
   else if (y <= skyAt[0]) sky = skyStops[0];
@@ -150,7 +159,7 @@ const FINE = 48;
 const MAX_TEXTURES = 160;
 const sceneUniforms = ['corners', 'distScale', 'curve', 'roll', 'frame', 'pivot', 'picture', 'textured',
   'ground', 'shadeColor', 'fogColor', 'borderColor', 'shade', 'opacity', 'border', 'fog'] as const;
-const skyUniforms = ['frame', 'pivot', 'curve', 'roll', 'skyStops', 'below', 'skyAt'] as const;
+const skyUniforms = ['frame', 'pivot', 'curve', 'roll', 'yaw', 'pitch', 'focal', 'skyStops', 'below', 'skyAt'] as const;
 
 type Renderer = {
   gl: WebGL2RenderingContext;
@@ -256,6 +265,11 @@ type DrawInput = {
   distScale: number;
   fisheye: number;
   rollDeg: number;
+  /** Camera turn the sketch already applied to the corners; the sky needs it too. Right and up are positive. */
+  yawDeg: number;
+  pitchDeg: number;
+  /** Eye to picture plane, in pixels. */
+  focal: number;
   /** The vanishing point, in frame pixels: the roll turns about it. */
   pivot: [number, number];
   /** Null leaves the background transparent. */
@@ -280,6 +294,9 @@ const draw = (renderer: Renderer, input: DrawInput) => {
     gl.uniform2f(s.pivot, input.pivot[0], input.pivot[1]);
     gl.uniform1f(s.curve, curve);
     gl.uniform1f(s.roll, roll);
+    gl.uniform1f(s.yaw, input.yawDeg * Math.PI / 180);
+    gl.uniform1f(s.pitch, input.pitchDeg * Math.PI / 180);
+    gl.uniform1f(s.focal, input.focal);
     gl.uniform3fv(s.skyStops, input.sky.stops.flat());
     gl.uniform1fv(s.skyAt, input.sky.at);
     gl.uniform3fv(s.below, input.sky.below);

@@ -18,6 +18,14 @@ What changed, and the choices made for the open parts:
 - Implementation: road, curbs, dashes and slabs moved into the WebGL canvas with the cubes. Every quad is drawn as a grid (6×6 cells for cube faces, 48×48 for the road and its markings), and the vertex shader moves each grid point through the camera roll and then the lens, so straight edges bend without an offscreen buffer. The sky is a full-screen pass that runs the inverse lens and roll per pixel, so it curves and rolls with the street. Fog is computed per pixel from distance. Culling uses the lens's wider reach.
 - With the bonnet gone the bottom of the frame was an empty road, so the horizon moved up from 0.6 to 0.56 of the height. Back slabs carry less base haze (0.12, was 0.3): a near slab used to show as a pale ghost against the dark sky.
 
+## Revision request (2026-11-16, look-around)
+
+> let's add a feature that allows the camera to look around. it could be a simple sine motion. it'd be great to have controls for both x and y rotation of the camera.
+
+- The camera turns about the eye as two sines, each a whole number of cycles per loop so the join is seamless: `lookYaw` (left-right, rotation about y, amplitude 0 to 45°, default 12°) with `lookYawCycles` (default 1), and `lookPitch` (up-down, rotation about x, 0 to 30°, default 5°) with `lookPitchCycles` (default 2). Pitch starts a quarter cycle later, so with equal cycles the gaze traces a loop rather than a diagonal. Amplitudes of 0 turn either off.
+- The turn is applied in the sketch's projection, before the GPU's roll and lens. The sky inverts it per pixel and reads the gradient by ray elevation, so the horizon stays level and moves with the pitch.
+- Turning the camera brings cubes beside and just behind the eye into view, so cube slots are kept down to 1.3 cube sizes behind the eye and the road now starts 3 behind it. A grid point at or behind the eye is pushed far out on its side with a depth beyond the near plane, so the GPU clips it instead of folding it into view. Checked with 40° yaw and 25° pitch: no tearing near the camera.
+
 Sections below describe the original version; where they mention the sun, bonnet, gradient maps or `test` clips, the notes above supersede them.
 
 ## Idea and hierarchy

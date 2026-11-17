@@ -5,7 +5,7 @@ import {clip, clipNames, sourceFrameIndex, type ClipRef} from '../../assets';
 import {useBeat} from '../../beat/BeatContext';
 import {divisionBeats, lfo, mod, stepRandom} from '../../beat/envelopes';
 import {divisionSchema} from '../../beat/divisions';
-import {beatPatternSchema, patternEvents, patternIssues, patternPulse} from '../../beat/patterns';
+import {patternEvents, patternIssues, patternPulse} from '../../beat/patterns';
 import {useCanvas} from '../canvas';
 import {defineSketch, divisionIssues, useAsset, useSketch} from '../define';
 import {FaceCanvas, lensReach, rgb, type Face, type Fog, type Rgb} from './FaceCanvas';
@@ -70,27 +70,46 @@ const rotX = ([x, y, z]: Vec, deg: number): Vec => { const [c, s] = turn(deg); r
 const rotY = ([x, y, z]: Vec, deg: number): Vec => { const [c, s] = turn(deg); return [x * c + z * s, y, -x * s + z * c]; };
 const rotZ = ([x, y, z]: Vec, deg: number): Vec => { const [c, s] = turn(deg); return [x * c - y * s, x * s + y * c, z]; };
 
+// Studio gives a number field with a whole-number minimum and no step a step of 1, so every
+// fractional field states its step with `multipleOf`, which Studio reads as the input step.
+// The hop pattern has the shape of the shared `beatPatternSchema`, with steps added: that schema
+// cannot take one, because its built-in shuffle swing is 1/3.
+const hopPatternSchema = z.object({
+  /** One strength per division: 0 = rest, 1 = full accent. */
+  steps: z.array(z.number().min(0).max(1).multipleOf(0.05)).min(1),
+  /** Delay odd slots by this fraction of one division. */
+  swing: z.number().min(0).max(0.95).multipleOf(0.01).optional(),
+}).strict();
+
 const schema = z.object({
   /** Buildings passed per bar. 3 against a 4-beat bar keeps the drive from strobing with the hops. */
   blocksPerBar: z.number().int().min(1).max(8),
   /** Grid of the seismic hits. */
   hopDivision: divisionSchema,
   /** Strength of each hit on that grid; 0 rests. Swing loosens the offbeats. */
-  hopPattern: beatPatternSchema,
+  hopPattern: hopPatternSchema,
   /** Hop height of one cube at full strength, in cube sizes. Upper cubes ride on the ones below. */
-  hopHeight: z.number().min(0).max(1.5),
+  hopHeight: z.number().min(0).max(1.5).multipleOf(0.01),
   /** Length of one hop-and-settle, in beats. */
-  hopBeats: z.number().min(0.1).max(4),
+  hopBeats: z.number().min(0.1).max(4).multipleOf(0.05),
   /** Beats the wave needs to travel one cube size down the street. */
-  waveBeats: z.number().min(0).max(1),
+  waveBeats: z.number().min(0).max(1).multipleOf(0.01),
   /** Beats between a cube and the one stacked on it. */
-  stackBeats: z.number().min(0).max(0.5),
+  stackBeats: z.number().min(0).max(0.5).multipleOf(0.01),
   /** The right side of the street answers the left this many beats later. */
-  answerBeats: z.number().min(0).max(4),
+  answerBeats: z.number().min(0).max(4).multipleOf(0.05),
   /** Tallest building, in cubes. */
   maxFloors: z.number().int().min(2).max(9),
   /** Fisheye lens strength: 0 is a flat view; higher bows the street and widens the edges. */
-  fisheye: z.number().min(0).max(1),
+  fisheye: z.number().min(0).max(1).multipleOf(0.01),
+  /** Look left and right (rotation about the camera's y axis): sine amplitude in degrees. */
+  lookYaw: z.number().min(0).max(45).multipleOf(0.5),
+  /** Left-right look cycles per loop. */
+  lookYawCycles: z.number().int().min(1).max(8),
+  /** Look up and down (rotation about the camera's x axis): sine amplitude in degrees. */
+  lookPitch: z.number().min(0).max(30).multipleOf(0.5),
+  /** Up-down look cycles per loop. */
+  lookPitchCycles: z.number().int().min(1).max(8),
 });
 type Props = z.output<typeof schema>;
 
@@ -119,13 +138,13 @@ const frameAt = (media: ClipRef, phase: number) => {
 // Street geometry, in cube sizes.
 const PITCH = 1.3;     // one building plus its alley
 const FAR = 11;        // fully dissolved in haze
-const NEAR = 0.62;     // closer cube centres are already off-screen
+const NEAR = -1.3;     // cube centres beside or just behind the eye still show when it looks around
 const EYE = 0.85;      // camera height
 const ROLL = 1.1;      // camera roll amplitude, degrees
 
 const RandoWando: React.FC<Props> = (props) => {
   const {blocksPerBar, hopDivision, hopPattern, hopHeight, hopBeats, waveBeats, stackBeats, answerBeats,
-    maxFloors, fisheye} = props;
+    maxFloors, fisheye, lookYaw, lookYawCycles, lookPitch, lookPitchCycles} = props;
   const transparent = Boolean((props as {transparent?: boolean}).transparent);
   const {beat, totalBeats, beatsPerBar, loopPhase, effectiveBpm} = useBeat();
   const {width, height, vmin, cx, aspect} = useCanvas();
@@ -160,6 +179,10 @@ const RandoWando: React.FC<Props> = (props) => {
   const camZ = loopPhase * ring * PITCH;
   const camX = 0.14 * lfo(loopPhase, 1);
   const roll = ROLL * lfo(loopPhase, 2, 'sine', 0.2);
+  // Looking around: whole sine cycles per loop. Pitch starts a quarter cycle later, so the
+  // two together trace a loop rather than a diagonal line.
+  const yaw = lookYaw * lfo(loopPhase, lookYawCycles);
+  const pitch = lookPitch * lfo(loopPhase, lookPitchCycles, 'sine', 0.25);
   const thump = patternPulse(beat, stepBeats, totalBeats, hopPattern, 0, {decay: 0.8, curve: 2});
   const eye = EYE + 0.025 * thump;
 
@@ -205,12 +228,24 @@ const RandoWando: React.FC<Props> = (props) => {
   const farW = 2 * FAR * S / P;
   const depthB = 2 / (1 / farW - 1 / nearW);
   const depthA = -1 - depthB / nearW;
-  /** A point in street pixels (relative to the eye's ground point, z toward the viewer) to clip space. */
+  const [cosYaw, sinYaw] = turn(yaw);
+  const [cosPitch, sinPitch] = turn(pitch);
+  /**
+   * A point in street pixels (relative to the eye's ground point, z toward the viewer) to clip
+   * space. The camera turns right by `yaw`, then up by `pitch`, about the eye.
+   */
   const project = ([x, y, z]: Vec) => {
-    const w = (P - z) / P;
+    const vx = x - camX * S;
+    const vy = y + eye * S;
+    const vz = z - P;
+    const x1 = vx * cosYaw + vz * sinYaw;
+    const z1 = -vx * sinYaw + vz * cosYaw;
+    const y2 = vy * cosPitch - z1 * sinPitch;
+    const z2 = vy * sinPitch + z1 * cosPitch;
+    const w = -z2 / P;
     return [
-      (cx / width * 2 - 1) * w + 2 * (x - camX * S) / width,
-      (1 - hy / height * 2) * w - 2 * (y + eye * S) / height,
+      (cx / width * 2 - 1) * w + 2 * x1 / width,
+      (1 - hy / height * 2) * w - 2 * y2 / height,
       depthA * w + depthB,
       w,
     ];
@@ -221,7 +256,8 @@ const RandoWando: React.FC<Props> = (props) => {
   const faceCorners = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
 
   // Road, markings and slabs never stand in front of a cube: drawn first, in painter's order.
-  const ROAD_NEAR = 0.25;
+  // The road starts behind the eye, so looking down never finds its edge.
+  const ROAD_NEAR = -3;
   const ROAD_HALF = 20;
   const ground = (x0: number, x1: number, d0: number, d1: number, color: Rgb): Face => ({
     corners: quad([[x0, 0, d1], [x1, 0, d1], [x0, 0, d0], [x1, 0, d0]]),
@@ -272,7 +308,9 @@ const RandoWando: React.FC<Props> = (props) => {
         lift += hopHeight * hop.value;
         const bottom = floor + lift;
         // Skip cubes that are entirely above what the lens can show.
-        if (bottom > eye && hy - (bottom - eye) * P / (d + 0.5) < height / 2 - reach - 8 * vmin) break;
+        // Projected from the cube's lowest point nearest the street, in front of the camera only.
+        const [, clipY, , clipW] = project([(x - side * 0.5) * S, -bottom * S, P - (d - 0.5) * S]);
+        if (clipW > 0.05 && (1 - clipY / clipW) / 2 * height < height / 2 - reach - 8 * vmin) break;
         const cube = (side > 0 ? 1 : 0) * 100000 + id * 100 + floor;
         const lean = (stepRandom(seed('lean'), hop.index, cube) * 2 - 1) * 9 * hop.value;
         const twist = (stepRandom(seed('twist'), hop.index, cube) * 2 - 1) * 7 * hop.value;
@@ -303,7 +341,7 @@ const RandoWando: React.FC<Props> = (props) => {
       <FaceCanvas width={width} height={height}
         backdrop={[...backdrop, ...slabs]} faces={faces} textureSize={textureSize}
         look={{shadeColor: INK_RGB, fogColor: HAZE_RGB, borderColor: INK_RGB}} distScale={P / S}
-        fisheye={fisheye} rollDeg={roll} pivot={pivot}
+        fisheye={fisheye} rollDeg={roll} yawDeg={yaw} pitchDeg={pitch} focal={P} pivot={pivot}
         sky={transparent ? null : {...sky, at: [0, 0.45 * hy, 0.86 * hy, hy]}}
         style={{position: 'absolute', left: 0, top: 0, width, height}} />
     </AbsoluteFill>
@@ -326,6 +364,10 @@ export default defineSketch({
     answerBeats: 0.5,
     maxFloors: 7,
     fisheye: 0.7,
+    lookYaw: 12,
+    lookYawCycles: 1,
+    lookPitch: 5,
+    lookPitchCycles: 2,
   },
   timing: {bpm: 100, bars: 4},
   Component: RandoWando,
