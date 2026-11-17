@@ -47,6 +47,17 @@ export type Sky = {
   at: number[];
   /** Ground colour below the horizon, where the road ends. */
   below: Rgb;
+  /**
+   * Stars fixed to directions in the world, so they stay put as the camera looks around.
+   * Each twinkles a whole number of times per loop, at `phase` (0..1 through the loop).
+   */
+  stars: {amount: number; size: number; phase: number; beats: number; seed: number; colors: [Rgb, Rgb]};
+  /**
+   * A distant skyline standing on the horizon, two silhouettes deep, read by direction like the
+   * stars. `height` is the tallest block in radians of elevation (0 leaves it out). `colors` are
+   * the far and near rows; `lights` the faint windows of the near row; `mist` the colour at its feet.
+   */
+  skyline: {height: number; colors: [Rgb, Rgb]; lights: Rgb; mist: Rgb};
 };
 
 /** `#rrggbb` as 0..1 channels. */
@@ -127,6 +138,72 @@ uniform vec2 frame, pivot;
 uniform float curve, roll, yaw, pitch, focal;
 uniform vec3 skyStops[4], below;
 uniform float skyAt[4];
+uniform float starAmount, starSize, starPhase, starBeats, seed, skylineHeight;
+uniform vec3 starColors[2], skylineColors[2], skylineLights, skylineMist;
+const float TAU = 6.2831853;
+
+float hash(vec2 p) {
+  vec3 q = fract(vec3(p.xyx + seed) * vec3(0.1031, 0.1030, 0.0973));
+  q += dot(q, q.yzx + 33.33);
+  return fract((q.x + q.y) * q.z);
+}
+
+// Cells of about size radians right round the horizon, so the pattern meets itself behind the eye.
+float around(float size) { return floor(TAU / size); }
+
+// Height of one skyline row, in radians, at azimuth az.
+float rowHeight(float az, float row, float size, float tallest) {
+  float n = around(size);
+  float u = (az / TAU + 0.5) * n;
+  float i = mod(floor(u), n);
+  float f = fract(u);
+  float r = hash(vec2(i, row));
+  float h = tallest * (0.22 + 0.78 * r * r);
+  // Some blocks are slimmer towers with a low annex either side.
+  float inset = 0.12 + 0.22 * hash(vec2(i, row + 3.0));
+  if (hash(vec2(i, row + 7.0)) < 0.4 && (f < inset || f > 1.0 - inset)) h *= 0.4;
+  // A few carry a mast.
+  if (hash(vec2(i, row + 11.0)) < 0.2 && abs(f - 0.5) < 0.035) h += tallest * 0.3;
+  return h;
+}
+
+// Coverage of one skyline row at this pixel: four samples across it horizontally.
+float rowCover(float az, float el, vec2 foot, float row, float size, float tallest) {
+  float cover = 0.0;
+  for (int k = 0; k < 4; k++) {
+    float h = rowHeight(az + (float(k) - 1.5) * 0.25 * foot.x, row, size, tallest);
+    cover += clamp((h - el) / foot.y + 0.5, 0.0, 1.0);
+  }
+  return cover * 0.25;
+}
+
+vec3 stars(float az, float el, vec2 foot) {
+  float size = 0.05;
+  float n = around(size);
+  vec2 cell = vec2(TAU / n, size);
+  vec2 g = vec2(az + 0.5 * TAU, el) / cell;
+  vec2 id = vec2(mod(floor(g.x), n), floor(g.y));
+  if (hash(id + 17.0) > starAmount) return vec3(0.0);
+  vec2 at = 0.15 + 0.7 * vec2(hash(id + 1.0), hash(id + 2.0));
+  vec2 d = (fract(g) - at) * cell / foot;          // in pixels
+  float big = hash(id + 5.0);
+  float radius = starSize * (0.45 + 0.9 * big * big);
+  float light = exp(-dot(d, d) / (radius * radius));
+  // The brightest few get a faint cross.
+  if (big > 0.85) {
+    float arm = 4.0 * radius;
+    light += 0.35 * (exp(-abs(d.x) / arm) * exp(-d.y * d.y / (0.2 * radius * radius))
+      + exp(-abs(d.y) / arm) * exp(-d.x * d.x / (0.2 * radius * radius)));
+  }
+  // Twinkle once every 2, 4 or 8 beats, as a whole number of times per loop.
+  float period = exp2(1.0 + floor(hash(id + 9.0) * 3.0));
+  float cycles = max(1.0, floor(starBeats / period + 0.5));
+  float wave = 0.5 + 0.5 * cos(TAU * (starPhase * cycles + hash(id + 13.0)));
+  float twinkle = mix(0.15, 1.0, wave * wave * wave);
+  // Most are cool white; one in five is warm.
+  return starColors[hash(id + 21.0) < 0.2 ? 1 : 0] * light * twinkle * (0.55 + 0.45 * big);
+}
+
 void main() {
   // Undo the lens, then the roll, to find where this pixel looks in the flat view.
   vec2 c = frame * 0.5;
@@ -148,6 +225,33 @@ void main() {
   else if (y < skyAt[1]) sky = mix(skyStops[0], skyStops[1], (y - skyAt[0]) / (skyAt[1] - skyAt[0]));
   else if (y < skyAt[2]) sky = mix(skyStops[1], skyStops[2], (y - skyAt[1]) / (skyAt[2] - skyAt[1]));
   else sky = mix(skyStops[2], skyStops[3], (y - skyAt[2]) / (skyAt[3] - skyAt[2]));
+
+  // Direction of the ray: azimuth round the horizon and elevation above it, in radians, with the
+  // size of this pixel in each (fwidth is huge only where azimuth wraps, behind the eye).
+  float az = atan(ray.x, -ray.z);
+  float el = atan(-ray.y, length(ray.xz));
+  vec2 foot = max(vec2(min(fwidth(az), 0.02), fwidth(el)), vec2(1e-5));
+  if (el > 0.0) sky += stars(az, el, foot) * smoothstep(0.1, 0.32, el);
+  // The city stands a little below the horizon too, in the haze where the road gives out, so its
+  // feet dissolve into the mist instead of standing on one straight line.
+  if (el > -0.08) {
+    if (skylineHeight > 0.0) {
+      float far = rowCover(az, el, foot, 40.0, 0.032, skylineHeight);
+      float near = rowCover(az + 0.013, el, foot, 50.0, 0.047, 0.62 * skylineHeight);
+      vec3 front = skylineColors[1];
+      // Sparse faint windows on the near row.
+      vec2 cell = floor(vec2(az, el) / 0.0065);
+      float lit = step(hash(cell + 61.0), 0.09) * step(el, 0.55 * skylineHeight);
+      vec2 pane = fract(vec2(az, el) / 0.0065);
+      lit *= step(0.3, pane.x) * step(pane.x, 0.7) * step(0.3, pane.y) * step(pane.y, 0.7);
+      front = mix(front, skylineLights, 0.45 * lit);
+      vec3 city = mix(mix(sky, skylineColors[0], far), front, near);
+      // Mist at its feet: toward the horizon glow, then below the horizon gone into the haze.
+      float mist = 0.55 * (1.0 - smoothstep(0.0, 0.5 * skylineHeight, el));
+      city = mix(city, mix(city, skylineMist, mist), max(far, near));
+      sky = mix(sky, city, smoothstep(-0.07, 0.005, el));
+    }
+  }
   color = vec4(sky, 1.0);
 }`;
 
@@ -159,7 +263,9 @@ const FINE = 48;
 const MAX_TEXTURES = 160;
 const sceneUniforms = ['corners', 'distScale', 'curve', 'roll', 'frame', 'pivot', 'picture', 'textured',
   'ground', 'shadeColor', 'fogColor', 'borderColor', 'shade', 'opacity', 'border', 'fog'] as const;
-const skyUniforms = ['frame', 'pivot', 'curve', 'roll', 'yaw', 'pitch', 'focal', 'skyStops', 'below', 'skyAt'] as const;
+const skyUniforms = ['frame', 'pivot', 'curve', 'roll', 'yaw', 'pitch', 'focal', 'skyStops', 'below', 'skyAt',
+  'starAmount', 'starSize', 'starPhase', 'starBeats', 'seed', 'starColors',
+  'skylineHeight', 'skylineColors', 'skylineLights', 'skylineMist'] as const;
 
 type Renderer = {
   gl: WebGL2RenderingContext;
@@ -300,6 +406,17 @@ const draw = (renderer: Renderer, input: DrawInput) => {
     gl.uniform3fv(s.skyStops, input.sky.stops.flat());
     gl.uniform1fv(s.skyAt, input.sky.at);
     gl.uniform3fv(s.below, input.sky.below);
+    const {stars, skyline} = input.sky;
+    gl.uniform1f(s.starAmount, stars.amount);
+    gl.uniform1f(s.starSize, stars.size);
+    gl.uniform1f(s.starPhase, stars.phase);
+    gl.uniform1f(s.starBeats, stars.beats);
+    gl.uniform1f(s.seed, stars.seed);
+    gl.uniform3fv(s.starColors, stars.colors.flat());
+    gl.uniform1f(s.skylineHeight, skyline.height);
+    gl.uniform3fv(s.skylineColors, skyline.colors.flat());
+    gl.uniform3fv(s.skylineLights, skyline.lights);
+    gl.uniform3fv(s.skylineMist, skyline.mist);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 

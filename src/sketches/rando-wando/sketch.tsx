@@ -44,6 +44,14 @@ const sky = {
   stops: ['#0d0a2e', '#2a1f86', '#6a4cf0', '#d2b8ff'].map(rgb),
   below: rgb(HAZE),
 };
+// Stars are mostly cool white, a few sticker-warm. The distant skyline sits just darker than the
+// horizon glow (far row) and a step darker again (near row), with faint lilac windows.
+const STAR_COLORS: [Rgb, Rgb] = [rgb('#f3eeff'), rgb('#ffe39a')];
+const SKYLINE_COLORS: [Rgb, Rgb] = [rgb('#9c86f2'), rgb('#7559de')];
+const SKYLINE_LIGHTS = rgb('#efe6ff');
+const SKYLINE_MIST = rgb('#d2b8ff');
+/** Tallest skyline block at `skyline: 1`, in radians of elevation (about 9 vmin). */
+const SKYLINE_RISE = 0.09;
 const grounds: Record<Tone, Rgb[]> = {
   warm: ['#3b2ab0', '#2343c9', '#6b4fe6', '#1d1766'].map(rgb),
   cool: ['#4a1466', '#7a2585', '#e8dcff'].map(rgb),
@@ -110,6 +118,10 @@ const schema = z.object({
   lookPitch: z.number().min(0).max(30).multipleOf(0.5),
   /** Up-down look cycles per loop. */
   lookPitchCycles: z.number().int().min(1).max(8),
+  /** Share of the sky's star cells that hold a star; 0 for none. Each twinkles every 2, 4 or 8 beats. */
+  stars: z.number().min(0).max(1).multipleOf(0.01),
+  /** Height of the distant skyline on the horizon; 0 leaves it out. */
+  skyline: z.number().min(0).max(2).multipleOf(0.05),
 });
 type Props = z.output<typeof schema>;
 
@@ -144,7 +156,7 @@ const ROLL = 1.1;      // camera roll amplitude, degrees
 
 const RandoWando: React.FC<Props> = (props) => {
   const {blocksPerBar, hopDivision, hopPattern, hopHeight, hopBeats, waveBeats, stackBeats, answerBeats,
-    maxFloors, fisheye, lookYaw, lookYawCycles, lookPitch, lookPitchCycles} = props;
+    maxFloors, fisheye, lookYaw, lookYawCycles, lookPitch, lookPitchCycles, stars, skyline} = props;
   const transparent = Boolean((props as {transparent?: boolean}).transparent);
   const {beat, totalBeats, beatsPerBar, loopPhase, effectiveBpm} = useBeat();
   const {width, height, vmin, cx, aspect} = useCanvas();
@@ -342,7 +354,10 @@ const RandoWando: React.FC<Props> = (props) => {
         backdrop={[...backdrop, ...slabs]} faces={faces} textureSize={textureSize}
         look={{shadeColor: INK_RGB, fogColor: HAZE_RGB, borderColor: INK_RGB}} distScale={P / S}
         fisheye={fisheye} rollDeg={roll} yawDeg={yaw} pitchDeg={pitch} focal={P} pivot={pivot}
-        sky={transparent ? null : {...sky, at: [0, 0.45 * hy, 0.86 * hy, hy]}}
+        sky={transparent ? null : {...sky, at: [0, 0.45 * hy, 0.86 * hy, hy],
+          stars: {amount: stars, size: 0.16 * vmin, phase: loopPhase, beats: totalBeats,
+            seed: Math.floor(stepRandom(seed('sky'), 0) * 1000), colors: STAR_COLORS},
+          skyline: {height: skyline * SKYLINE_RISE, colors: SKYLINE_COLORS, lights: SKYLINE_LIGHTS, mist: SKYLINE_MIST}}}
         style={{position: 'absolute', left: 0, top: 0, width, height}} />
     </AbsoluteFill>
   );
@@ -368,6 +383,8 @@ export default defineSketch({
     lookYawCycles: 1,
     lookPitch: 5,
     lookPitchCycles: 2,
+    stars: 0.5,
+    skyline: 1,
   },
   timing: {bpm: 100, bars: 4},
   Component: RandoWando,

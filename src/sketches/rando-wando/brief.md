@@ -26,6 +26,16 @@ What changed, and the choices made for the open parts:
 - The turn is applied in the sketch's projection, before the GPU's roll and lens. The sky inverts it per pixel and reads the gradient by ray elevation, so the horizon stays level and moves with the pitch.
 - Turning the camera brings cubes beside and just behind the eye into view, so cube slots are kept down to 1.3 cube sizes behind the eye and the road now starts 3 behind it. A grid point at or behind the eye is pushed far out on its side with a depth beyond the near plane, so the GPU clips it instead of folding it into view. Checked with 40° yaw and 25° pitch: no tearing near the camera.
 
+## Revision request (2026-11-16, night sky)
+
+> let's add twinkling stars to the sky. let's also break up the horizon a bit. let's add subltle city skyline back there.
+
+- Both live in the sky pass and are read by ray direction (azimuth and elevation), so they stay fixed in the world as the camera yaws, pitches, rolls and bends through the lens, just like the gradient. They are quiet layers and do not hop.
+- Stars: `stars` (0 to 1, default 0.5) is the share of the sky's cells (about 0.05 rad each) that hold a star. The stars are cool white, with one in five warm sticker yellow. Each is a soft dot of 0.07 to 0.2 vmin, and the brightest 15% have a faint cross. Each one twinkles every 2, 4 or 8 beats, rounded to a whole number of times per loop, at a seeded phase, so the seam closes. They fade in from about 0.1 rad above the horizon, so the lilac glow stays clean.
+- Skyline: `skyline` (0 to 2, default 1; 0 turns it off) scales the tallest block to 0.09 rad (about 9 vmin). There are two rows: a far one a little darker than the horizon glow (`#9c86f2`) and a nearer, shorter one a step darker (`#7559de`). The blocks are seeded; some are slim towers with low annexes, and a few carry masts. Faint lilac window dots sit on the near row. Edges are antialiased using the pixel footprint.
+- Breaking up the horizon: the old horizon was a straight lilac band over a straight haze band (the road fogs out about 7 vmin below the true horizon). The silhouette now breaks the line above it. The city also continues down into that haze band, where it dissolves through mist into the haze colour, so no single straight edge remains.
+- Both canvases pass determinism and the seam check. In landscape, the skyline fills the street's vanishing point. In portrait, it is a narrower strip between the facades.
+
 Sections below describe the original version; where they mention the sun, bonnet, gradient maps or `test` clips, the notes above supersede them.
 
 ## Idea and hierarchy
