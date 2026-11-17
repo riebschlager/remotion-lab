@@ -1,7 +1,7 @@
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
-import {DoubleSide, LoadingManager} from 'three';
+import {DoubleSide, Group, LoadingManager} from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
@@ -11,11 +11,15 @@ import {divisionBeats, step, stepRandom} from '../../beat/envelopes';
 import {divisionSchema} from '../../beat/divisions';
 import {useCanvas} from '../canvas';
 import {defineSketch, divisionIssues, useSketch, type SketchBaseProps} from '../define';
-import {bakeModel, sliceBounce, sliceModel, type Model} from './sliceGeometry';
+import {sliceBounce, sliceModel} from './sliceGeometry';
+import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler} from './poses';
 import {StudioFloor} from './StudioFloor';
 
+const poseTimeSchema = z.number().min(0).max(SOURCE_DURATION).step(0.05);
 const schema = z.object({
   division: divisionSchema,
+  poseTimes: z.tuple([poseTimeSchema, poseTimeSchema, poseTimeSchema, poseTimeSchema])
+    .describe('Four source animation times in seconds, one pose reached on each beat'),
   slices: z.number().int().min(2).max(20).describe('Horizontal mesh sections'),
   spread: z.number().min(0).max(2.5).step(0.05).describe('Vertical separation at peak'),
   kick: z.number().min(0).max(0.5).step(0.01).describe('Alternating sideways bounce'),
@@ -34,23 +38,23 @@ type Props = z.output<typeof schema>;
 
 // Keep model parsing and texture readiness together: a frame never captures an
 // untextured intermediate load. Missing FBX/embedded textures fail explicitly.
-let modelPromise: Promise<Model> | undefined;
-const loadModel = () => modelPromise ??= new Promise<Model>((resolve, reject) => {
+let modelPromise: Promise<Group> | undefined;
+const loadModel = () => modelPromise ??= new Promise<Group>((resolve, reject) => {
   const manager = new LoadingManager();
-  let model: Model | undefined;
+  let model: Group | undefined;
   manager.onLoad = () => { if (model) resolve(model); };
   manager.onError = (url) => reject(new Error(`Milhouse model/texture is missing: ${url}`));
   new FBXLoader(manager).load(staticFile('assets/milhouse-01/milhouse-2.fbx'),
-    root => { try { model = bakeModel(root); } catch (error) { reject(error); } },
+    root => { model = root; },
     undefined,
     () => reject(new Error('public/assets/milhouse-01/milhouse-2.fbx is missing or invalid. Restore the supplied FBX runtime copy.')),
   );
 }).catch(error => { modelPromise = undefined; throw error; });
 
-function useMilhouse() {
+function useMilhouse(times: readonly number[]) {
   const {delayRender, continueRender, cancelRender} = useDelayRender();
   const [hold] = useState(() => delayRender('Loading Milhouse FBX and embedded texture'));
-  const [model, setModel] = useState<Model | null>(null);
+  const [model, setModel] = useState<Group | null>(null);
   const released = useRef(false);
   useEffect(() => {
     let current = true;
@@ -60,14 +64,18 @@ function useMilhouse() {
   useLayoutEffect(() => {
     if (model && !released.current) { continueRender(hold); released.current = true; }
   }, [model, hold, continueRender]);
-  return model;
+  const poses = useMemo(() => model ? createPoseSampler(model, times) : null, [model, times]);
+  useEffect(() => () => { poses?.material.dispose(); }, [poses]);
+  return poses;
 }
 
-const Sections: React.FC<{model: Model; props: Props; energy: number; phase: number}> = ({model, props, energy, phase}) => {
+const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; phase: number}> = ({sampler, props, energy, phase}) => {
+  const {beat, totalBeats} = useBeat();
   const {seed} = useSketch();
-  const sections = useMemo(() => sliceModel(model, props.slices), [model, props.slices]);
+  const sections = useMemo(() => sliceModel(sampler.sample(beat, totalBeats), props.slices),
+    [sampler, beat, totalBeats, props.slices]);
   const material = useMemo(() => {
-    const satin = model.material.clone();
+    const satin = sampler.material.clone();
     satin.roughness = props.roughness;
     // The embedded palette distinguishes blue hair from the satin yellow body.
     satin.onBeforeCompile = shader => {
@@ -77,7 +85,7 @@ const Sections: React.FC<{model: Model; props: Props; energy: number; phase: num
         roughnessFactor *= mix(1.0, 0.65, hairFinish);`);
     };
     return satin;
-  }, [model, props.roughness]);
+  }, [sampler, props.roughness]);
   useEffect(() => () => material.dispose(), [material]);
   useEffect(() => () => { for (const section of sections) { section.surface.dispose(); section.caps.dispose(); } }, [sections]);
   return (
@@ -107,7 +115,7 @@ const Sections: React.FC<{model: Model; props: Props; energy: number; phase: num
 const MilhouseSlices: React.FC<Props> = (props) => {
   const {beat, totalBeats, beatsPerBar} = useBeat();
   const {width, height, aspect} = useCanvas();
-  const model = useMilhouse();
+  const sampler = useMilhouse(props.poseTimes);
   const {transparent, variant} = props as Props & SketchBaseProps;
   const {phase} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
   const energy = sliceBounce(phase);
@@ -117,7 +125,7 @@ const MilhouseSlices: React.FC<Props> = (props) => {
   const zoom = height / frustumHeight;
   return (
     <AbsoluteFill style={transparent ? undefined : {backgroundColor: props.backdrop}}>
-      {model ? <ThreeCanvas width={width} height={height} orthographic
+      {sampler ? <ThreeCanvas width={width} height={height} orthographic
         shadows="percentage"
         camera={{position: [0, 4, 20], zoom, near: 0.1, far: 100}}
         gl={{alpha: true, antialias: true, preserveDrawingBuffer: true}}
@@ -138,9 +146,9 @@ const MilhouseSlices: React.FC<Props> = (props) => {
           shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5}
           shadow-camera-top={6} shadow-camera-bottom={-5} shadow-camera-near={0.5}
           shadow-camera-far={25} shadow-bias={-0.0002} shadow-normalBias={0.015} shadow-radius={3} />
-        <Sections model={model} props={props} energy={energy} phase={phase} />
+        <Sections sampler={sampler} props={props} energy={energy} phase={phase} />
         {!transparent ? <StudioFloor color={props.floorColor}
-          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}`} /> : null}
+          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}`} /> : null}
       </ThreeCanvas> : null}
     </AbsoluteFill>
   );
@@ -149,13 +157,16 @@ const MilhouseSlices: React.FC<Props> = (props) => {
 export default defineSketch({
   id: 'milhouse-slices',
   title: 'Milhouse Slices',
-  description: 'Milhouse springs into horizontal mesh sections and reassembles on every beat.',
+  description: 'Milhouse smoothly moves through four source poses while horizontal slices bounce on the beat.',
   schema,
-  defaults: {division: '1/4', slices: 8, spread: 1.5, kick: 0.15, twist: 10,
+  defaults: {division: '1/4', poseTimes: [...DEFAULT_POSE_TIMES], slices: 8, spread: 1.5, kick: 0.15, twist: 10,
     viewAngle: -15, backdrop: '#302139', cutColor: '#ffca9e', floorColor: '#403246',
     ambientIntensity: 0.28, keyIntensity: 7.5, fillIntensity: 3.3, rimIntensity: 9, roughness: 0.46},
   timing: {bpm: 120, bars: 4, beatsPerBar: 4},
   Component: MilhouseSlices,
-  validate: (props, timing) => divisionIssues('division', props.division, timing),
+  validate: (props, timing) => [
+    ...divisionIssues('division', props.division, timing),
+    ...((timing.bars * timing.beatsPerBar) % 4 === 0 ? [] : ['poseTimes: loop must contain complete four-beat pose phrases.']),
+  ],
   debugDivisions: (props) => [props.division],
 });

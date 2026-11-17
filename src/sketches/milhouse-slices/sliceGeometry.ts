@@ -12,11 +12,10 @@ const mix = (a: Vertex, b: Vertex, t: number): Vertex => ({
   p: a.p.clone().lerp(b.p, t), n: a.n.clone().lerp(b.n, t).normalize(), uv: a.uv.clone().lerp(b.uv, t),
 });
 
-/** Bake the FBX rest pose once; slices retain the supplied texture coordinates. */
-export function bakeModel(root: Group): Model {
+/** Bake the current FBX pose; slices retain the supplied texture coordinates. */
+export function bakeModel(root: Group, normalize = true, material?: MeshStandardMaterial): Model {
   root.updateMatrixWorld(true);
   const triangles: Triangle[] = [];
-  let material: MeshStandardMaterial | undefined;
   root.traverse((object) => {
     if (!(object instanceof Mesh)) return;
     if (object instanceof SkinnedMesh) object.skeleton.update();
@@ -32,9 +31,15 @@ export function bakeModel(root: Group): Model {
       const triangle: Vertex[] = [];
       for (let j = 0; j < 3; j++) {
         const index = geometry.index ? geometry.index.getX(i + j) : i + j;
+        const normal = new Vector3().fromBufferAttribute(geometry.attributes.normal, index);
+        if (object instanceof SkinnedMesh) {
+          // Transform the normal by the same weighted bone transform, excluding translation.
+          object.applyBoneTransform(index, normal);
+          normal.sub(object.applyBoneTransform(index, new Vector3())).normalize();
+        }
         triangle.push({
           p: object.getVertexPosition(index, new Vector3()).applyMatrix4(object.matrixWorld),
-          n: new Vector3().fromBufferAttribute(geometry.attributes.normal, index).applyMatrix3(normalMatrix).normalize(),
+          n: normal.applyMatrix3(normalMatrix).normalize(),
           uv: new Vector2().fromBufferAttribute(geometry.attributes.uv, index),
         });
       }
@@ -42,13 +47,29 @@ export function bakeModel(root: Group): Model {
     }
   });
   if (!material || !triangles.length) throw new Error('Milhouse FBX contains no renderable mesh.');
+  const model = {triangles, material};
+  if (normalize) normalizeModels([model]);
+  return model;
+}
+
+/** One shared frame of reference: pose changes cannot resize the character. */
+export type ModelNormalization = {origin: Vector3; scale: number};
+
+export function applyNormalization(model: Model, {origin, scale}: ModelNormalization): Model {
+  for (const triangle of model.triangles) for (const vertex of triangle) {
+    vertex.p.sub(origin).multiplyScalar(scale);
+  }
+  return model;
+}
+
+export function normalizeModels(models: Model[]): ModelNormalization {
+  const triangles = models.flatMap(model => model.triangles);
   const bounds = new Box3().setFromPoints(triangles.flatMap(t => t.map(v => v.p)));
   const center = bounds.getCenter(new Vector3());
   const scale = 5 / (bounds.max.y - bounds.min.y);
-  for (const triangle of triangles) for (const vertex of triangle) {
-    vertex.p.sub(new Vector3(center.x, bounds.min.y, center.z)).multiplyScalar(scale);
-  }
-  return {triangles, material};
+  const normalization = {origin: new Vector3(center.x, bounds.min.y, center.z), scale};
+  for (const model of models) applyNormalization(model, normalization);
+  return normalization;
 }
 
 function clipPolygon(vertices: Vertex[], y: number, above: boolean): Vertex[] {
@@ -135,7 +156,10 @@ export function sliceModel(model: Model, count: number): Section[] {
     const center = (low + high) / 2;
     const clipped: Vertex[][] = [];
     for (const triangle of model.triangles) {
-      const polygon = clipPolygon(clipPolygon(triangle, low, true), high, false);
+      // The outer sections retain extremities that arc beyond endpoint pose bounds.
+      let polygon: Vertex[] = triangle;
+      if (index > 0) polygon = clipPolygon(polygon, low, true);
+      if (index < count - 1) polygon = clipPolygon(polygon, high, false);
       for (let i = 1; i < polygon.length - 1; i++) clipped.push([polygon[0], polygon[i], polygon[i + 1]]);
     }
     const capTriangles = [

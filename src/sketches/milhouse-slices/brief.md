@@ -110,3 +110,98 @@ loader warns when truncating those. This sketch freezes its rest pose rather
 than playing skeletal animation. Source palette colors (including white shirt
 and red trousers) are retained rather than recoloring to another Milhouse design.
 No finished video export was requested or produced.
+
+## Four-pose prototype
+
+User request: “let's try the four-pose prototype, one pose per beat. pick expressive poses from the fbx and keep the current lighting and slice treatment.”
+
+Preserve 120 BPM, four bars, studio lighting, satin material, floor, caps and
+slice bounce. Sample four expressive poses from the supplied 17.233-second
+mixamo.com animation, bake them once, and hold each pose for one quarter-note.
+Repeat the four-pose phrase across the loop. Pose changes are intentional hard
+cuts on beats, including the loop join; slices still settle before each change.
+Remove horizontal root travel to keep the character on the studio mark, preserve
+vertical performance, and use one shared scale for all poses. Inspect source
+silhouettes before choosing times, then review textured rest/peak frames in both
+canvases. Pose source times are editable; validate a complete four-beat phrase.
+
+Selected source times after inspecting a one-second silhouette sheet: 1s (lean
+with bent arms), 2s (side-on crouch), 13s (open palm), 15s (two-handed gesture).
+Textured review confirms all four distinct silhouettes. The first and third
+face the viewer; the second and fourth provide opposing turns. The original
+embedded palette, studio light intensities and colors, satin roughness, cap
+color, separation, kick and twist defaults are preserved. Source bone transforms
+are applied to positions and normals before cutting, so highlights follow poses.
+Four complete section sets are cached, rather than rebuilding cuts on each hit.
+
+`poseTimes` exposes the four source moments in Studio; the pose rhythm stays
+quarter-note even if the slice-bounce division changes. Source times are seconds
+within the FBX, not playback clocks. The four-beat phrase must fit the full loop,
+validated through normal and seam metadata. A cloned rig is sampled so source
+loading state cannot be mutated by pose edits or out-of-order renders.
+
+Review: inspected all four textured assembled poses and launch peaks (frames
+0/15/30/45 and 5/20/35/50), Studio playback, and portrait/landscape canvas sheets.
+Both canvases retain the whole silhouette and airborne sections. The fourth-to-
+first pose cut is intentional and matches interior four-beat phrase cuts.
+Portrait determinism/seam PASS (seam and interior hit both 0.05202); landscape
+PASS (both 0.01640). All 96 code checks pass, including source-rig isolation,
+reverse-order pose sampling, full sliced surface retention, and timing validation.
+
+- Source selection: `out/preview/milhouse-pose-selection/candidates.png`
+- Four poses at rest/peak: `out/preview/milhouse-four-poses/sheet.png`
+- Portrait loop: `out/preview/milhouse-four-poses-portrait/sheet.png`
+- Landscape loop: `out/preview/milhouse-four-poses-landscape/sheet.png`
+- All four landscape rest/peak: `out/preview/milhouse-four-poses-landscape/poses.png`
+
+Existing FBX four-weight truncation remains; inspected selected poses show no
+new conspicuous deformation defects. No full video export was requested.
+
+After the loading/resource cleanup, all four targeted Milhouse rendered checks
+passed again on the final code (portrait, landscape, exact seam-view boundary
+correspondence and invalid-prop rejection).
+
+Full `npm run test:visual`: all 83 rendered regression checks passed, with no
+failures or skips. `npm run check`: all 96 checks passed. No dependencies,
+registry layers, presets, shared timing code or source media were changed.
+
+## Smooth four-pose revision
+
+User request: “let's try smoothly animating between those four poses instead of snapping on each beat, while keeping the current slice bounce and lighting.”
+
+Keep the selected source moments (1s, 2s, 13s, 15s), 120 BPM, four-beat phrase,
+quarter-note slice bounce and all studio lighting/material settings. Arrive at
+each chosen pose on its beat, then ease into the next over one beat, including
+pose four back to pose one. Blend bone rotations and local positions before
+baking and recutting the moving mesh; do not interpolate already-cut meshes,
+whose vertex counts differ, or scrub through unrelated intervening FBX actions.
+Use a fixed shared scale/origin and remove horizontal root travel as before.
+Frames must be independently sampled from useBeat(), with no accumulated mixer
+updates. Inspect halfway transitions, slice peaks, the loop join and both canvases.
+
+Implementation: capture local position, quaternion and scale for every source
+bone at the four selected times. Each frame independently blends the adjacent
+captures (quaternion slerp, position/scale lerp) using a quintic ease with zero
+velocity and acceleration at the pose targets. Bake that deformed surface with
+skinned normals, normalize using the fixed endpoint bounds, and recut it before
+applying the unchanged bounce. Outer slices retain any extremities that arc
+beyond the endpoint bounds; internal cut planes stay fixed. Reuse the source
+palette material and dispose replaced section geometry after each frame.
+
+Review: inspected Studio playback and the four transitions at targets, bounce
+peaks, midpoints and arrivals (frames 0/5/8/12 in each beat), plus both canvas
+sheets. The arm gestures remain readable, turns follow short natural arcs, and
+the four-to-one blend closes without a pose cut. Portrait determinism/seam PASS
+(seam 0.00071 vs neighboring motion 0.01333); landscape PASS (0.00022 vs 0.00421).
+All 96 code checks pass, including exact target arrival, independently sampled
+midpoints, source-rig isolation, periodicity, continuity at every beat, and full
+surface retention through blended poses.
+
+- Transitions: `out/preview/milhouse-smooth-transitions/sheet.png`
+- Portrait loop: `out/preview/milhouse-smooth-portrait/sheet.png`
+- Landscape loop: `out/preview/milhouse-smooth-landscape/sheet.png`
+- Landscape targets/peaks/midpoints: `out/preview/milhouse-smooth-landscape/poses.png`
+
+Final verification: `npm run check` passed all 96 checks; `npm run test:visual`
+passed all 83 rendered checks, with no failures or skips. Lighting, material,
+slice bounce, timing defaults and source media are preserved. No export made.

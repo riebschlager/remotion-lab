@@ -71,3 +71,76 @@ test('both sketch metadata paths reject incompatible musical divisions', () => {
   assert.throws(() => sketch.metadata(props), /division/);
   assert.throws(() => sketch.seamMetadata(props), /division/);
 });
+
+test('four pose targets advance on quarter notes and wrap independently of render order', async () => {
+  const {poseIndex} = await import('../src/sketches/milhouse-slices/poses');
+  assert.deepEqual([0, 0.99, 1, 1.99, 2, 3, 4, 15.99, 16, -0.01].map(b => poseIndex(b, 16)),
+    [0, 0, 1, 1, 2, 3, 0, 3, 0, 3]);
+  for (const metadata of [sketch.metadata, sketch.seamMetadata]) {
+    assert.throws(() => metadata({...sketch.defaultProps, bars: 1, beatsPerBar: 3, division: '1/4'}), /four-beat/);
+    assert.throws(() => metadata({...sketch.defaultProps, poseTimes: [1, 2, 13, 99]}), /poseTimes/);
+    assert.doesNotThrow(() => metadata({...sketch.defaultProps, division: '1/8'}));
+  }
+});
+
+test('FBX pose baking preserves source rig and produces repeatable distinct meshes', async t => {
+  const {existsSync, readFileSync} = await import('node:fs');
+  const path = 'public/assets/milhouse-01/milhouse-2.fbx';
+  if (!existsSync(path)) return t.skip('Supplied FBX runtime media is not on this machine');
+  const {TextureLoader, Texture, Bone} = await import('three');
+  const {FBXLoader} = await import('three/addons/loaders/FBXLoader.js');
+  const {bakePoses, createPoseSampler, poseBlend, DEFAULT_POSE_TIMES} = await import('../src/sketches/milhouse-slices/poses');
+  const originalLoad = TextureLoader.prototype.load;
+  TextureLoader.prototype.load = function () { return new Texture(); };
+  try {
+    const bytes = readFileSync(path);
+    const root = new FBXLoader().parse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
+    const snapshot = () => {
+      const values: number[][] = [];
+      root.traverse(o => {if (o instanceof Bone) values.push([...o.position.toArray(), ...o.quaternion.toArray()]);});
+      return values;
+    };
+    const before = snapshot();
+    const models = bakePoses(root, DEFAULT_POSE_TIMES);
+    assert.deepEqual(snapshot(), before);
+    const points = (model: typeof models[number]) => model.triangles.flatMap(tri => tri.flatMap(v => v.p.toArray()));
+    const reverse = bakePoses(root, [...DEFAULT_POSE_TIMES].reverse()).reverse();
+    models.forEach((model, index) => {
+      assert.deepEqual(points(model), points(reverse[index]));
+      assert.ok(model.triangles.every(tri => tri.every(v => Math.abs(v.n.length() - 1) < 1e-8)));
+      if (index) assert.notDeepEqual(points(model), points(models[0]));
+      const sections = sliceModel(model, 8);
+      const sourceArea = model.triangles.reduce((sum, [a, b, c]) =>
+        sum + b.p.clone().sub(a.p).cross(c.p.clone().sub(a.p)).length() / 2, 0);
+      assert.ok(Math.abs(sections.reduce((sum, section) => sum + area(section.surface), 0) - sourceArea) < 1e-4,
+        'Shared pose bounds must retain the full animated surface in the horizontal slices');
+      sections.forEach(section => {section.surface.dispose(); section.caps.dispose();});
+    });
+    const sampler = createPoseSampler(root, DEFAULT_POSE_TIMES);
+    const midpoint = points(sampler.sample(0.5, 16));
+    assert.notDeepEqual(midpoint, points(models[0]));
+    assert.notDeepEqual(midpoint, points(models[1]));
+    sampler.sample(3.75, 16);
+    assert.deepEqual(points(sampler.sample(0.5, 16)), midpoint);
+    assert.deepEqual(points(sampler.sample(16.5, 16)), midpoint);
+    for (let i = 0; i < 4; i++) {
+      assert.deepEqual(points(sampler.sample(i, 16)), points(models[i]));
+      const before = points(sampler.sample(i - 1e-4, 16));
+      const after = points(sampler.sample(i + 1e-4, 16));
+      assert.ok(Math.max(...before.map((value, j) => Math.abs(value - after[j]))) < 1e-8,
+        'Bone blending must meet continuously at every target and the loop seam');
+      const blended = sampler.sample(i + 0.5, 16);
+      const sections = sliceModel(blended, 8);
+      const sourceArea = blended.triangles.reduce((sum, [a, b, c]) =>
+        sum + b.p.clone().sub(a.p).cross(c.p.clone().sub(a.p)).length() / 2, 0);
+      assert.ok(Math.abs(sections.reduce((sum, section) => sum + area(section.surface), 0) - sourceArea) < 1e-4,
+        'Moving extremities must not be truncated at the endpoint bounds');
+      sections.forEach(section => {section.surface.dispose(); section.caps.dispose();});
+    }
+    assert.deepEqual(poseBlend(3.5, 16), {from: 3, to: 0, mix: 0.5});
+    assert.deepEqual(snapshot(), before);
+    sampler.material.dispose();
+    assert.throws(() => bakePoses(root, [99]), /poseTimes/);
+    models[0].material.dispose(); reverse[0].material.dispose();
+  } finally {TextureLoader.prototype.load = originalLoad;}
+});
