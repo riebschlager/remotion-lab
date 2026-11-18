@@ -54,10 +54,10 @@ const loadModel = () => modelPromise ??= new Promise<Group>((resolve, reject) =>
   let model: Group | undefined;
   manager.onLoad = () => { if (model) resolve(model); };
   manager.onError = (url) => reject(new Error(`Milhouse model/texture is missing: ${url}`));
-  new FBXLoader(manager).load(staticFile('assets/milhouse-01/milhouse-2.fbx'),
+  new FBXLoader(manager).load(staticFile('assets/milhouse-01/milhouse-1.fbx'),
     root => { model = root; },
     undefined,
-    () => reject(new Error('public/assets/milhouse-01/milhouse-2.fbx is missing or invalid. Restore the supplied FBX runtime copy.')),
+    () => reject(new Error('public/assets/milhouse-01/milhouse-1.fbx is missing or invalid. Restore the supplied FBX runtime copy.')),
   );
 }).catch(error => { modelPromise = undefined; throw error; });
 
