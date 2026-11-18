@@ -243,3 +243,33 @@ test('cascade launches bottom-up, never interpenetrates, lands in order and rest
     assert.throws(() => metadata({...sketch.defaultProps, cascade: {...cascadeDefaults, landAt: 0.9, bounce: 0.5}}), /cascade.bounce/);
   }
 });
+
+test('camera paths are periodic, static is the original shot, and legacy looks stay locked off', async () => {
+  const {cameraShot, cameraDefaults, shotPosition} = await import('../src/sketches/milhouse-slices/camera');
+  const totalBeats = 16, beatsPerBar = 4, stepsPerLoop = 16;
+  const clock = (beat: number) => {
+    const local = ((beat % totalBeats) + totalBeats) % totalBeats;
+    const stepIndex = Math.floor(local) % stepsPerLoop;
+    return {beat, totalBeats, beatsPerBar, stepPhase: local - stepIndex, stepIndex, stepsPerLoop, landPhase: 0.62};
+  };
+  const wrap = (deg: number) => ((deg % 360) + 540) % 360 - 180;
+  for (const mode of ['static', 'turntable', 'ratchet', 'marks'] as const) {
+    for (const turns of [0, 1, 2]) {
+      const settings = {...cameraDefaults, mode, turns, finale: 0.8};
+      const end = cameraShot(settings, clock(totalBeats - 1e-6)), start = cameraShot(settings, clock(0));
+      assert.ok(Math.abs(wrap(end.azimuth - start.azimuth)) < 1e-3, `${mode}/${turns} azimuth closes the loop`);
+      assert.ok(Math.abs(end.elevation - start.elevation) < 1e-3 && Math.abs(end.zoom - start.zoom) < 1e-3, `${mode}/${turns} closes the loop`);
+      for (let b = 0; b < totalBeats; b += 0.01) {
+        const a = cameraShot(settings, clock(b)), next = cameraShot(settings, clock(b + 0.01));
+        assert.ok(Math.abs(wrap(next.azimuth - a.azimuth)) < 6 && Math.abs(next.zoom - a.zoom) < 0.05, `${mode}/${turns} is continuous at beat ${b}`);
+      }
+    }
+  }
+  const hero = shotPosition(cameraShot({...cameraDefaults, mode: 'static'}, clock(3.2)));
+  assert.ok(Math.abs(hero[0]) < 1e-9 && Math.abs(hero[1] - 4) < 1e-3 && Math.abs(hero[2] - 20) < 1e-3, 'Static matches the original camera');
+  for (const metadata of [sketch.metadata, sketch.seamMetadata]) {
+    const legacy = metadata({...sketch.defaultProps, camera: undefined}).props as {camera: {mode: string}};
+    assert.equal(legacy.camera.mode, 'static');
+    assert.throws(() => metadata({...sketch.defaultProps, division: '1 bar', bars: 3, camera: {...cameraDefaults, turns: 0}}), /camera.turns/);
+  }
+});

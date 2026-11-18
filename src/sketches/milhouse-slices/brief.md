@@ -374,3 +374,23 @@ Reviewed one full beat frame by frame (portrait, 30 fps), plus the portrait
 and landscape preview sheets. Both pass determinism and seam checks. At the
 default 1/4 division the eight landings fall within about seven frames. Use a
 1/2 or 1-bar division for a slower, more legible restack.
+
+### Camera moves revision
+
+User request: “let's add some camera moves to this animation… either an orbit
+around milhouse, or the camera tweens to different locations with a "look at"
+set to keep milhouse in frame.” Chosen direction: a bullet-time ratchet orbit
+with a zoom punch on each launch, plus a slow per-bar push.
+
+`camera.mode` is `static | turntable | ratchet | marks`, default `ratchet`.
+The ratchet moves only while the slices are airborne (from launch until the
+stack lands, stretched by `holdOpen`), so each swing reads as caused by the cut;
+`turns` whole orbits per loop, or a back-and-forth sway across `arc` when 0.
+`marks` eases between four shots, one per pose beat, arriving on the downbeat.
+The camera stays orthographic, so shots are azimuth, elevation and zoom only;
+it orbits the world origin at the original distance, and `static` reproduces
+the original (0, 4, 20) shot exactly. Lights stay in the world by default (the
+rear rim becomes the key on the far side of the orbit); `lightsFollow` rotates
+Milhouse instead of the camera so lighting stays constant. Saved looks without
+a camera keep `static`. The optional overhead `finale` stays off by default:
+at 60° the head hides the portals and the figure drifts high in frame.

@@ -1,6 +1,7 @@
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
+import {useThree} from '@react-three/fiber';
 import {Color, Float32BufferAttribute, Group, LoadingManager, Quaternion, Vector3} from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
@@ -16,6 +17,7 @@ import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler
 import {StudioFloor} from './StudioFloor';
 import {Portal, portalSchema, leakSchema, portalDefaults, leakDefaults} from './Portal';
 import {cascadeDefaults, cascadeGaps, cascadeMotion, cascadeSchema, cascadeTiming} from './cascade';
+import {cameraDefaults, cameraSchema, cameraShot, shotPosition, type Shot} from './camera';
 
 const poseTimeSchema = z.number().min(0).max(SOURCE_DURATION).step(0.05);
 const schema = z.object({
@@ -43,6 +45,8 @@ const schema = z.object({
   fillIntensity: z.number().min(0).max(10).step(0.1).describe('Gentle front fill'),
   rimIntensity: z.number().min(0).max(15).step(0.1).describe('Cool rear strip'),
   roughness: z.number().min(0.15).max(0.9).step(0.01).describe('Vinyl satin finish'),
+  // Saved looks without a camera keep the original locked-off shot.
+  camera: cameraSchema.default({...cameraDefaults, mode: 'static'}).describe('Beat-locked camera moves'),
 });
 type Props = z.output<typeof schema>;
 
@@ -85,7 +89,7 @@ type SliceTransform = {
 };
 const UP = new Vector3(0, 1, 0);
 
-const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; phase: number}> = ({sampler, props, energy, phase}) => {
+const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; phase: number; yaw: number}> = ({sampler, props, energy, phase, yaw}) => {
   const {beat, totalBeats} = useBeat();
   const {seed} = useSketch();
   const sections = useMemo(() => {
@@ -159,7 +163,7 @@ const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; ph
   useEffect(() => () => material.dispose(), [material]);
   useEffect(() => () => { for (const section of sections) { section.surface.dispose(); section.caps.dispose(); } }, [sections]);
   return (
-    <group rotation={[0, props.viewAngle * Math.PI / 180, 0]} position={[0, -2.95, 0]}>
+    <group rotation={[0, (props.viewAngle - yaw) * Math.PI / 180, 0]} position={[0, -2.95, 0]}>
       {sections.map((section, index) => {
         const t = transforms[index];
         // The outer group pivots at the slice's base so tilt and squash stay seated.
@@ -204,15 +208,33 @@ function cascadeTransforms(props: Props, phase: number, headings: number[], half
   });
 }
 
+/** Drives the orthographic camera from the beat clock before the frame is advanced. */
+const CameraRig: React.FC<{shot: Shot; azimuthOffset: number; baseZoom: number}> = ({shot, azimuthOffset, baseZoom}) => {
+  const camera = useThree(state => state.camera);
+  useLayoutEffect(() => {
+    camera.position.set(...shotPosition(shot, azimuthOffset));
+    camera.up.set(0, 1, 0);
+    camera.zoom = baseZoom * shot.zoom;
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  }, [camera, shot.azimuth, shot.elevation, shot.zoom, azimuthOffset, baseZoom]);
+  return null;
+};
+
 const MilhouseSlices: React.FC<Props> = (props) => {
   const {beat, totalBeats, beatsPerBar} = useBeat();
   const {width, height, aspect} = useCanvas();
   const sampler = useMilhouse(props.poseTimes);
   const {transparent, variant} = props as Props & SketchBaseProps;
-  const {phase: stepPhase} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
+  const {phase: stepPhase, index: stepIndex, stepsPerLoop} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
   const cascade = props.motion === 'cascade';
   const phase = sliceMotionPhase(stepPhase, props.holdOpen,
     cascade ? cascadeTiming(props.slices, props.spread, props.cascade).apex : undefined);
+  // Raw division phase when the stack is back together; the hold sits before it.
+  const landPhase = (cascade ? props.cascade.landAt : 0.64) * (1 - props.holdOpen) + props.holdOpen;
+  const shot = cameraShot(props.camera, {beat, totalBeats, beatsPerBar, stepPhase, stepIndex, stepsPerLoop, landPhase});
+  // Lights following the camera is the same as turning Milhouse the other way.
+  const follow = props.camera.lightsFollow;
   const energy = cascade ? 0 : sliceBounce(phase, props.openEase, props.closeEase);
   // A canvas-fraction camera: keep the whole silhouette and its bounce visible
   // even on very wide or narrow custom canvases. World model height is five.
@@ -222,12 +244,13 @@ const MilhouseSlices: React.FC<Props> = (props) => {
     <AbsoluteFill style={transparent ? undefined : {backgroundColor: props.backdrop}}>
       {sampler ? <ThreeCanvas width={width} height={height} orthographic
         shadows="percentage"
-        camera={{position: [0, 4, 20], zoom, near: 0.1, far: 100}}
+        camera={{position: shotPosition(shot, follow ? 0 : shot.azimuth), zoom: zoom * shot.zoom, near: 0.1, far: 100}}
         gl={{alpha: true, antialias: true, preserveDrawingBuffer: true}}
         onCreated={({camera}) => {
           RectAreaLightUniformsLib.init();
           camera.lookAt(0, 0, 0); camera.updateProjectionMatrix();
         }}>
+        <CameraRig shot={shot} azimuthOffset={follow ? -shot.azimuth : 0} baseZoom={zoom} />
         {!transparent ? <fog attach="fog" args={[props.backdrop, 22, 60]} /> : null}
         <ambientLight intensity={props.ambientIntensity} color="#e7deed" />
         <rectAreaLight position={[-4.5, 5, 6]} width={4.5} height={6}
@@ -241,9 +264,9 @@ const MilhouseSlices: React.FC<Props> = (props) => {
           shadow-mapSize={[1024, 1024]} shadow-camera-left={-5} shadow-camera-right={5}
           shadow-camera-top={6} shadow-camera-bottom={-5} shadow-camera-near={0.5}
           shadow-camera-far={25} shadow-bias={-0.0002} shadow-normalBias={0.015} shadow-radius={3} />
-        <Sections sampler={sampler} props={props} energy={energy} phase={phase} />
+        <Sections sampler={sampler} props={props} energy={energy} phase={phase} yaw={follow ? shot.azimuth : 0} />
         {!transparent ? <StudioFloor color={props.floorColor}
-          revision={`${props.motion}/${JSON.stringify(props.cascade)}/${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}/${phase}/${energy}`} /> : null}
+          revision={`${props.motion}/${JSON.stringify(props.cascade)}/${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${follow ? shot.azimuth : 0}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}/${phase}/${energy}`} /> : null}
       </ThreeCanvas> : null}
     </AbsoluteFill>
   );
@@ -259,7 +282,8 @@ export default defineSketch({
     holdOpen: 0, openEase: 'smooth', closeEase: 'smooth', kick: 0.15, twist: 10,
     portal: portalDefaults, lightLeak: leakDefaults,
     viewAngle: -15, backdrop: '#302139', cutColor: '#00efef', floorColor: '#403246',
-    ambientIntensity: 0.28, keyIntensity: 7.5, fillIntensity: 3.3, rimIntensity: 9, roughness: 0.46},
+    ambientIntensity: 0.28, keyIntensity: 7.5, fillIntensity: 3.3, rimIntensity: 9, roughness: 0.46,
+    camera: {...cameraDefaults, marks: [...cameraDefaults.marks]}},
   timing: {bpm: 120, bars: 4, beatsPerBar: 4},
   Component: MilhouseSlices,
   validate: (props, timing) => [
@@ -270,6 +294,9 @@ export default defineSketch({
       ? ['cascade.landAt: leave at least 0.2 of the division after the top slice launches (landAt - stagger).'] : []),
     ...(props.motion === 'cascade' && props.cascade.landAt + props.cascade.bounce * (props.cascade.landAt - props.cascade.stagger) > 0.95
       ? ['cascade.bounce: the top slice must finish its hop before 95% of the division so the stack can settle.'] : []),
+    ...(props.camera.mode === 'ratchet' && props.camera.turns === 0
+      && Math.round(timing.bars * timing.beatsPerBar / divisionBeats(props.division, timing.beatsPerBar)) % 2 !== 0
+      ? ['camera.turns: a back-and-forth ratchet needs an even number of divisions in the loop.'] : []),
     ...((timing.bars * timing.beatsPerBar) % 4 === 0 ? [] : ['poseTimes: loop must contain complete four-beat pose phrases.']),
   ],
   debugDivisions: (props) => [props.division],
