@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
 import {mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {test} from 'node:test';
-import {difference, openSession} from '../../scripts/lib/render';
+import {difference, missingSketchAssets, openSession} from '../../scripts/lib/render';
 import {leakDefaults, portalDefaults} from '../../src/sketches/milhouse-slices/Portal';
+import milhouseSlices from '../../src/sketches/milhouse-slices/sketch';
 
-const skip = !existsSync('public/assets/milhouse-01/milhouse-2.fbx') && 'Supplied FBX is not on this machine';
+const missing = missingSketchAssets(milhouseSlices);
+const skip = missing.length ? missing.join('; ') : false;
 test('active Milhouse portals repeat exactly and respond visibly to portal and leak controls', {skip, timeout: 180_000}, async () => {
   const session = await openSession();
   const dir = path.resolve('out/loop-tests/milhouse-portal');

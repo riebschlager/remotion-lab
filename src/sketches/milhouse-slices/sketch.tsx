@@ -1,5 +1,5 @@
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
+import {AbsoluteFill, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
 import {useThree} from '@react-three/fiber';
 import {Color, Float32BufferAttribute, Group, LoadingManager, Quaternion, Vector3} from 'three';
@@ -7,11 +7,12 @@ import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniform
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
 import {z} from 'zod';
+import {collectionFile} from '../../assets';
 import {useBeat} from '../../beat/BeatContext';
 import {divisionBeats, step, stepRandom} from '../../beat/envelopes';
 import {divisionSchema} from '../../beat/divisions';
 import {useCanvas} from '../canvas';
-import {defineSketch, divisionIssues, useSketch, type SketchBaseProps} from '../define';
+import {defineSketch, divisionIssues, useAsset, useSketch, type SketchBaseProps} from '../define';
 import {sliceBounce, sliceEaseOptions, sliceModel, sliceMotionPhase} from './sliceGeometry';
 import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler} from './poses';
 import {StudioFloor} from './StudioFloor';
@@ -49,32 +50,34 @@ const schema = z.object({
   camera: cameraSchema.default({...cameraDefaults, mode: 'static'}).describe('Beat-locked camera moves'),
 });
 type Props = z.output<typeof schema>;
+const modelFile = collectionFile('milhouse-01', 'milhouse-2.fbx');
 
 // Keep model parsing and texture readiness together: a frame never captures an
 // untextured intermediate load. Missing FBX/embedded textures fail explicitly.
 let modelPromise: Promise<Group> | undefined;
-const loadModel = () => modelPromise ??= new Promise<Group>((resolve, reject) => {
+const loadModel = (src: string) => modelPromise ??= new Promise<Group>((resolve, reject) => {
   const manager = new LoadingManager();
   let model: Group | undefined;
   manager.onLoad = () => { if (model) resolve(model); };
   manager.onError = (url) => reject(new Error(`Milhouse model/texture is missing: ${url}`));
-  new FBXLoader(manager).load(staticFile('assets/milhouse-01/milhouse-1.fbx'),
+  new FBXLoader(manager).load(src,
     root => { model = root; },
     undefined,
-    () => reject(new Error('public/assets/milhouse-01/milhouse-1.fbx is missing or invalid. Restore the supplied FBX runtime copy.')),
+    () => reject(new Error(`public/${modelFile.publicPath} is missing or invalid. Restore the supplied FBX runtime copy.`)),
   );
 }).catch(error => { modelPromise = undefined; throw error; });
 
 function useMilhouse(times: readonly number[]) {
+  const {src} = useAsset(modelFile);
   const {delayRender, continueRender, cancelRender} = useDelayRender();
   const [hold] = useState(() => delayRender('Loading Milhouse FBX and embedded texture'));
   const [model, setModel] = useState<Group | null>(null);
   const released = useRef(false);
   useEffect(() => {
     let current = true;
-    loadModel().then(result => { if (current) setModel(result); }, error => { if (current) cancelRender(error); });
+    loadModel(src).then(result => { if (current) setModel(result); }, error => { if (current) cancelRender(error); });
     return () => { current = false; if (!released.current) { continueRender(hold); released.current = true; } };
-  }, [hold, continueRender, cancelRender]);
+  }, [src, hold, continueRender, cancelRender]);
   useLayoutEffect(() => {
     if (model && !released.current) { continueRender(hold); released.current = true; }
   }, [model, hold, continueRender]);
@@ -286,6 +289,7 @@ export default defineSketch({
     camera: {...cameraDefaults, marks: [...cameraDefaults.marks]}},
   timing: {bpm: 120, bars: 4, beatsPerBar: 4},
   Component: MilhouseSlices,
+  assets: [modelFile],
   validate: (props, timing) => [
     ...divisionIssues('division', props.division, timing),
     ...(Math.abs(timing.bars * timing.beatsPerBar * props.portal.echoTravel - Math.round(timing.bars * timing.beatsPerBar * props.portal.echoTravel)) < 1e-8

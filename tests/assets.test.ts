@@ -198,14 +198,18 @@ test('clip() and font() resolve manifest entries and explain what is available o
 });
 
 test('missing files are reported per file, against whatever lookup the caller has', () => {
-  const {clip, font} = createAssets({fixture: manifest});
-  const refs = [clip('fixture', 'pulse.gif'), font('fixture', 'Lab Static')];
+  const {clip, font, collectionFile} = createAssets({fixture: manifest});
+  const model = collectionFile('fixture', 'models/figure.fbx');
+  const refs = [clip('fixture', 'pulse.gif'), font('fixture', 'Lab Static'), model];
+  assert.equal(assetKey(model), 'file:fixture/models/figure.fbx');
   assert.deepEqual(refs.flatMap(assetFiles),
-    ['assets/fixture/pulse.gif', 'assets/fixture/type/LabStatic-Regular.ttf', 'assets/fixture/type/LabStatic-BoldItalic.ttf']);
+    ['assets/fixture/pulse.gif', 'assets/fixture/type/LabStatic-Regular.ttf',
+      'assets/fixture/type/LabStatic-BoldItalic.ttf', 'assets/fixture/models/figure.fbx']);
   assert.deepEqual(missingAssets(refs, () => true), []);
   assert.deepEqual(missingAssets(refs, (file) => file.endsWith('Regular.ttf')), [
     'public/assets/fixture/pulse.gif is missing (clip "pulse.gif" in collection "fixture")',
     'public/assets/fixture/type/LabStatic-BoldItalic.ttf is missing (font "Lab Static" in collection "fixture")',
+    'public/assets/fixture/models/figure.fbx is missing (file "models/figure.fbx" in collection "fixture")',
   ]);
 });
 

@@ -26,7 +26,14 @@ export type FontRef = FontEntry & {
   family: string;
 };
 
-export type AssetRef = ClipRef | FontRef;
+export type CollectionFileRef = {
+  kind: 'file';
+  collection: string;
+  name: string;
+  publicPath: string;
+};
+
+export type AssetRef = ClipRef | FontRef | CollectionFileRef;
 
 type ManifestShape = {clips: Record<string, unknown>; fonts: Record<string, unknown>};
 
@@ -48,6 +55,11 @@ export const createAssets = <M extends Record<string, ManifestShape>>(source: M)
     `If the file was added after the last scan, run npm run assets:scan -- ${collection}.`;
 
   return {
+    /** A collection file that uses a sketch-specific loader, such as an FBX model. */
+    collectionFile: <C extends keyof M & string>(collection: C, name: string): CollectionFileRef => {
+      collectionOf(collection);
+      return {kind: 'file', collection, name, publicPath: `assets/${collection}/${name}`};
+    },
     /** A GIF or video by its path inside the collection, e.g. `clip('retro', 'loops/spin.gif')`. */
     clip: <C extends keyof M & string>(collection: C, name: keyof M[C]['clips'] & string): ClipRef => {
       const {clips} = collectionOf(collection);
@@ -72,15 +84,17 @@ export const createAssets = <M extends Record<string, ManifestShape>>(source: M)
   };
 };
 
-export const {clip, font, clipNames, fontFamilies} = createAssets(manifests);
+export const {clip, font, collectionFile, clipNames, fontFamilies} = createAssets(manifests);
 
 /** Stable identity of a reference, used to match declared assets with used ones. */
 export const assetKey = (ref: AssetRef) =>
-  `${ref.kind}:${ref.collection}/${ref.kind === 'clip' ? ref.name : ref.family}`;
+  `${ref.kind}:${ref.collection}/${ref.kind === 'font' ? ref.family : ref.name}`;
 
 /** Every file a reference needs, relative to public/. */
-export const assetFiles = (ref: AssetRef) => (ref.kind === 'clip' ? [ref.publicPath]
-  : ref.faces.map((face) => `assets/${ref.collection}/${face.file}`));
+export const assetFiles = (ref: AssetRef) => (ref.kind === 'font'
+  ? ref.faces.map((face) => `assets/${ref.collection}/${face.file}`) : [ref.publicPath]);
+
+export const assetLabel = (ref: AssetRef) => `${ref.kind} "${ref.kind === 'font' ? ref.family : ref.name}"`;
 
 /**
  * One message per file that `exists` cannot find. The caller supplies the
@@ -89,7 +103,7 @@ export const assetFiles = (ref: AssetRef) => (ref.kind === 'clip' ? [ref.publicP
  */
 export const missingAssets = (refs: AssetRef[], exists: (publicPath: string) => boolean) =>
   refs.flatMap((ref) => assetFiles(ref).filter((file) => !exists(file)).map((file) =>
-    `public/${file} is missing (${ref.kind === 'clip' ? `clip "${ref.name}"` : `font "${ref.family}"`} in collection "${ref.collection}")`));
+    `public/${file} is missing (${assetLabel(ref)} in collection "${ref.collection}")`));
 
 export const missingAssetsHint = 'Collection media is not in git: copy the collection into public/assets/, or re-scan if a file was renamed.';
 

@@ -48,7 +48,10 @@ for (const sketch of sketches) {
 
   if (missing.length) {
     test(`${sketch.id} names its missing asset files instead of rendering`, async () => {
-      await assert.rejects(session.select(sketch.id), /assets: public\/assets\/.* is missing/);
+      const namesMissingFiles = (error: Error) =>
+        error.message.includes('assets:') && missing.every((message) => error.message.includes(message));
+      await assert.rejects(session.select(sketch.id), namesMissingFiles);
+      await assert.rejects(session.select(`${sketch.id}-seam`), namesMissingFiles);
     });
   }
 }

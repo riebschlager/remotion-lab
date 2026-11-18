@@ -108,7 +108,9 @@ test('four pose targets advance on quarter notes and wrap independently of rende
 
 test('FBX pose baking preserves source rig and produces repeatable distinct meshes', async t => {
   const {existsSync, readFileSync} = await import('node:fs');
-  const path = 'public/assets/milhouse-01/milhouse-2.fbx';
+  const model = sketch.assets(sketch.defaultProps).find((ref) => ref.kind === 'file');
+  assert.ok(model && model.name.endsWith('.fbx'), 'The sketch must declare its FBX model');
+  const path = `public/${model.publicPath}`;
   if (!existsSync(path)) return t.skip('Supplied FBX runtime media is not on this machine');
   const {TextureLoader, Texture, Bone} = await import('three');
   const {FBXLoader} = await import('three/addons/loaders/FBXLoader.js');

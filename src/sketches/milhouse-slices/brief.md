@@ -42,10 +42,9 @@ Use the rest pose and embedded palette; bake world-space triangles, clip against
 horizontal planes, interpolate normals/UVs, and cap closed contours. Real mesh
 sections, not screen-space strips.
 
-FBX is outside the clip/font collection API. A byte-for-byte runtime copy lives
-at `public/assets/milhouse-01/milhouse-2.fbx`; assets:scan skips FBX and reports
-zero clips/fonts. No filmstrip applies. The sketch owns loading/missing-file
-errors. Keep the supplied original untouched. No Clip or Type is needed.
+A byte-for-byte runtime copy lives at `public/assets/milhouse-01/milhouse-2.fbx`.
+The sketch declares this file so the shared asset checks can find it before
+rendering. The scanner skips FBX. Keep the supplied original untouched.
 
 ## Canvas and success criteria
 

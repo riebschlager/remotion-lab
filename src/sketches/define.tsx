@@ -4,7 +4,7 @@ import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {z} from 'zod';
 import {typeIssues, type TypeBinding} from '../type/model';
 import {clipPlaybackIssues, type ClipBinding} from '../assets/clipPlayback';
-import {assetKey, missingAssets, missingAssetsHint, type AssetRef, type ClipRef, type FontRef} from '../assets';
+import {assetKey, assetLabel, missingAssets, missingAssetsHint, type AssetRef, type ClipRef, type CollectionFileRef, type FontRef} from '../assets';
 import {cssFontFamily, loadCollectionFont} from '../assets/fonts';
 import {BeatProvider} from '../beat/BeatContext';
 import {divisionBeats, divisionFitsLoop, type Division} from '../beat/divisions';
@@ -44,21 +44,21 @@ export const useSketch = () => {
 
 /**
  * The usable form of an asset the sketch declared in `defineSketch({assets})`:
- * a clip gains `src` for `<AnimatedImage>` or `<Video>`, a font gains the
+ * a clip or collection file gains a `src` URL, and a font gains the
  * `fontFamily` to put in a style. Declared assets are checked against the
  * public folder before rendering, and fonts are loaded before the component
  * mounts, so an undeclared asset is an error instead of a broken frame.
  */
 export function useAsset(ref: ClipRef): ClipRef & {src: string};
+export function useAsset(ref: CollectionFileRef): CollectionFileRef & {src: string};
 export function useAsset(ref: FontRef): FontRef & {fontFamily: string};
 export function useAsset(ref: AssetRef) {
   const sketch = useSketch();
   if (!sketch.assets.has(assetKey(ref))) {
-    const what = ref.kind === 'clip' ? `clip "${ref.name}"` : `font "${ref.family}"`;
-    throw new Error(`Sketch "${sketch.id}" uses ${what} from collection "${ref.collection}" without declaring it. `
+    throw new Error(`Sketch "${sketch.id}" uses ${assetLabel(ref)} from collection "${ref.collection}" without declaring it. `
       + 'List it in `assets` in defineSketch so it is checked and loaded before rendering.');
   }
-  return ref.kind === 'clip' ? {...ref, src: staticFile(ref.publicPath)} : {...ref, fontFamily: cssFontFamily(ref)};
+  return ref.kind === 'font' ? {...ref, fontFamily: cssFontFamily(ref)} : {...ref, src: staticFile(ref.publicPath)};
 }
 
 /** Paths in the public folder, when running in Studio or a render. Node callers check the disk instead. */
@@ -109,7 +109,7 @@ export const defineSketch = <S extends z.ZodObject>(definition: {
   Component: React.ComponentType<z.output<S>>;
   /**
    * Every collection asset the component reads with `useAsset()`, from
-   * `clip()` and `font()`. Use the function form when a param chooses one.
+   * `clip()`, `font()` or `collectionFile()`. Use the function form when a param chooses one.
    */
   assets?: AssetRef[] | ((props: z.output<S>) => AssetRef[]);
   /** Declarative playback bindings: validated before rendering in both metadata paths. */
