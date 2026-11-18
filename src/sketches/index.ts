@@ -8,6 +8,8 @@ import clipDuet from './clip-duet/sketch';
 import typeBeat from './type-beat/sketch';
 import randoWando from './rando-wando/sketch';
 import milhouseSlices from './milhouse-slices/sketch';
+import milhousePortalDive from './milhouse-portal-dive/sketch';
+import milhouseChunks from './milhouse-chunks/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -23,6 +25,8 @@ export const sketches: Sketch[] = [
   typeBeat,
   randoWando,
   milhouseSlices,
+  milhousePortalDive,
+  milhouseChunks,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);
