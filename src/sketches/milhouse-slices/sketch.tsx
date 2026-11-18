@@ -1,7 +1,7 @@
 import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {AbsoluteFill, staticFile, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
-import {Color, Float32BufferAttribute, Group, LoadingManager} from 'three';
+import {Color, Float32BufferAttribute, Group, LoadingManager, Quaternion, Vector3} from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
@@ -15,6 +15,7 @@ import {sliceBounce, sliceEaseOptions, sliceModel, sliceMotionPhase} from './sli
 import {createPoseSampler, DEFAULT_POSE_TIMES, SOURCE_DURATION, type PoseSampler} from './poses';
 import {StudioFloor} from './StudioFloor';
 import {Portal, portalSchema, leakSchema, portalDefaults, leakDefaults} from './Portal';
+import {cascadeDefaults, cascadeGaps, cascadeMotion, cascadeSchema, cascadeTiming} from './cascade';
 
 const poseTimeSchema = z.number().min(0).max(SOURCE_DURATION).step(0.05);
 const schema = z.object({
@@ -23,9 +24,12 @@ const schema = z.object({
     .describe('Four source animation times in seconds, one pose reached on each beat'),
   slices: z.number().int().min(2).max(20).describe('Horizontal mesh sections'),
   spread: z.number().min(0).max(2.5).step(0.05).describe('Vertical separation at peak'),
-  holdOpen: z.number().min(0).max(0.8).step(0.01).default(0).describe('Fraction of each slice division spent fully apart'),
-  openEase: z.enum(sliceEaseOptions).default('smooth').describe('Easing as the slices break apart'),
-  closeEase: z.enum(sliceEaseOptions).default('smooth').describe('Easing as the slices reassemble'),
+  motion: z.enum(['cascade', 'accordion']).default('accordion')
+    .describe('cascade: bottom-up ballistic launch that restacks with bounce and wobble; accordion: all slices ease together'),
+  cascade: cascadeSchema.default(cascadeDefaults).describe('Physics for cascade motion'),
+  holdOpen: z.number().min(0).max(0.8).step(0.01).default(0).describe('Fraction of each slice division spent fully apart (cascade freezes at the top slice apex)'),
+  openEase: z.enum(sliceEaseOptions).default('smooth').describe('Accordion easing as the slices break apart'),
+  closeEase: z.enum(sliceEaseOptions).default('smooth').describe('Accordion easing as the slices reassemble'),
   kick: z.number().min(0).max(0.5).step(0.01).describe('Alternating sideways bounce'),
   twist: z.number().min(0).max(30).step(1).describe('Slice twist in degrees'),
   viewAngle: z.number().min(-60).max(60).step(1).describe('Character viewing angle'),
@@ -75,6 +79,12 @@ function useMilhouse(times: readonly number[]) {
   return poses;
 }
 
+type SliceTransform = {
+  position: [number, number, number]; quaternion: Quaternion; scale: [number, number, number];
+  pivot: number; yaw: number; energy: number; opening: number; faceOpening: [number, number];
+};
+const UP = new Vector3(0, 1, 0);
+
 const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; phase: number}> = ({sampler, props, energy, phase}) => {
   const {beat, totalBeats} = useBeat();
   const {seed} = useSketch();
@@ -90,7 +100,30 @@ const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; ph
     });
     return result;
   }, [sampler, beat, totalBeats, props.slices]);
-  const opening = Math.min(1, energy * props.spread * 9);
+  // Off-center mass: the XZ direction a slice leans toward when knocked loose.
+  const headings = useMemo(() => sections.map(({surface}) => {
+    const p = surface.getAttribute('position');
+    let x = 0, z = 0;
+    for (let i = 0; i < p.count; i++) { x += p.getX(i); z += p.getZ(i); }
+    return Math.atan2(z, x);
+  }), [sections]);
+  const half = 2.5 / props.slices;
+  const transforms: SliceTransform[] = props.motion === 'cascade'
+    ? cascadeTransforms(props, phase, headings, half, seed)
+    : sections.map((_, index) => {
+      const fraction = index / (props.slices - 1);
+      const direction = index % 2 ? 1 : -1;
+      const individuality = 0.85 + 0.3 * stepRandom(seed('slice-kick'), index);
+      const lift = energy * (0.15 + fraction * props.spread);
+      const opening = Math.min(1, energy * props.spread * 9);
+      return {
+        position: [direction * energy * props.kick * individuality, lift, 0],
+        quaternion: new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), direction * Math.sin(phase * Math.PI * 2) * energy * 0.035),
+        scale: [1, 1, 1], pivot: 0, yaw: direction * energy * props.twist * Math.PI / 180,
+        energy, opening, faceOpening: [opening, opening],
+      };
+    });
+  const opening = Math.max(0, ...transforms.map(t => t.opening));
   const spill = useMemo(() => ({
     strength: {value: 0}, primary: {value: new Color()}, secondary: {value: new Color()},
   }), []);
@@ -128,20 +161,18 @@ const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; ph
   return (
     <group rotation={[0, props.viewAngle * Math.PI / 180, 0]} position={[0, -2.95, 0]}>
       {sections.map((section, index) => {
-        const fraction = index / (props.slices - 1);
-        const direction = index % 2 ? 1 : -1;
-        const individuality = 0.85 + 0.3 * stepRandom(seed('slice-kick'), index);
-        const lift = energy * (0.15 + fraction * props.spread);
-        const x = direction * energy * props.kick * individuality;
-        const yaw = direction * energy * props.twist * Math.PI / 180;
+        const t = transforms[index];
+        // The outer group pivots at the slice's base so tilt and squash stay seated.
         return (
-          <group key={index} position={[x, section.center + lift, 0]}
-            rotation={[0, yaw, direction * Math.sin(phase * Math.PI * 2) * energy * 0.035]}>
-            <mesh geometry={section.surface} material={material} castShadow receiveShadow />
-            <Portal caps={section.caps} color={props.cutColor} settings={props.portal} leaks={props.lightLeak}
-              energy={energy} opening={opening} clock={beat * props.portal.echoTravel}
-              drift={beat / totalBeats * Math.PI * 2}
-              variation={stepRandom(seed('portal-phase'), index) * props.portal.sliceVariation} />
+          <group key={index} position={[t.position[0], section.center + t.position[1] - t.pivot, t.position[2]]}
+            quaternion={t.quaternion} scale={t.scale}>
+            <group position={[0, t.pivot, 0]} rotation={[0, t.yaw, 0]}>
+              <mesh geometry={section.surface} material={material} castShadow receiveShadow />
+              <Portal caps={section.caps} color={props.cutColor} settings={props.portal} leaks={props.lightLeak}
+                energy={t.energy} opening={t.opening} faceOpening={t.faceOpening} clock={beat * props.portal.echoTravel}
+                drift={beat / totalBeats * Math.PI * 2}
+                variation={stepRandom(seed('portal-phase'), index) * props.portal.sliceVariation} />
+            </group>
           </group>
         );
       })}
@@ -149,14 +180,40 @@ const Sections: React.FC<{sampler: PoseSampler; props: Props; energy: number; ph
   );
 };
 
+function cascadeTransforms(props: Props, phase: number, headings: number[], half: number,
+  seed: (channel: string) => string): SliceTransform[] {
+  const count = props.slices;
+  const motions = cascadeMotion(phase, count, props.spread, props.cascade, headings);
+  const gaps = cascadeGaps(motions);
+  // Gap that fully opens a portal, matching accordion brightness at peak.
+  const unit = Math.max(props.spread / (count - 1), 0.02);
+  const open = (gap: number) => Math.min(1, gap * 9 * (count - 1));
+  return motions.map((m, index) => {
+    const direction = index % 2 ? 1 : -1;
+    const individuality = 0.85 + 0.3 * stepRandom(seed('slice-kick'), index);
+    const below = index > 0 ? gaps[index - 1] : 0, above = index < count - 1 ? gaps[index] : 0;
+    const axis = new Vector3(Math.cos(m.heading), 0, Math.sin(m.heading)).cross(UP).negate();
+    return {
+      position: [direction * m.air * props.kick * individuality, m.lift, 0],
+      quaternion: new Quaternion().setFromAxisAngle(axis, m.tilt),
+      scale: [1 + m.squash / 2, 1 - m.squash, 1 + m.squash / 2], pivot: half,
+      yaw: direction * m.air * props.twist * Math.PI / 180,
+      energy: Math.min(1, Math.max(below, above) / unit),
+      opening: open(Math.max(below, above)), faceOpening: [open(below), open(above)],
+    };
+  });
+}
+
 const MilhouseSlices: React.FC<Props> = (props) => {
   const {beat, totalBeats, beatsPerBar} = useBeat();
   const {width, height, aspect} = useCanvas();
   const sampler = useMilhouse(props.poseTimes);
   const {transparent, variant} = props as Props & SketchBaseProps;
   const {phase: stepPhase} = step(beat, divisionBeats(props.division, beatsPerBar), totalBeats);
-  const phase = sliceMotionPhase(stepPhase, props.holdOpen);
-  const energy = sliceBounce(phase, props.openEase, props.closeEase);
+  const cascade = props.motion === 'cascade';
+  const phase = sliceMotionPhase(stepPhase, props.holdOpen,
+    cascade ? cascadeTiming(props.slices, props.spread, props.cascade).apex : undefined);
+  const energy = cascade ? 0 : sliceBounce(phase, props.openEase, props.closeEase);
   // A canvas-fraction camera: keep the whole silhouette and its bounce visible
   // even on very wide or narrow custom canvases. World model height is five.
   const frustumHeight = Math.max(7.1 + props.spread, 4.5 / aspect);
@@ -186,7 +243,7 @@ const MilhouseSlices: React.FC<Props> = (props) => {
           shadow-camera-far={25} shadow-bias={-0.0002} shadow-normalBias={0.015} shadow-radius={3} />
         <Sections sampler={sampler} props={props} energy={energy} phase={phase} />
         {!transparent ? <StudioFloor color={props.floorColor}
-          revision={`${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}/${phase}/${energy}`} /> : null}
+          revision={`${props.motion}/${JSON.stringify(props.cascade)}/${props.slices}/${props.spread}/${props.kick}/${props.twist}/${props.viewAngle}/${variant}/${props.poseTimes.join(",")}/${props.cutColor}/${JSON.stringify(props.portal)}/${JSON.stringify(props.lightLeak)}/${phase}/${energy}`} /> : null}
       </ThreeCanvas> : null}
     </AbsoluteFill>
   );
@@ -198,6 +255,7 @@ export default defineSketch({
   description: 'Satin Milhouse opens into neon echo portals with aurora interiors and escaping light.',
   schema,
   defaults: {division: '1/4', poseTimes: [...DEFAULT_POSE_TIMES], slices: 8, spread: 1.5,
+    motion: 'cascade', cascade: {...cascadeDefaults},
     holdOpen: 0, openEase: 'smooth', closeEase: 'smooth', kick: 0.15, twist: 10,
     portal: portalDefaults, lightLeak: leakDefaults,
     viewAngle: -15, backdrop: '#302139', cutColor: '#00efef', floorColor: '#403246',
@@ -208,6 +266,10 @@ export default defineSketch({
     ...divisionIssues('division', props.division, timing),
     ...(Math.abs(timing.bars * timing.beatsPerBar * props.portal.echoTravel - Math.round(timing.bars * timing.beatsPerBar * props.portal.echoTravel)) < 1e-8
       ? [] : ['portal.echoTravel: inward waves must complete whole cycles over the loop.']),
+    ...(props.motion === 'cascade' && props.cascade.landAt - props.cascade.stagger < 0.2
+      ? ['cascade.landAt: leave at least 0.2 of the division after the top slice launches (landAt - stagger).'] : []),
+    ...(props.motion === 'cascade' && props.cascade.landAt + props.cascade.bounce * (props.cascade.landAt - props.cascade.stagger) > 0.95
+      ? ['cascade.bounce: the top slice must finish its hop before 95% of the division so the stack can settle.'] : []),
     ...((timing.bars * timing.beatsPerBar) % 4 === 0 ? [] : ['poseTimes: loop must contain complete four-beat pose phrases.']),
   ],
   debugDivisions: (props) => [props.division],

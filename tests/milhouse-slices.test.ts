@@ -215,3 +215,31 @@ test('portal travel closes musically in both metadata paths and controls allow q
       lightLeak: {strength: 0, reach: 0, definition: 0, surfaceSpill: 0}}));
   }
 });
+
+test('cascade launches bottom-up, never interpenetrates, lands in order and rests at the seam', async () => {
+  const {cascadeMotion, cascadeTiming, cascadeGaps, cascadeDefaults} = await import('../src/sketches/milhouse-slices/cascade');
+  const n = 8, spread = 1.5, headings = Array.from({length: n}, (_, i) => i);
+  const {slices, apex} = cascadeTiming(n, spread, cascadeDefaults);
+  assert.ok(Math.abs(slices[n - 1].land - cascadeDefaults.landAt) < 1e-12, 'Gravity is solved so the top slice lands on time');
+  for (let i = 1; i < n; i++) {
+    assert.ok(slices[i].launch > slices[i - 1].launch && slices[i].land > slices[i - 1].land);
+  }
+  assert.ok(apex > 0 && apex < cascadeDefaults.landAt);
+  for (let p = 0; p < 1; p += 0.01) {
+    const motion = cascadeMotion(p, n, spread, cascadeDefaults, headings);
+    assert.ok(cascadeGaps(motion).every(gap => gap >= 0));
+    assert.deepEqual(cascadeMotion(p, n, spread, cascadeDefaults, headings), motion);
+  }
+  for (const p of [0, 1 - 1e-9]) {
+    for (const m of cascadeMotion(p, n, spread, cascadeDefaults, headings)) {
+      assert.ok(m.lift < 1e-6 && Math.abs(m.tilt) < 1e-4 && Math.abs(m.squash) < 1e-6, 'Rest at both sides of the seam');
+    }
+  }
+  for (const metadata of [sketch.metadata, sketch.seamMetadata]) {
+    const legacy = metadata({...sketch.defaultProps, motion: undefined, cascade: undefined}).props;
+    assert.equal(legacy.motion, 'accordion', 'Saved looks without motion keep the original accordion');
+    assert.deepEqual(legacy.cascade, cascadeDefaults);
+    assert.throws(() => metadata({...sketch.defaultProps, cascade: {...cascadeDefaults, stagger: 0.4, landAt: 0.5}}), /cascade.landAt/);
+    assert.throws(() => metadata({...sketch.defaultProps, cascade: {...cascadeDefaults, landAt: 0.9, bounce: 0.5}}), /cascade.bounce/);
+  }
+});

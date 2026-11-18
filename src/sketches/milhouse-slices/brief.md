@@ -339,3 +339,38 @@ separation at frames 3–8 and full reassembly by frame 14. Both canvas previews
 pass determinism and seam checks. All 99 code checks pass.
 All 84 visual regressions pass. The 29 sampled default portrait frames match
 the previous color revision pixel for pixel.
+
+## Cascade physics
+
+User request: “let's explore some options for how the slices could be spaced
+out. like maybe we offset them a bit to make it seem like he's being sliced in
+order from bottom to top and the pieces fall together like a floating stack…
+make this pull apart and assemble animation feel more like there is actual
+physics involved.” Chosen direction: bottom-up stagger, contact stacking and a
+coin-style settling wobble, with launch speeds solved from the beat grid.
+
+`motion: 'cascade'` (new default) launches slice i at `stagger · i/(n−1)` of
+the division on ballistic arcs under one shared gravity. Gravity is solved so
+the top slice lands at `landAt`. Peak heights keep the existing
+`0.15 + fraction · spread` profile, so lower slices fly shorter arcs and land
+first and the stack rebuilds from the feet up. A slice can never sink below the
+one under it (cumulative max): early slices carry the stack, later ones settle
+onto it. Each landing adds a restitution hop (`bounce`, bounce² height) and a
+brief base-pivoted `squash`. Airborne slices lean toward their off-center
+mass (`tumble`, from the slice's XZ centroid), only once they have clearance.
+After the final landing a coin `wobble` decays to zero at the seam while its
+precession accelerates. `holdOpen` freezes the clock at the top slice's apex.
+`kick` and `twist` scale with each slice's own airborne amount. Portals and
+rays open per cut from the actual gap between neighbors, so the light climbs
+with the cut and closed joints stay dark.
+
+Everything is closed-form in division phase (no history). `motion: 'accordion'`
+keeps the original simultaneous ease, and props without `motion` resolve to
+it. Validation requires `landAt − stagger ≥ 0.2` and the top hop to finish by
+95% of the division. Defaults: stagger 0.16, landAt 0.62, bounce 0.22, tumble
+8°, wobble 5°, squash 0.08.
+
+Reviewed one full beat frame by frame (portrait, 30 fps), plus the portrait
+and landscape preview sheets. Both pass determinism and seam checks. At the
+default 1/4 division the eight landings fall within about seven frames. Use a
+1/2 or 1-bar division for a slower, more legible restack.

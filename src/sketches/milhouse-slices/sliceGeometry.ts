@@ -181,12 +181,12 @@ const sliceEasing = {
 export const sliceEaseOptions = ['smooth', 'ease-in', 'ease-out', 'linear'] as const;
 
 /** Insert a plateau at the launch peak and fit the other stages around it. */
-export function sliceMotionPhase(phase: number, holdOpen: number): number {
+export function sliceMotionPhase(phase: number, holdOpen: number, peak = peakPhase): number {
   if (holdOpen === 0) return phase;
   const movingTime = 1 - holdOpen;
-  const holdStart = peakPhase * movingTime;
+  const holdStart = peak * movingTime;
   if (phase < holdStart) return phase / movingTime;
-  if (phase <= holdStart + holdOpen) return peakPhase;
+  if (phase <= holdStart + holdOpen) return peak;
   return (phase - holdOpen) / movingTime;
 }
 

@@ -55,7 +55,9 @@ const vertex = `varying vec2 vUv; varying vec3 vLocal;
 export const Portal: React.FC<{
   caps: BufferGeometry; color: string; settings: PortalSettings; leaks: LeakSettings;
   energy: number; opening: number; clock: number; drift: number; variation: number;
-}> = ({caps, color, settings, leaks, energy, opening, clock, drift, variation}) => {
+  /** Per-face opening for the lower and upper cut; defaults to `opening` for both. */
+  faceOpening?: readonly [number, number];
+}> = ({caps, color, settings, leaks, energy, opening, clock, drift, variation, faceOpening}) => {
   const field = useMemo(() => portalGeometry(caps), [caps]);
   useEffect(() => () => {field.geometry.dispose(); field.rays.dispose(); field.texture.dispose();}, [field]);
   const materials = useMemo(() => {
@@ -63,6 +65,7 @@ export const Portal: React.FC<{
       primaryColor: {value: new Color()}, secondaryColor: {value: new Color()}, deepColor: {value: new Color()},
       clock: {value: 0}, drift: {value: 0}, variation: {value: 0}, glow: {value: 1},
       energy: {value: 0}, opening: {value: 0}, response: {value: 0},
+      openingBelow: {value: 0}, openingAbove: {value: 0},
       field: {value: null as DataTexture | null}, rimWidth: {value: 0}, echoCount: {value: 0},
       depth: {value: 0}, turbulence: {value: 0}, aurora: {value: 0},
       leakStrength: {value: 0}, reach: {value: 0}, definition: {value: 0},
@@ -101,15 +104,18 @@ export const Portal: React.FC<{
     });
     const rays = new ShaderMaterial({uniforms, side: DoubleSide, transparent: true,
       depthWrite: false, blending: NormalBlending, toneMapped: false,
-      vertexShader: `uniform float reach, opening; attribute vec3 outward;
-        varying vec2 vUv; varying vec3 vLocal;
+      vertexShader: `uniform float reach, openingBelow, openingAbove; attribute vec3 outward;
+        varying vec2 vUv; varying vec3 vLocal; varying float vOpening;
         void main() {
           vUv = uv; vLocal = position;
-          vec3 p = position + outward * reach * (0.25 + 0.75 * sqrt(opening));
+          // Lower and upper cuts sit either side of the section center.
+          vOpening = position.y < 0.0 ? openingBelow : openingAbove;
+          vec3 p = position + outward * reach * (0.25 + 0.75 * sqrt(vOpening));
           gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
         }`,
       fragmentShader: `${common}
         uniform float leakStrength, definition;
+        varying float vOpening;
         void main() {
           float r = vUv.x;
           float stripes = pow(0.5 + 0.5 * sin(vLocal.x * 53.0 + vLocal.z * 39.0
@@ -118,7 +124,7 @@ export const Portal: React.FC<{
           float halo = exp(-r * 20.0) * 0.45;
           float tail = pow(1.0 - r, 2.5) * shafts * 0.28;
           float pinched = 1.0 + response * (1.0 - energy) * 0.6;
-          float alpha = min(0.72, (halo + tail) * leakStrength * glow * opening * pinched);
+          float alpha = min(0.72, (halo + tail) * leakStrength * glow * vOpening * pinched);
           gl_FragColor = vec4(palette(0.5 + 0.5 * sin(vLocal.x * 4.5 + vLocal.z * 5.0 + drift + variation * TAU)), alpha);
           #include <colorspace_fragment>
         }`,
@@ -131,7 +137,9 @@ export const Portal: React.FC<{
   u.field.value = field.texture;
   u.primaryColor.value.set(color); u.secondaryColor.value.set(settings.secondaryColor); u.deepColor.value.set(settings.deepColor);
   u.clock.value = clock; u.drift.value = drift; u.variation.value = variation;
-  u.energy.value = energy; u.opening.value = opening; u.response.value = settings.beatResponse;
+  u.energy.value = energy; u.opening.value = opening;
+  [u.openingBelow.value, u.openingAbove.value] = faceOpening ?? [opening, opening];
+  u.response.value = settings.beatResponse;
   u.glow.value = settings.glow; u.rimWidth.value = settings.rimWidth * 5;
   u.echoCount.value = settings.echoCount; u.depth.value = settings.depth;
   u.turbulence.value = settings.turbulence; u.aurora.value = settings.aurora;
