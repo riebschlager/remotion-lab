@@ -51,7 +51,7 @@ const schema = z.object({
   camera: cameraSchema.default({...cameraDefaults, mode: 'static'}).describe('Beat-locked camera moves'),
 });
 type Props = z.output<typeof schema>;
-const modelFile = collectionFile('milhouse-01', 'milhouse-2.fbx');
+const modelFile = collectionFile('milhouse-01', 'milhouse-1.fbx');
 
 // Keep model parsing and texture readiness together: a frame never captures an
 // untextured intermediate load. Missing FBX/embedded textures fail explicitly.
