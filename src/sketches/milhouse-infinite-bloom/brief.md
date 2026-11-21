@@ -94,3 +94,47 @@ comparisons show the outgoing torso dropping out gradually during frames
 and verified that after the dissolve the transparent render matches the
 opening shot pixel for pixel. Both canvas loops passed the strict seam and
 determinism checks.
+
+## Cross the threshold
+
+> i like the general direction and look of the milhouse-infinite-bloom sketch, but i would like to reevaluate the approach to how the background is integrated into this sketch. currently, the background fades between 'rooms' in a noticeable way. this makes it appear that the background is a slideshow of different looks that are simply fading into each other. the look i would like to see is that you are truly diving into a different world inside the recently split apart milhouse. i am open to visual tricks and stagecraft to obscure the transition, as long as the net effect make it appear that we are clearly transitioning from one world and diving into another. perhaps we can investigate other visual elements, such as displacement or distortion that could help visually sell this move.
+
+The approved direction is a window through the actual horizontal cut, with a
+small bend in the departing flower. The first opening should show the lime bloom
+and its Milhouse together. Keep that same flower in motion as the rim overtakes
+the corners. Let the moving edge and foreground shirt convey the crossing.
+Keep the four rooms, original performance and one dive per bar at 120 BPM.
+Check the first crossing closely in portrait and landscape, then the other
+three arrivals, including the return to pink.
+
+The camera follows the lower cut and finishes the approach with optical
+magnification. Both views use the same animated flower as the landing shot.
+The destination stays sharp. Only the inner rings of the departing flower
+get extra curl. A tight split carries the upper half a little further
+sideways during the plunge to keep it clear of the lens.
+
+In the first dive the lime petals surround the smaller figure while pink
+petals and the shirt still occupy the edges. The rim clears the frame by
+the arrival in both formats. Reviewed the four crossings in
+[portrait](../../../out/preview/bloom-window-portrait/sheet.png) and
+[landscape](../../../out/preview/bloom-window-landscape/sheet.png).
+Frame 49 repeated pixel for pixel on both. Both full-loop previews passed
+the strict seam check.
+
+## GIF groups in each room
+
+> this is great. can we make it so that the "rooms" can be made to show collections of gifs from the selected folder rather than single gifs from the folder? it's ok if these are randomly seeded.
+
+Use three GIFs per room by default, distributed across the petal rings.
+Keep the four recognizable lead GIFs in the default flower circuit and draw
+their companions from the selected folder. Use Variant to reroll the groups.
+The portal preview and the landing shot show the same group. The GIFs keep
+playing on the existing beat clock through the crossing.
+
+The first crossing pairs the lime folds with copper spirals and neon
+chevrons. The ring layers stay recognizable as the opening expands.
+Reviewed all four crossings and the return to the opening group in
+[portrait](../../../out/preview/bloom-groups-portrait/sheet.png) and
+[landscape](../../../out/preview/bloom-groups-landscape/sheet.png).
+Both loops passed the strict seam check. The active crossing at frame 52
+repeated pixel for pixel on both canvases at the standard preview scale.

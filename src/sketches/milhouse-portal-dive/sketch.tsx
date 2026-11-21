@@ -1,17 +1,16 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {useDelayRender, useRemotionEnvironment} from 'remotion';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {AbsoluteFill, useDelayRender} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
-import {useFrame, useThree} from '@react-three/fiber';
+import {useFrame, type RenderCallback} from '@react-three/fiber';
 import {
-  CanvasTexture, Color, Group, HalfFloatType, LinearFilter, LoadingManager, NoBlending, NoToneMapping,
-  PerspectiveCamera, Mesh, SRGBColorSpace, Vector2, Vector3, WebGLRenderTarget,
+  Color, Group, HalfFloatType, LoadingManager, NoBlending, NoToneMapping,
+  PerspectiveCamera, Mesh, Vector2, Vector3, WebGLRenderTarget,
 } from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
 import {z} from 'zod';
 import {collectionFile} from '../../assets';
-import {useGifFrame} from '../../assets/GifFrame';
 import {useBeat} from '../../beat/BeatContext';
 import {step} from '../../beat/envelopes';
 import {useCanvas} from '../canvas';
@@ -19,6 +18,7 @@ import {defineSketch, useAsset, type SketchBaseProps} from '../define';
 import {sliceModel, type Model} from './sliceGeometry';
 import {createPerformance, SOURCE_DURATION} from './animation';
 import {portalGeometry} from './portalGeometry';
+import {projectCut} from './projectCut';
 import {createDiveHandoff} from './diveHandoff';
 
 const modelFile = collectionFile('milhouse-01', 'milhouse-2.fbx');
@@ -37,14 +37,8 @@ const schema = z.object({
 });
 type Props = z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent'>> & {
   revealBackdropThroughPortal?: boolean;
-  destinationPreview?: {
-    src: string;
-    frame: number;
-    width: number;
-    height: number;
-    opacity: number;
-    brightness: number;
-  };
+  throughCut?: boolean;
+  destinationBackdrop?: React.ReactNode;
 };
 
 let modelPromise: Promise<Group> | undefined;
@@ -93,12 +87,11 @@ const portalVertex = `
   }
 `;
 const portalFragment = `
-  uniform sampler2D field, destination, preview;
+  uniform sampler2D field, destination;
   uniform vec3 rimColor, echoColor;
   uniform vec2 center;
   uniform float windowScale, clock, handoff, screenAlignment;
-  uniform float previewOpacity, previewBrightness;
-  uniform vec2 previewScale;
+  uniform bool throughCut;
   uniform bool entrance, revealBackdrop;
   varying vec2 fieldUv;
   varying vec4 screen;
@@ -110,22 +103,17 @@ const portalFragment = `
     vec4 room = texture2D(destination, imageUv);
     float bounds = min(min(imageUv.x, 1.0 - imageUv.x), min(imageUv.y, 1.0 - imageUv.y));
     float window = float(entrance) * smoothstep(0.0, 0.08, bounds);
-    float rim = 1.0 - smoothstep(0.012, 0.06, distanceField.g);
+    float crossing = throughCut && entrance ? handoff : 0.0;
+    float rim = 1.0 - smoothstep(0.012, 0.06, distanceField.g * (1.0 + 1.5 * crossing));
     float band = pow(0.5 + 0.5 * cos(6.28318 * (distanceField.r * 3.0 - clock)), 10.0);
     vec3 led = mix(rimColor, echoColor, smoothstep(0.22, 0.78, 0.5 + 0.5 * sin(fieldUv.x * 19.0)));
     vec3 base = vec3(0.018, 0.003, 0.043);
-    float edge = max(rim, band * (1.0 - distanceField.r) * 0.37);
+    float edge = max(rim, band * (1.0 - distanceField.r) * 0.37 * (1.0 - crossing));
     if (revealBackdrop) {
       // Keep the window transparent wherever the destination has no figure.
-      vec4 interior = mix(vec4(base, 1.0), room, window);
-      if (previewOpacity > 0.0) {
-        vec2 capUv = vec2(fieldUv.x, 1.0 - fract(fieldUv.y * 2.0));
-        vec4 image = texture2D(preview, (capUv - 0.5) * previewScale + 0.5);
-        vec3 previewRoom = room.rgb * window +
-          image.rgb * previewBrightness * (1.0 - room.a * window);
-        interior = mix(interior, vec4(previewRoom, 1.0), image.a * previewOpacity);
-      }
-      vec4 color = mix(mix(interior, vec4(led, 1.0), edge), room, handoff);
+      vec4 interior = throughCut && entrance ? room * window : mix(vec4(base, 1.0), room, window);
+      vec4 color = mix(interior, vec4(led, 1.0), edge);
+      if (!throughCut) color = mix(color, room, handoff);
       gl_FragColor = vec4(color.rgb / max(color.a, 0.0001), color.a);
     } else {
       vec3 paint = mix(base, room.rgb, window * room.a);
@@ -136,32 +124,10 @@ const portalFragment = `
   }
 `;
 
-function usePreviewTexture(preview: Props['destinationPreview'], visible: boolean) {
-  const advance = useThree(state => state.advance);
-  const {isRendering} = useRemotionEnvironment();
-  const {src, width = 1, height = 1} = preview ?? {};
-  const texture = useMemo(() => {
-    if (!src) return null;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const result = new CanvasTexture(canvas);
-    result.colorSpace = SRGBColorSpace;
-    result.minFilter = LinearFilter;
-    result.generateMipmaps = false;
-    return result;
-  }, [src, width, height]);
-  const canvas = useMemo(() => ({current: texture ? texture.image as HTMLCanvasElement : null}), [texture]);
-  useEffect(() => () => texture?.dispose(), [texture]);
-  const upload = useCallback(() => {
-    if (!texture) return;
-    texture.needsUpdate = true;
-    // Remotion's WebGL frame may already have rendered while the GIF decoded.
-    if (isRendering) advance(0);
-  }, [advance, isRendering, texture]);
-  useGifFrame(visible ? src : undefined, preview?.frame ?? 0, canvas, upload);
-  return texture;
-}
+const DrawScene: React.FC<{draw: RenderCallback}> = ({draw}) => {
+  useFrame(draw, 1);
+  return null;
+};
 
 function splitPose(model: Model) {
   const [lower, upper] = sliceModel(model, 2);
@@ -199,7 +165,8 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   const open = between(phase, 0.10, 0.32);
   const approach = between(phase, 0.20, props.diveStart);
   const {plunge, handoff} = portalTransition(phase, props.diveStart);
-  const dissolve = between(plunge, 0.55, 0.96);
+  const dissolve = props.throughCut ? 0 : between(plunge, 0.55, 0.96);
+  const arrived = props.throughCut ? plunge >= 0.995 : dissolve === 1;
   const screenAlignment = between(plunge, 0.48, 0.73);
   const upper = useRef<Group>(null);
   const lowerSurface = useRef<Mesh>(null);
@@ -222,9 +189,6 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   );
   useEffect(() => () => {if (pose !== opening) pose.dispose();}, [pose, opening]);
   const showGates = open > 0;
-  const preview = props.destinationPreview;
-  const previewTexture = usePreviewTexture(preview, showGates && handoff < 1);
-  const previewAspect = preview ? preview.width / preview.height : 1;
   const faces = useMemo(() => showGates ? portalFaces(pose) : null, [pose, showGates]);
   useEffect(() => () => faces?.dispose(), [faces]);
 
@@ -235,8 +199,9 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
     {type: HalfFloatType},
   ), [width, height, scale]);
   useEffect(() => () => target.dispose(), [target]);
-  const roomDissolve = useMemo(() => createDiveHandoff(target.texture), [target]);
-  useEffect(() => () => roomDissolve.dispose(), [roomDissolve]);
+  const roomDissolve = useMemo(() => props.throughCut ? null : createDiveHandoff(target.texture),
+    [props.throughCut, target]);
+  useEffect(() => () => roomDissolve?.dispose(), [roomDissolve]);
 
   const fov = 37;
   const distance = Math.max(11.8, 7.5 / aspect);
@@ -247,6 +212,9 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
     camera.updateMatrixWorld();
     return camera;
   }, [aspect, distance]);
+  // A tight split can leave the upper half hanging in the lens at arrival.
+  // Carry its existing sideways motion through the plunge to clear the opening.
+  const slide = props.slide + (props.throughCut ? Math.max(0, 1 - props.slide) * between(plunge, 0.25, 0.84) : 0);
   const cap = faces?.entry;
   const entry = cap ? cap.entry.clone().add(new Vector3(0, pose.lower.center - 2.5, 0)) : new Vector3();
   const revealPosition = new Vector3(0, 6.0, Math.max(9.6, 6.4 / aspect));
@@ -258,23 +226,36 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   // Follow some of the upper half's lateral travel while the split is on screen.
   aim.x += open * props.slide * 0.33;
   aim.lerp(entry, between(plunge, 0, 0.57));
+  // In the bloom, dolly to a readable view of the cut and finish with optical
+  // magnification. The foreground cannot clip the lens on the last few frames.
+  if (props.throughCut) crossing.copy(entry).add(new Vector3(0, 3.3, 3.5));
   const cameraPosition = hero.position.clone().lerp(revealPosition, approach).lerp(crossing, plunge);
   const cameraView = hero.clone();
   cameraView.position.copy(cameraPosition);
   cameraView.lookAt(aim);
+  if (props.throughCut) {
+    const endZoom = 4 / Math.max(0.025, cap?.clearance ?? 1) * Math.max(1, aspect);
+    cameraView.zoom = endZoom ** plunge;
+    cameraView.updateProjectionMatrix();
+  }
   cameraView.updateMatrixWorld();
   const projectedEntry = entry.clone().project(cameraView);
+
+  const centerX = (projectedEntry.x + 1) / 2;
+  const centerY = (1 - projectedEntry.y) / 2;
+  const windowScale = props.throughCut ? 0.10 + 0.90 * between(plunge, 0, 0.97) ** 1.5
+    : 0.10 + 0.68 * plunge ** 1.6;
+  const aperture = cap && props.destinationBackdrop && !arrived
+    ? projectCut(cap.geometry, pose.lower.center - 2.5, cameraView, width, height, centerX, centerY)
+    : undefined;
 
   // The destination uses the next room's opening source pose. The meshes keep
   // their matching section centers, so only their geometry needs swapping.
   // Rendering the next world never depends on the previous frame.
-  useFrame(({gl, scene, camera}) => {
-    camera.position.copy(cameraView.position);
-    camera.quaternion.copy(cameraView.quaternion);
-    camera.updateMatrixWorld();
+  const draw: RenderCallback = ({gl, scene}) => {
     if (!showGates || !upper.current || !lowerSurface.current || !upperSurface.current ||
       !gates.current || !upperCap.current) {
-      gl.render(scene, camera);
+      gl.render(scene, cameraView);
       return;
     }
     const previousTarget = gl.getRenderTarget();
@@ -286,7 +267,7 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       upper.current.position.set(0, 0, 0);
       upper.current.rotation.z = 0;
       gates.current.visible = upperCap.current.visible = false;
-      if (dissolve < 1) gl.setRenderTarget(target);
+      if (!arrived) gl.setRenderTarget(target);
       gl.render(scene, hero);
     } finally {
       gl.setRenderTarget(previousTarget);
@@ -296,11 +277,10 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       upper.current.rotation.z = roll;
       gates.current.visible = upperCap.current.visible = true;
     }
-    // The destination takes over before the camera can graze the outgoing mesh.
-    if (dissolve === 1) return;
-    gl.render(scene, camera);
-    if (dissolve > 0) roomDissolve.render(gl, dissolve);
-  }, 1);
+    if (arrived) return;
+    gl.render(scene, cameraView);
+    if (dissolve > 0) roomDissolve?.render(gl, dissolve);
+  };
 
   const gateMaterial = (face: ReturnType<typeof portalGeometry>, entrance: boolean) => ({
     vertexShader: portalVertex,
@@ -310,66 +290,71 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       field: {value: face.texture}, destination: {value: target.texture},
       rimColor: {value: new Color(props.rimColor)}, echoColor: {value: new Color(props.echoColor)},
       center: {value: new Vector2(projectedEntry.x * 0.5 + 0.5, projectedEntry.y * 0.5 + 0.5)},
-      windowScale: {value: 0.10 + 0.68 * plunge ** 1.6}, clock: {value: phase * 3},
+      windowScale: {value: windowScale}, clock: {value: phase * 3},
       handoff: {value: entrance ? handoff : 0}, entrance: {value: entrance},
-      screenAlignment: {value: entrance ? screenAlignment : 0},
+      screenAlignment: {value: entrance && !props.throughCut ? screenAlignment : 0},
       revealBackdrop: {value: props.revealBackdropThroughPortal === true},
-      preview: {value: previewTexture},
-      previewOpacity: {value: entrance ? (preview?.opacity ?? 0) * (1 - handoff) : 0},
-      previewBrightness: {value: (preview?.brightness ?? 1) ** 2.2},
-      previewScale: {value: new Vector2(Math.min(1, 1 / previewAspect), Math.min(1, previewAspect))},
+      throughCut: {value: Boolean(props.throughCut)},
     },
   });
 
   return <>
-    {!props.transparent && <color attach="background" args={[props.backdrop]} />}
-    <ambientLight intensity={0.28} color="#e7deed" />
-    <rectAreaLight position={[-4.5, 5, 6]} width={4.5} height={6}
-      intensity={7.5} color="#fff0dc" onUpdate={light => light.lookAt(0, 0, 0)} />
-    <rectAreaLight position={[4.5, 1.5, 5]} width={3.5} height={5}
-      intensity={3.3} color="#eef0ff" onUpdate={light => light.lookAt(0, -0.2, 0)} />
-    <rectAreaLight position={[3.5, 3.5, -4]} width={2} height={5}
-      intensity={9} color="#c9d4ff" onUpdate={light => light.lookAt(0, 0.4, 0)} />
-    {!props.transparent && <mesh position={[0, -2.51, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[200, 200]} />
-      <shaderMaterial uniforms={{floor: {value: new Color(props.floorColor)}, backdrop: {value: new Color(props.backdrop)}}}
-        vertexShader={`varying vec2 ground;
-          void main() {ground = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);}`}
-        fragmentShader={`uniform vec3 floor, backdrop; varying vec2 ground;
-          void main() {
-            float shadow = exp(-dot(ground * vec2(0.7, 1.15), ground * vec2(0.7, 1.15)));
-            vec3 color = mix(backdrop, floor, exp(-length(ground) * 0.10));
-            gl_FragColor = vec4(color * (1.0 - shadow * 0.63), 1.0);
-            #include <colorspace_fragment>
-          }`} />
-    </mesh>}
-    <mesh ref={lowerSurface} geometry={pose.lower.surface} material={performance.material} position-y={pose.lower.center - 2.5} />
-    <group ref={upper} position={[open * props.slide, open * props.lift, 0]} rotation-z={-0.18 * open}>
-      <mesh ref={upperSurface} geometry={pose.upper.surface} material={performance.material} position-y={pose.upper.center - 2.5} />
-      {faces && <mesh ref={upperCap} geometry={faces.echo.geometry} position-y={pose.upper.center - 2.5}>
-        <shaderMaterial {...gateMaterial(faces.echo, false)} />
+    {props.destinationBackdrop && (arrived || aperture) && <AbsoluteFill style={{
+      clipPath: aperture?.clipPath, overflow: 'hidden',
+    }}>
+      <AbsoluteFill style={aperture ? {
+        translate: `${(centerX - 0.5) * width}px ${(centerY - 0.5) * height}px`,
+        scale: Math.max(windowScale, aperture.coverScale),
+      } : undefined}>{props.destinationBackdrop}</AbsoluteFill>
+    </AbsoluteFill>}
+    <ThreeCanvas width={width} height={height}
+      camera={{fov: 37, near: 0.01, far: Math.max(150, 7.5 / aspect + 80)}}
+      gl={{alpha: true, antialias: true, preserveDrawingBuffer: true}}
+      onCreated={({gl}) => {
+        RectAreaLightUniformsLib.init();
+        gl.toneMapping = NoToneMapping;
+      }}>
+      <DrawScene draw={draw} />
+      {!props.transparent && <color attach="background" args={[props.backdrop]} />}
+      <ambientLight intensity={0.28} color="#e7deed" />
+      <rectAreaLight position={[-4.5, 5, 6]} width={4.5} height={6}
+        intensity={7.5} color="#fff0dc" onUpdate={light => light.lookAt(0, 0, 0)} />
+      <rectAreaLight position={[4.5, 1.5, 5]} width={3.5} height={5}
+        intensity={3.3} color="#eef0ff" onUpdate={light => light.lookAt(0, -0.2, 0)} />
+      <rectAreaLight position={[3.5, 3.5, -4]} width={2} height={5}
+        intensity={9} color="#c9d4ff" onUpdate={light => light.lookAt(0, 0.4, 0)} />
+      {!props.transparent && <mesh position={[0, -2.51, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[200, 200]} />
+        <shaderMaterial uniforms={{floor: {value: new Color(props.floorColor)}, backdrop: {value: new Color(props.backdrop)}}}
+          vertexShader={`varying vec2 ground;
+            void main() {ground = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);}`}
+          fragmentShader={`uniform vec3 floor, backdrop; varying vec2 ground;
+            void main() {
+              float shadow = exp(-dot(ground * vec2(0.7, 1.15), ground * vec2(0.7, 1.15)));
+              vec3 color = mix(backdrop, floor, exp(-length(ground) * 0.10));
+              gl_FragColor = vec4(color * (1.0 - shadow * 0.63), 1.0);
+              #include <colorspace_fragment>
+            }`} />
       </mesh>}
-    </group>
-    {faces && <group ref={gates}>
-      <mesh geometry={faces.entry.geometry} position-y={pose.lower.center - 2.5}>
-        <shaderMaterial {...gateMaterial(faces.entry, true)} />
-      </mesh>
-    </group>}
+      <mesh ref={lowerSurface} geometry={pose.lower.surface} material={performance.material} position-y={pose.lower.center - 2.5} />
+      <group ref={upper} position={[open * slide, open * props.lift, 0]} rotation-z={-0.18 * open}>
+        <mesh ref={upperSurface} geometry={pose.upper.surface} material={performance.material} position-y={pose.upper.center - 2.5} />
+        {faces && <mesh ref={upperCap} geometry={faces.echo.geometry} position-y={pose.upper.center - 2.5}>
+          <shaderMaterial {...gateMaterial(faces.echo, false)} />
+        </mesh>}
+      </group>
+      {faces && <group ref={gates}>
+        <mesh geometry={faces.entry.geometry} position-y={pose.lower.center - 2.5}>
+          <shaderMaterial {...gateMaterial(faces.entry, true)} />
+        </mesh>
+      </group>}
+    </ThreeCanvas>
   </>;
 };
 
 export const MilhousePortalDive: React.FC<Props> = props => {
   const root = useModel();
-  const {width, height, aspect} = useCanvas();
-  return root && <ThreeCanvas width={width} height={height}
-    camera={{fov: 37, near: 0.01, far: Math.max(150, 7.5 / aspect + 80)}}
-    gl={{alpha: true, antialias: true, preserveDrawingBuffer: true}}
-    onCreated={({gl}) => {
-      RectAreaLightUniformsLib.init();
-      gl.toneMapping = NoToneMapping;
-    }}>
-    <Studio root={root} props={props} />
-  </ThreeCanvas>;
+  return root && <Studio root={root} props={props} />;
 };
 
 export const portalDiveSettings = {

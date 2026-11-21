@@ -2,13 +2,13 @@ import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {z} from 'zod';
 import {clip, type ClipRef} from '../../assets';
-import {useClipPlayback} from '../../assets/Clip';
 import {useBeat} from '../../beat/BeatContext';
 import {stepRandom} from '../../beat/envelopes';
-import {defineSketch, useAsset, useSketch, type SketchBaseProps} from '../define';
+import {defineSketch, type SketchBaseProps} from '../define';
 import {bloomSettings, InfiniteBloom} from '../infinite-bloom/sketch';
 import {MilhousePortalDive, portalDiveSettings, portalTransition} from '../milhouse-portal-dive/sketch';
 
+const id = 'milhouse-infinite-bloom';
 const flowerRooms = [
   clip('gif-flower', 'Pink Loop GIF by Psyklon.gif'),
   clip('gif-flower', 'Loop Distort GIF by Psyklon.gif'),
@@ -21,80 +21,75 @@ const schema = portalDiveSettings.schema.omit({backdrop: true, floorColor: true}
   bloomBrightness: z.number().min(0.2).max(1).step(0.05)
     .describe('Brightness of the petals behind Milhouse'),
   changeRoomTextures: z.boolean().default(true)
-    .describe('Bring in a different GIF texture during each dive'),
+    .describe('Give each portal room its own GIF group'),
+  gifsPerRoom: z.number().int().min(1).max(5).default(3)
+    .describe('Distinct GIFs per room, limited by the number in the selected folder'),
 });
-type Props = z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent'>>;
+type Props = z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent' | 'bars' | 'variant'>>;
 
-const backgroundClips = ({bloom, changeRoomTextures, transparent}: Props) => {
-  if (transparent || bloom.textureOpacity === 0) return [];
-  return changeRoomTextures && bloom.textureFolder === 'gif-flower'
-    ? flowerRooms : bloomSettings.assets(bloom);
+const roomTextures = ({bloom, changeRoomTextures, gifsPerRoom, transparent,
+  bars = portalDiveSettings.timing.bars, variant = 0}: Props): ClipRef[][] => {
+  const clips = transparent ? [] : bloomSettings.assets(bloom);
+  if (!changeRoomTextures || clips.length < 2) return Array.from({length: bars}, () => clips);
+
+  const curated = bloom.textureFolder === 'gif-flower';
+  const shuffle = (textures: ClipRef[], channel: string) => {
+    const seed = JSON.stringify([id, variant, channel]);
+    return textures.map((texture, index) => ({texture, rank: stepRandom(seed, index)}))
+      .sort((a, b) => a.rank - b.rank).map(({texture}) => texture);
+  };
+  const leads = curated ? (variant === 0 ? flowerRooms : shuffle(flowerRooms, 'room-order'))
+    : shuffle(clips, 'room-order');
+  const companions = curated ? shuffle(clips.filter((texture) => !flowerRooms.some((lead) => lead.name === texture.name)), 'room-companions')
+    : leads;
+  const count = Math.min(gifsPerRoom, clips.length);
+  return Array.from({length: bars}, (_, room) => {
+    // When the circuit would end on the first lead, use the next lead instead.
+    const index = room % leads.length;
+    const leadIndex = room > 0 && room === bars - 1 && index === 0 && leads.length > 2 ? 1 : index;
+    if (!curated) {
+      return Array.from({length: count}, (_, offset) => leads[(leadIndex + offset) % leads.length]);
+    }
+    const lead = leads[leadIndex];
+    const start = companions.length ? (room * (count - 1)) % companions.length : 0;
+    const candidates = [...companions.slice(start), ...companions.slice(0, start),
+      ...leads.filter((texture) => texture !== lead)];
+    return [lead, ...candidates.slice(0, count - 1)];
+  });
 };
 
-const PortalWithPreview: React.FC<{props: Props; next: ClipRef}> = ({props, next}) => {
-  const asset = useAsset(next);
-  const sample = useClipPlayback(asset, props.bloom.texturePlayback);
-  return <MilhousePortalDive {...portalDiveSettings.defaults} {...props}
-    transparent revealBackdropThroughPortal destinationPreview={{
-      src: asset.src,
-      frame: sample.frame,
-      width: asset.width,
-      height: asset.height,
-      opacity: sample.opacity * props.bloom.textureOpacity,
-      brightness: props.bloomBrightness,
-    }} />;
-};
+const backgroundClips = (props: Props) => [...new Set(roomTextures(props).flat())];
 
 const MilhouseInfiniteBloom: React.FC<Props> = props => {
-  const {bloom, bloomBrightness, changeRoomTextures, diveStart, transparent} = props;
-  const {barIndex, barPhase, totalBeats, beatsPerBar} = useBeat();
-  const {seed, variant} = useSketch();
-  const clips = backgroundClips(props);
-  const filter = `saturate(1.35) brightness(${bloomBrightness})`;
-
-  if (!changeRoomTextures || clips.length < 2 || totalBeats === beatsPerBar) {
-    return <AbsoluteFill>
-      {!transparent && <AbsoluteFill style={{filter: clips.length ? filter : `hue-rotate(320deg) ${filter}`}}>
-        <InfiniteBloom {...bloom} showFolderPicker={false} textureRefs={clips} />
-      </AbsoluteFill>}
-      <MilhousePortalDive {...portalDiveSettings.defaults} {...props} transparent revealBackdropThroughPortal />
-    </AbsoluteFill>;
-  }
-
-  const bars = totalBeats / beatsPerBar;
-  const ordered = bloom.textureFolder === 'gif-flower' && variant === 0
-    ? clips
-    : clips.map((texture, index) => ({texture, position: stepRandom(seed('room-order'), index)}))
-      .sort((a, b) => a.position - b.position).map(({texture}) => texture);
-  const {handoff} = portalTransition(barPhase, diveStart);
-  const next = (barIndex + 1) % bars;
-  const textureFor = (room: number) => {
-    const index = room % ordered.length;
-    // With three or more textures, keep the final room distinct from both neighbors.
-    return ordered[room === bars - 1 && index === 0 && ordered.length > 2 ? 1 : index];
-  };
-  const rooms = [{room: barIndex, opacity: 1}, {room: next, opacity: handoff}];
+  const {bloom, bloomBrightness, diveStart, transparent} = props;
+  const {barIndex, barPhase} = useBeat();
+  const rooms = roomTextures(props);
+  const filter = `${rooms[barIndex].length ? '' : 'hue-rotate(320deg) '}saturate(1.35) brightness(${bloomBrightness})`;
+  const {plunge} = portalTransition(barPhase, diveStart);
+  const next = (barIndex + 1) % rooms.length;
+  const paint = (room: number, bend = 0) => !transparent && <AbsoluteFill style={{filter}}>
+    <InfiniteBloom {...bloom} showFolderPicker={false} innerCurl={bend}
+      textureRefs={rooms[room]} />
+  </AbsoluteFill>;
 
   return <AbsoluteFill>
-    {rooms.map(({room, opacity}, index) => (
-      opacity > 0 && (index !== 0 || handoff < 1) && <AbsoluteFill key={room} style={{filter, opacity}}>
-        <InfiniteBloom {...bloom} showFolderPicker={false} textureRefs={[textureFor(room)]} />
-      </AbsoluteFill>
-    ))}
-    <PortalWithPreview props={props} next={textureFor(next)} />
+    {paint(barIndex, 1.35 * Math.sin(Math.PI * plunge))}
+    <MilhousePortalDive {...portalDiveSettings.defaults} {...props} transparent revealBackdropThroughPortal
+      throughCut destinationBackdrop={paint(next)} />
   </AbsoluteFill>;
 };
 
 const {lift, slide, diveStart, sourceIn, sourceOut, rimColor, echoColor} = portalDiveSettings.defaults;
 
 export default defineSketch({
-  id: 'milhouse-infinite-bloom',
+  id,
   title: 'Milhouse Infinite Bloom',
   description: 'Milhouse dives through a series of portals inside an ever-blooming flower.',
   schema,
   defaults: {
     lift, slide, diveStart, sourceIn, sourceOut, rimColor, echoColor,
     bloomBrightness: 0.7,
+    gifsPerRoom: 3,
     bloom: {
       ...bloomSettings.defaults,
       textureFolder: 'gif-flower',

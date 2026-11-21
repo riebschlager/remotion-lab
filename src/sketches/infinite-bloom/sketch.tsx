@@ -194,11 +194,12 @@ const Pollen: React.FC<{
 
 export const InfiniteBloom: React.FC<z.output<typeof schema> &
   Partial<Pick<SketchBaseProps, 'transparent'>> & {
+    innerCurl?: number;
     showFolderPicker?: boolean;
     textureRefs?: readonly ClipRef[];
   }> = ({
   zoom, center, textureFolder, textureOpacity, texturePlayback, petals, transparent,
-  showFolderPicker = true, textureRefs, ...shape
+  showFolderPicker = true, textureRefs, innerCurl = 0, ...shape
 }) => {
   const {loopPhase, beatPhase, totalBeats, beatsPerBar, bpm, fps} = useBeat();
   const {isStudio, isRendering} = useRemotionEnvironment();
@@ -227,7 +228,8 @@ export const InfiniteBloom: React.FC<z.output<typeof schema> &
   return <AbsoluteFill style={{overflow: 'hidden', background: transparent ? undefined :
     'radial-gradient(circle closest-side, #351128 0%, #1a0a20 68%, #100814 100%)'}}>
     <div style={{position: 'absolute', inset: 0, scale: zoom === 1 ? undefined : zoom}}>
-      {rings.map((ring) => <PetalRing key={ring.slot} {...ring} petals={petals} shape={shape}
+      {rings.map((ring) => <PetalRing key={ring.slot} {...ring} petals={petals}
+        shape={{...shape, petalCurl: shape.petalCurl + innerCurl * (1 - smooth(ring.progress / 0.68))}}
         pulse={pulse} playback={texturePlayback} textureOpacity={textureOpacity} />)}
       <Pollen pulse={pulse} center={center} rings={rings} playback={texturePlayback}
         textureOpacity={textures.length ? textureOpacity : 0} />
