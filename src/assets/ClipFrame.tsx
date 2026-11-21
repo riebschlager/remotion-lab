@@ -1,14 +1,13 @@
 import React from 'react';
 import {Video} from '@remotion/media';
-import {AnimatedImage, Freeze, Sequence, useVideoConfig} from 'remotion';
-import {clipFrameTime, sourceFrameIndex, type ClipRef} from './index';
+import {Freeze, Sequence, useVideoConfig} from 'remotion';
+import {GifFrame} from './GifFrame';
+import {clipFrameTime, sourceFrameIndex, type ClipFrameSource} from './index';
 
 /**
  * Draws exactly one source frame of a clip.
  *
- * Remotion's `<AnimatedImage>` and `<Video>` follow the composition's frame
- * clock, which a beat-locked loop must not do. This pins that clock to the
- * requested source frame instead, so what is drawn depends only on `frame`.
+ * GIFs are decoded by source frame index. Video uses a frozen media clock.
  * Derive `frame` from `useBeat()`; for example, to play a clip once every
  * four beats:
  *
@@ -19,8 +18,7 @@ import {clipFrameTime, sourceFrameIndex, type ClipRef} from './index';
  * see `sourceFrameIndex` for how values a rounding error below a whole frame are treated.
  */
 export const ClipFrame: React.FC<{
-  /** From `useAsset(clip(...))`. */
-  clip: ClipRef & {src: string};
+  clip: ClipFrameSource & {src: string};
   /** Source frame, 0-based. */
   frame: number;
   /** Box to draw into, in composition pixels. */
@@ -31,16 +29,17 @@ export const ClipFrame: React.FC<{
 }> = ({clip, frame, width, height, fit = 'contain', style}) => {
   const {fps} = useVideoConfig();
   const sourceFrame = sourceFrameIndex(frame, clip.frameCount);
+  if (clip.format === 'gif') {
+    return <GifFrame key={clip.src} src={clip.src} frame={sourceFrame} width={width} height={height} fit={fit} style={style} />;
+  }
   return (
-    // The players read media time from the frame clock. Remotion clamps that clock to the
+    // Video reads media time from the frame clock. Remotion clamps that clock to the
     // composition's own length, even inside <Freeze>, so a clip longer than the loop could never
     // show its later frames. Holding the clock at 0 and starting the clip that far in the past
     // carries the same time without the limit.
     <Freeze frame={0}>
       <Sequence layout="none" from={-clipFrameTime(clip, sourceFrame) * fps}>
-        {clip.format === 'gif'
-          ? <AnimatedImage src={clip.src} width={width} height={height} fit={fit} style={style} />
-          : <Video src={clip.src} muted objectFit={fit} style={{width, height, ...style}} />}
+        <Video src={clip.src} muted objectFit={fit} style={{width, height, ...style}} />
       </Sequence>
     </Freeze>
   );

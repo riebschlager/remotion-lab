@@ -20,6 +20,9 @@ export type ClipRef = ClipEntry & {
   publicPath: string;
 };
 
+export type ClipFrameSource = Pick<ClipRef,
+  'name' | 'format' | 'frameCount' | 'timing' | 'frameStarts' | 'fps' | 'fpsRational' | 'durationSeconds'>;
+
 export type FontRef = FontEntry & {
   kind: 'font';
   collection: string;
@@ -126,13 +129,11 @@ export const sourceFrameIndex = (frame: number, frameCount: number) => {
  * The time, in seconds from the clip's start, to ask a player for so that it
  * shows exactly one source frame.
  *
- * The two players choose frames differently. `<AnimatedImage>` shows the
- * frame whose start is nearest the requested time, so a GIF is addressed by
- * the frame's start. `<Video>` shows the frame that contains the time, so a
- * video is addressed by the frame's middle, clear of rounding at either edge.
- * tests/visual/assets.test.ts renders every frame of each fixture this way.
+ * For GIFs this returns the frame's start, useful when inspecting source
+ * timing. ClipFrame addresses GIFs by index. Video uses the frame's midpoint
+ * to stay clear of rounding at either edge.
  */
-export const clipFrameTime = (ref: ClipRef, sourceFrame: number) => {
+export const clipFrameTime = (ref: ClipFrameSource, sourceFrame: number) => {
   if (!Number.isInteger(sourceFrame) || sourceFrame < 0 || sourceFrame >= ref.frameCount) {
     throw new Error(`Clip "${ref.name}" has frames 0..${ref.frameCount - 1}; got ${sourceFrame}`);
   }

@@ -1,0 +1,1235 @@
+{
+  "version": 1,
+  "collection": "2026-11-02-2",
+  "description": "Thirty animated GIFs in a numbered sequence, with cutout and cartoon stickers, colorful effects and characters, and dancing cartoon characters.",
+  "tags": [
+    "animated-gifs",
+    "petal-textures",
+    "sticker-mix"
+  ],
+  "clips": {
+    "01_gif-dancimal_Happy Dance Sticker by Neil Sanders(2).gif": {
+      "description": "Orange-red floppy-eared dog hops and kicks, ears flying up.",
+      "tags": [
+        "character",
+        "orange",
+        "dog",
+        "hop"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 554,
+      "height": 600,
+      "frameCount": 36,
+      "fps": 29.032258,
+      "fpsRational": null,
+      "durationSeconds": 1.24,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.04,
+        0.08,
+        0.12,
+        0.15,
+        0.18,
+        0.21,
+        0.24,
+        0.27,
+        0.31,
+        0.35,
+        0.39,
+        0.43,
+        0.46,
+        0.49,
+        0.52,
+        0.55,
+        0.58,
+        0.62,
+        0.66,
+        0.7,
+        0.73,
+        0.76,
+        0.79,
+        0.82,
+        0.85,
+        0.89,
+        0.93,
+        0.97,
+        1.01,
+        1.04,
+        1.07,
+        1.1,
+        1.13,
+        1.16,
+        1.2
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.031,
+        "neighborDifference": 0.0644
+      },
+      "filmstrip": {
+        "file": "filmstrips/01_gif-dancimal_Happy Dance Sticker by Neil Sanders(2).gif.jpg",
+        "frames": [
+          0,
+          7,
+          14,
+          21,
+          28,
+          35
+        ]
+      },
+      "bytes": 410343
+    },
+    "02_gif-dancimal_Happy Dance Sticker by Neil Sanders copy 2.gif": {
+      "description": "Yellow figure bends and twists through stretchy poses, arms looping over its head.",
+      "tags": [
+        "character",
+        "yellow",
+        "stretch",
+        "dance"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 520,
+      "frameCount": 36,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 1.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0413,
+        "neighborDifference": 0.1089
+      },
+      "filmstrip": {
+        "file": "filmstrips/02_gif-dancimal_Happy Dance Sticker by Neil Sanders copy 2.gif.jpg",
+        "frames": [
+          0,
+          7,
+          14,
+          21,
+          28,
+          35
+        ]
+      },
+      "bytes": 257503
+    },
+    "03_gif-paint_Miss You Art Sticker copy.gif": {
+      "description": "Small paint splat changes from pink to orange, green, cyan and violet.",
+      "tags": [
+        "paint",
+        "splat",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 10,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 0.7,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1022,
+        "neighborDifference": 0.0774
+      },
+      "filmstrip": {
+        "file": "filmstrips/03_gif-paint_Miss You Art Sticker copy.gif.jpg",
+        "frames": [
+          0,
+          2,
+          4,
+          5,
+          7,
+          9
+        ]
+      },
+      "bytes": 130455
+    },
+    "04_gif-og-sticker_floating_james_franco.gif": {
+      "description": "Reclining photographic cutout floats over a small blue and yellow graphic.",
+      "tags": [
+        "collage",
+        "cutout",
+        "floating"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 350,
+      "height": 330,
+      "frameCount": 23,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 2.3,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0599,
+        "neighborDifference": 0.0432
+      },
+      "filmstrip": {
+        "file": "filmstrips/04_gif-og-sticker_floating_james_franco.gif.jpg",
+        "frames": [
+          0,
+          4,
+          9,
+          13,
+          18,
+          22
+        ]
+      },
+      "bytes": 767734
+    },
+    "05_gif-og-sticker_blue_figure_dance.gif": {
+      "description": "Bright blue outlined figure twists, bends and stretches its limbs.",
+      "tags": [
+        "dance",
+        "character",
+        "illustration"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 397,
+      "height": 728,
+      "frameCount": 8,
+      "fps": 12.5,
+      "fpsRational": [
+        25,
+        2
+      ],
+      "durationSeconds": 0.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1407,
+        "neighborDifference": 0.1613
+      },
+      "filmstrip": {
+        "file": "filmstrips/05_gif-og-sticker_blue_figure_dance.gif.jpg",
+        "frames": [
+          0,
+          1,
+          3,
+          4,
+          6,
+          7
+        ]
+      },
+      "bytes": 86613
+    },
+    "06_gif-og-sticker_afro_man_dancing.gif": {
+      "description": "Dancing cutout with an afro, red top and black trousers kicks and steps.",
+      "tags": [
+        "dance",
+        "character",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 500,
+      "height": 500,
+      "frameCount": 70,
+      "fps": 33.333333,
+      "fpsRational": [
+        100,
+        3
+      ],
+      "durationSeconds": 2.1,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0555,
+        "neighborDifference": 0.0467
+      },
+      "filmstrip": {
+        "file": "filmstrips/06_gif-og-sticker_afro_man_dancing.gif.jpg",
+        "frames": [
+          0,
+          14,
+          28,
+          41,
+          55,
+          69
+        ]
+      },
+      "bytes": 1430556
+    },
+    "07_gif-og-sticker_lisa_simpson_dancing.gif": {
+      "description": "Lisa Simpson steps and waves in a bright red dress.",
+      "tags": [
+        "dance",
+        "character",
+        "cartoon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 250,
+      "height": 261,
+      "frameCount": 6,
+      "fps": 12.5,
+      "fpsRational": [
+        25,
+        2
+      ],
+      "durationSeconds": 0.48,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0237,
+        "neighborDifference": 0.039
+      },
+      "filmstrip": {
+        "file": "filmstrips/07_gif-og-sticker_lisa_simpson_dancing.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "bytes": 45847
+    },
+    "08_gif-og-sticker_winged_baby_angel.gif": {
+      "description": "A blond cartoon angel with white wings and a halo rests on a cloud.",
+      "tags": [
+        "angel",
+        "wings",
+        "glitter"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 363,
+      "height": 207,
+      "frameCount": 3,
+      "fps": 7.692308,
+      "fpsRational": [
+        100,
+        13
+      ],
+      "durationSeconds": 0.39,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0061,
+        "neighborDifference": 0.0062
+      },
+      "filmstrip": {
+        "file": "filmstrips/08_gif-og-sticker_winged_baby_angel.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2
+        ]
+      },
+      "bytes": 86243
+    },
+    "09_gif-og-sticker_carlton_dance.gif": {
+      "description": "Carlton in a red jacket swings his arms and steps side to side.",
+      "tags": [
+        "dance",
+        "character",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 350,
+      "height": 497,
+      "frameCount": 24,
+      "fps": 16.666667,
+      "fpsRational": [
+        50,
+        3
+      ],
+      "durationSeconds": 1.44,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0541,
+        "neighborDifference": 0.0596
+      },
+      "filmstrip": {
+        "file": "filmstrips/09_gif-og-sticker_carlton_dance.gif.jpg",
+        "frames": [
+          0,
+          5,
+          9,
+          14,
+          18,
+          23
+        ]
+      },
+      "bytes": 595369
+    },
+    "10_gif-fun_Fish Skate Sticker by celio.gif": {
+      "description": "Blue fish-headed skater in red polka-dot trousers moves in place.",
+      "tags": [
+        "fish",
+        "skating",
+        "character"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 530,
+      "height": 530,
+      "frameCount": 17,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 0.68,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0304,
+        "neighborDifference": 0.0261
+      },
+      "filmstrip": {
+        "file": "filmstrips/10_gif-fun_Fish Skate Sticker by celio.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          10,
+          13,
+          16
+        ]
+      },
+      "bytes": 348528
+    },
+    "11_gif-static_Television Beater Sticker by Catch Surf.gif": {
+      "description": "Retro television with rainbow lettering wobbling on its screen.",
+      "tags": [
+        "television",
+        "text",
+        "glitch"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 305,
+      "frameCount": 116,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 4.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0108,
+        "neighborDifference": 0.0099
+      },
+      "filmstrip": {
+        "file": "filmstrips/11_gif-static_Television Beater Sticker by Catch Surf.gif.jpg",
+        "frames": [
+          0,
+          23,
+          46,
+          69,
+          92,
+          115
+        ]
+      },
+      "bytes": 4458130
+    },
+    "12_gif-dunno_Zodiac Sign Sticker by String Ting.gif": {
+      "description": "Glittery turquoise bull on a gold disc above a Taurus caption.",
+      "tags": [
+        "bull",
+        "zodiac",
+        "glitter"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 326,
+      "height": 480,
+      "frameCount": 3,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 0.3,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0132,
+        "neighborDifference": 0.014
+      },
+      "filmstrip": {
+        "file": "filmstrips/12_gif-dunno_Zodiac Sign Sticker by String Ting.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2
+        ]
+      },
+      "bytes": 131011
+    },
+    "13_gif-fun_Fun Ok Sticker by Klar.graphics.gif": {
+      "description": "Grayscale cutout hand points to the right, with small flashes near the fingertip.",
+      "tags": [
+        "hand",
+        "collage",
+        "gesture"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 22,
+      "fps": 14.666667,
+      "fpsRational": null,
+      "durationSeconds": 1.5,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.12,
+        0.15,
+        0.27,
+        0.3,
+        0.42,
+        0.45,
+        0.48,
+        0.54,
+        0.57,
+        0.6,
+        0.63,
+        0.66,
+        0.69,
+        0.72,
+        0.75,
+        1.02,
+        1.05,
+        1.17,
+        1.2,
+        1.32,
+        1.35
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0003,
+        "neighborDifference": 0.0573
+      },
+      "filmstrip": {
+        "file": "filmstrips/13_gif-fun_Fun Ok Sticker by Klar.graphics.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          13,
+          17,
+          21
+        ]
+      },
+      "bytes": 148754
+    },
+    "14_gif-og-sticker_man_bending_over.gif": {
+      "description": "Blue-clad illustrated figure repeatedly bends forward.",
+      "tags": [
+        "character",
+        "gesture",
+        "cartoon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 384,
+      "frameCount": 21,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 0.84,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0138,
+        "neighborDifference": 0.0159
+      },
+      "filmstrip": {
+        "file": "filmstrips/14_gif-og-sticker_man_bending_over.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          12,
+          16,
+          20
+        ]
+      },
+      "bytes": 736846
+    },
+    "15_gif-paint_Miss You Art Sticker.gif": {
+      "description": "A color-changing paint stroke stretches across the frame above a patterned drip.",
+      "tags": [
+        "paint",
+        "drip",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 50,
+      "fps": 12.5,
+      "fpsRational": [
+        25,
+        2
+      ],
+      "durationSeconds": 4,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0224,
+        "neighborDifference": 0.0794
+      },
+      "filmstrip": {
+        "file": "filmstrips/15_gif-paint_Miss You Art Sticker.gif.jpg",
+        "frames": [
+          0,
+          10,
+          20,
+          29,
+          39,
+          49
+        ]
+      },
+      "bytes": 1051323
+    },
+    "16_gif-dunno_Art See Sticker by TRIPPIESTEFF.gif": {
+      "description": "Glossy white eyeball with a violet and green iris aimed left.",
+      "tags": [
+        "eye",
+        "3d",
+        "iridescent"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 10,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 0.7,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0169,
+        "neighborDifference": 0.0161
+      },
+      "filmstrip": {
+        "file": "filmstrips/16_gif-dunno_Art See Sticker by TRIPPIESTEFF.gif.jpg",
+        "frames": [
+          0,
+          2,
+          4,
+          5,
+          7,
+          9
+        ]
+      },
+      "bytes": 362878
+    },
+    "17_gif-dancimal_Mad Revenge Sticker by Neil Sanders.gif": {
+      "description": "Red-to-plum gradient figure with a gritted-teeth face lunges with one arm raised.",
+      "tags": [
+        "character",
+        "red",
+        "gradient",
+        "angry",
+        "lunge"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 16,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 0.64,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0364,
+        "neighborDifference": 0.0687
+      },
+      "filmstrip": {
+        "file": "filmstrips/17_gif-dancimal_Mad Revenge Sticker by Neil Sanders.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          9,
+          12,
+          15
+        ]
+      },
+      "bytes": 254727
+    },
+    "18_gif-og-sticker_monica_dancing.gif": {
+      "description": "Monica dances in a bright pink top with a loose arm swing.",
+      "tags": [
+        "dance",
+        "character",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 178,
+      "height": 178,
+      "frameCount": 92,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 4.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.0984,
+        "neighborDifference": 0.0263
+      },
+      "filmstrip": {
+        "file": "filmstrips/18_gif-og-sticker_monica_dancing.gif.jpg",
+        "frames": [
+          0,
+          18,
+          36,
+          55,
+          73,
+          91
+        ]
+      },
+      "bytes": 413341
+    },
+    "19_gif-special_Stop Motion Whatever Sticker by NICOLE DADDONA.gif": {
+      "description": "Pale sculpted skull rolls its oversized eyes from side to side.",
+      "tags": [
+        "skull",
+        "stop-motion",
+        "eyes"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 461,
+      "height": 480,
+      "frameCount": 6,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 0.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0426,
+        "neighborDifference": 0.0741
+      },
+      "filmstrip": {
+        "file": "filmstrips/19_gif-special_Stop Motion Whatever Sticker by NICOLE DADDONA.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "bytes": 522347
+    },
+    "20_gif-special_Slime Drip Sticker by LIMETYGER.gif": {
+      "description": "Bright yellow slime drips from the top edge in three frames.",
+      "tags": [
+        "slime",
+        "drip",
+        "yellow"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 304,
+      "frameCount": 3,
+      "fps": 7.692308,
+      "fpsRational": [
+        100,
+        13
+      ],
+      "durationSeconds": 0.39,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0905,
+        "neighborDifference": 0.0721
+      },
+      "filmstrip": {
+        "file": "filmstrips/20_gif-special_Slime Drip Sticker by LIMETYGER.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2
+        ]
+      },
+      "bytes": 5902
+    },
+    "21_gif-fun_Short Film Cloud Sticker by Pleins Écrans.gif": {
+      "description": "Flat blue cartoon cloud with a pink edge trembles in place.",
+      "tags": [
+        "cloud",
+        "illustration",
+        "boil"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 245,
+      "height": 191,
+      "frameCount": 51,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 2.04,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0,
+        "neighborDifference": 0.0086
+      },
+      "filmstrip": {
+        "file": "filmstrips/21_gif-fun_Short Film Cloud Sticker by Pleins Écrans.gif.jpg",
+        "frames": [
+          0,
+          10,
+          20,
+          30,
+          40,
+          50
+        ]
+      },
+      "bytes": 271740
+    },
+    "22_gif-special_Fun Love Sticker by Tarver.gif": {
+      "description": "Round blue smiley face with pink cheeks and a wide grin, wobbling in place on a transparent ground. Loops on its own; fills its square frame.",
+      "tags": [
+        "sticker",
+        "transparent",
+        "smiley",
+        "face",
+        "wobble",
+        "loops"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 15,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 1.05,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0244,
+        "neighborDifference": 0.0254
+      },
+      "filmstrip": {
+        "file": "filmstrips/22_gif-special_Fun Love Sticker by Tarver.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          8,
+          11,
+          14
+        ]
+      },
+      "bytes": 222196
+    },
+    "23_gif-dancimal_Angry Feelings Sticker by Neil Sanders.gif": {
+      "description": "Small red creature with a huge open-mouthed purple face stomping side to side in a tantrum.",
+      "tags": [
+        "character",
+        "red",
+        "angry",
+        "stomp"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 370,
+      "frameCount": 20,
+      "fps": 12.5,
+      "fpsRational": [
+        25,
+        2
+      ],
+      "durationSeconds": 1.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0308,
+        "neighborDifference": 0.091
+      },
+      "filmstrip": {
+        "file": "filmstrips/23_gif-dancimal_Angry Feelings Sticker by Neil Sanders.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          11,
+          15,
+          19
+        ]
+      },
+      "bytes": 95930
+    },
+    "24_gif-og-sticker_colorful_cat_dancers.gif": {
+      "description": "A cat-headed dancer moves its hands as its shirt cycles through bright colors.",
+      "tags": [
+        "cat",
+        "dance",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 19,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 1.9,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1399,
+        "neighborDifference": 0.0769
+      },
+      "filmstrip": {
+        "file": "filmstrips/24_gif-og-sticker_colorful_cat_dancers.gif.jpg",
+        "frames": [
+          0,
+          4,
+          7,
+          11,
+          14,
+          18
+        ]
+      },
+      "bytes": 753893
+    },
+    "25_gif-special_3D Space Sticker by SuperGSATB.gif": {
+      "description": "Grayscale moon cycles through illuminated phases.",
+      "tags": [
+        "moon",
+        "space",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 101,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 4.04,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0014,
+        "neighborDifference": 0.0062
+      },
+      "filmstrip": {
+        "file": "filmstrips/25_gif-special_3D Space Sticker by SuperGSATB.gif.jpg",
+        "frames": [
+          0,
+          20,
+          40,
+          60,
+          80,
+          100
+        ]
+      },
+      "bytes": 1872855
+    },
+    "26_gif-og-sticker_woman_hand_dance.gif": {
+      "description": "Dancer in a graphic shirt and jeans makes small, repeated hand gestures.",
+      "tags": [
+        "dance",
+        "gesture",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 270,
+      "height": 480,
+      "frameCount": 20,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 2,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.1235,
+        "neighborDifference": 0.0425
+      },
+      "filmstrip": {
+        "file": "filmstrips/26_gif-og-sticker_woman_hand_dance.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          11,
+          15,
+          19
+        ]
+      },
+      "bytes": 596344
+    },
+    "27_gif-fun_Check Out Short Film Sticker by Pleins Écrans.gif": {
+      "description": "A green telescope-like tube with orange limbs turns to face the viewer.",
+      "tags": [
+        "telescope",
+        "character",
+        "rotation"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 500,
+      "height": 500,
+      "frameCount": 115,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 4.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0003,
+        "neighborDifference": 0.0258
+      },
+      "filmstrip": {
+        "file": "filmstrips/27_gif-fun_Check Out Short Film Sticker by Pleins Écrans.gif.jpg",
+        "frames": [
+          0,
+          23,
+          46,
+          68,
+          91,
+          114
+        ]
+      },
+      "bytes": 794973
+    },
+    "28_gif-special_See Third Eye Sticker by Tarver.gif": {
+      "description": "Cartoon eye with green lid and dripping paint cycles iris colors.",
+      "tags": [
+        "eye",
+        "drip",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 576,
+      "height": 424,
+      "frameCount": 10,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 0.7,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0703,
+        "neighborDifference": 0.0532
+      },
+      "filmstrip": {
+        "file": "filmstrips/28_gif-special_See Third Eye Sticker by Tarver.gif.jpg",
+        "frames": [
+          0,
+          2,
+          4,
+          5,
+          7,
+          9
+        ]
+      },
+      "bytes": 104444
+    },
+    "29_gif-og-sticker_smoking_skull.gif": {
+      "description": "A green-tinted skull with dark glasses and a cigarette sparkles in place.",
+      "tags": [
+        "skull",
+        "glasses",
+        "glitter"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 102,
+      "height": 99,
+      "frameCount": 3,
+      "fps": 4,
+      "fpsRational": [
+        4,
+        1
+      ],
+      "durationSeconds": 0.75,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0116,
+        "neighborDifference": 0.0082
+      },
+      "filmstrip": {
+        "file": "filmstrips/29_gif-og-sticker_smoking_skull.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2
+        ]
+      },
+      "bytes": 5465
+    },
+    "30_gif-og-sticker_woman_get_down_dance.gif": {
+      "description": "Dancer in a pink sweatshirt steps side to side and gestures.",
+      "tags": [
+        "dance",
+        "cutout",
+        "character"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 300,
+      "height": 338,
+      "frameCount": 170,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 6.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.0895,
+        "neighborDifference": 0.0288
+      },
+      "filmstrip": {
+        "file": "filmstrips/30_gif-og-sticker_woman_get_down_dance.gif.jpg",
+        "frames": [
+          0,
+          34,
+          68,
+          101,
+          135,
+          169
+        ]
+      },
+      "bytes": 1748078
+    }
+  },
+  "fonts": {}
+}

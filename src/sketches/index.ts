@@ -10,6 +10,7 @@ import randoWando from './rando-wando/sketch';
 import milhouseSlices from './milhouse-slices/sketch';
 import milhousePortalDive from './milhouse-portal-dive/sketch';
 import milhouseChunks from './milhouse-chunks/sketch';
+import infiniteBloom from './infinite-bloom/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -27,6 +28,7 @@ export const sketches: Sketch[] = [
   milhouseSlices,
   milhousePortalDive,
   milhouseChunks,
+  infiniteBloom,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);

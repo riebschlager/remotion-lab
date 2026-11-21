@@ -32,14 +32,16 @@ export const clipPlaybackSchema = z.discriminatedUnion('mode', [
 ]);
 export type ClipPlayback = z.infer<typeof clipPlaybackSchema>;
 export type ClipBinding = {clip: ClipRef; playback: ClipPlayback; field?: string};
-const period = (clip: ClipRef, p: {mode: string; direction?: string}) =>
+/** Without seam measurements, require the same cut handling as a non-looping clip. */
+export type ClipPlaybackSource = {frameCount: number; loop?: {seamless: boolean}};
+const period = (clip: ClipPlaybackSource, p: {mode: string; direction?: string}) =>
   p.direction === 'ping-pong' ? Math.max(1, 2 * (clip.frameCount - 1)) : clip.frameCount;
 const duration = (p: Extract<ClipPlayback, {mode: 'fit'}>, meter: number) =>
   'beats' in p.duration ? p.duration.beats : p.duration.bars * meter;
 const patternOf = (p: {pattern?: {steps: number[]; swing?: number} | null}) => p.pattern ?? {steps: [1]};
 
 /** Call through defineSketch({clips}) to validate both metadata paths before decoding media. */
-export const clipPlaybackIssues = (clip: ClipRef, input: ClipPlayback, timing: TimingConfig, field = 'playback'): string[] => {
+export const clipPlaybackIssues = (clip: ClipPlaybackSource, input: ClipPlayback, timing: TimingConfig, field = 'playback'): string[] => {
   const parsed = clipPlaybackSchema.safeParse(input);
   if (!parsed.success) {
     const expand = (issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssue[] => issues.flatMap((i) => {
@@ -55,7 +57,7 @@ export const clipPlaybackIssues = (clip: ClipRef, input: ClipPlayback, timing: T
   const total = getTotalBeats(timing);
   if (p.mode === 'fit') {
     if (!divisionFitsLoop(duration(p, timing.beatsPerBar), total)) errors.push('duration: must fit a whole number of plays in the loop');
-    if (!clip.loop.seamless && p.direction !== 'ping-pong' && !p.cut) errors.push('cut: clip does not loop on its own; choose direction "ping-pong", cut "fade", or deliberately cut with "allow"');
+    if (!clip.loop?.seamless && p.direction !== 'ping-pong' && !p.cut) errors.push('cut: clip does not loop on its own; choose direction "ping-pong", cut "fade", or deliberately cut with "allow"');
   } else {
     const length = divisionBeats(p.division, timing.beatsPerBar);
     if (p.mode !== 'scrub') {
@@ -69,7 +71,7 @@ export const clipPlaybackIssues = (clip: ClipRef, input: ClipPlayback, timing: T
           errors.push('jump: active hits × jump must advance a whole number of source cycles; use seam "wrap" for an intentional reset');
         }
       }
-      if (!clip.loop.seamless && p.direction !== 'ping-pong' && p.cut !== 'allow') errors.push('cut: clip does not loop on its own; choose ping-pong or explicitly allow the cut');
+      if (!clip.loop?.seamless && p.direction !== 'ping-pong' && p.cut !== 'allow') errors.push('cut: clip does not loop on its own; choose ping-pong or explicitly allow the cut');
     }
     if (p.mode === 'scrub') {
       errors.push(...modulationIssues({scale: {signal: p.signal, range: [0, 1]}},
@@ -87,7 +89,7 @@ export const clipPlaybackIssues = (clip: ClipRef, input: ClipPlayback, timing: T
 
 export type ClipSample = {frame: number; strength: number; age: number; opacity: number};
 /** No history: rests retain the youngest active hit, even if it was in the previous loop. */
-export const sampleClip = (clip: ClipRef, p: ClipPlayback, context: ModulationContext): ClipSample => {
+export const sampleClip = (clip: ClipPlaybackSource, p: ClipPlayback, context: ModulationContext): ClipSample => {
   const {time} = context;
   const issues = clipPlaybackIssues(clip, p, {bpm: time.bpm, bars: time.totalBeats / time.beatsPerBar, beatsPerBar: time.beatsPerBar, fps: time.fps});
   if (issues.length) throw new Error(issues.join('; '));

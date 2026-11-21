@@ -1,0 +1,482 @@
+{
+  "version": 1,
+  "collection": "gif-flower",
+  "description": "Floral repeats, neon spirals, optical patterns and a dancing puppet selected for animated petal textures.",
+  "tags": [
+    "animated-gifs",
+    "petal-textures",
+    "floral",
+    "psychedelic"
+  ],
+  "clips": {
+    "Art 3D GIF by toomanynadias.gif": {
+      "description": "A purple 3D daisy with a lime-green center pulses over a warped black-and-white checkerboard.",
+      "tags": [
+        "flower",
+        "checkerboard",
+        "3d"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 500,
+      "height": 493,
+      "frameCount": 31,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 2.17,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0021,
+        "neighborDifference": 0.0084
+      },
+      "filmstrip": {
+        "file": "filmstrips/Art 3D GIF by toomanynadias.gif.jpg",
+        "frames": [
+          0,
+          6,
+          12,
+          18,
+          24,
+          30
+        ]
+      },
+      "bytes": 1542234
+    },
+    "Fire Disco GIF by Feliks Tomasz Konczakowski.gif": {
+      "description": "Glossy red and copper bands twist into a glowing spiral vortex.",
+      "tags": [
+        "spiral",
+        "metallic",
+        "red"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 100,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 4,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0516,
+        "neighborDifference": 0.0501
+      },
+      "filmstrip": {
+        "file": "filmstrips/Fire Disco GIF by Feliks Tomasz Konczakowski.gif.jpg",
+        "frames": [
+          0,
+          20,
+          40,
+          59,
+          79,
+          99
+        ]
+      },
+      "bytes": 11341486
+    },
+    "Fun Vintage GIF by Daisy Lemon.gif": {
+      "description": "Orange daisy clusters form a shifting mirrored repeat over a pale pink ground.",
+      "tags": [
+        "flower",
+        "kaleidoscope",
+        "retro"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 400,
+      "height": 400,
+      "frameCount": 9,
+      "fps": 5,
+      "fpsRational": [
+        5,
+        1
+      ],
+      "durationSeconds": 1.8,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1566,
+        "neighborDifference": 0.1351
+      },
+      "filmstrip": {
+        "file": "filmstrips/Fun Vintage GIF by Daisy Lemon.gif.jpg",
+        "frames": [
+          0,
+          2,
+          3,
+          5,
+          6,
+          8
+        ]
+      },
+      "bytes": 724680
+    },
+    "Happy Animation GIF by DOMCAKE.gif": {
+      "description": "White daisies and looping green stems slide across a vivid purple floral repeat.",
+      "tags": [
+        "flower",
+        "repeat-pattern",
+        "neon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 29,
+      "fps": 15,
+      "fpsRational": [
+        15,
+        1
+      ],
+      "durationSeconds": 1.933333,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1804,
+        "neighborDifference": 0.1208
+      },
+      "filmstrip": {
+        "file": "filmstrips/Happy Animation GIF by DOMCAKE.gif.jpg",
+        "frames": [
+          0,
+          6,
+          11,
+          17,
+          22,
+          28
+        ]
+      },
+      "bytes": 2369657
+    },
+    "Hypnotic Animation GIF by SymmetryInChaos.gif": {
+      "description": "Cyan, violet and orange filaments fold from a pinwheel into a dense luminous spiral.",
+      "tags": [
+        "pinwheel",
+        "spiral",
+        "neon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 450,
+      "height": 450,
+      "frameCount": 60,
+      "fps": 15,
+      "fpsRational": [
+        15,
+        1
+      ],
+      "durationSeconds": 4,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0529,
+        "neighborDifference": 0.0867
+      },
+      "filmstrip": {
+        "file": "filmstrips/Hypnotic Animation GIF by SymmetryInChaos.gif.jpg",
+        "frames": [
+          0,
+          12,
+          24,
+          35,
+          47,
+          59
+        ]
+      },
+      "bytes": 7413136
+    },
+    "Kaleidoscope Visuals GIF by SymmetryInChaos.gif": {
+      "description": "Prismatic points of light expand and contract in a dark radial kaleidoscope.",
+      "tags": [
+        "kaleidoscope",
+        "prismatic",
+        "radial"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 460,
+      "height": 460,
+      "frameCount": 26,
+      "fps": 15,
+      "fpsRational": [
+        15,
+        1
+      ],
+      "durationSeconds": 1.733333,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0424,
+        "neighborDifference": 0.0471
+      },
+      "filmstrip": {
+        "file": "filmstrips/Kaleidoscope Visuals GIF by SymmetryInChaos.gif.jpg",
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25
+        ]
+      },
+      "bytes": 2156223
+    },
+    "Loop Distort GIF by Psyklon.gif": {
+      "description": "Layered acid-green curls stretch and shift like translucent petals.",
+      "tags": [
+        "green",
+        "abstract",
+        "distortion"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 32,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 2.24,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.036,
+        "neighborDifference": 0.039
+      },
+      "filmstrip": {
+        "file": "filmstrips/Loop Distort GIF by Psyklon.gif.jpg",
+        "frames": [
+          0,
+          6,
+          12,
+          19,
+          25,
+          31
+        ]
+      },
+      "bytes": 3627878
+    },
+    "Pink Loop GIF by Psyklon.gif": {
+      "description": "Bright pink scalloped shapes wind into a black-centered spiral.",
+      "tags": [
+        "pink",
+        "spiral",
+        "radial"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 512,
+      "height": 512,
+      "frameCount": 32,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 3.2,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0489,
+        "neighborDifference": 0.0485
+      },
+      "filmstrip": {
+        "file": "filmstrips/Pink Loop GIF by Psyklon.gif.jpg",
+        "frames": [
+          0,
+          6,
+          12,
+          19,
+          25,
+          31
+        ]
+      },
+      "bytes": 4096395
+    },
+    "Relaxing Op Art GIF by Joe Winograd.gif": {
+      "description": "Grids of saturated dots and wavy stripes bend into shifting optical patterns.",
+      "tags": [
+        "op-art",
+        "geometric",
+        "colorful"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 450,
+      "fps": 15,
+      "fpsRational": [
+        15,
+        1
+      ],
+      "durationSeconds": 30,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0158,
+        "neighborDifference": 0.0203
+      },
+      "filmstrip": {
+        "file": "filmstrips/Relaxing Op Art GIF by Joe Winograd.gif.jpg",
+        "frames": [
+          0,
+          90,
+          180,
+          269,
+          359,
+          449
+        ]
+      },
+      "bytes": 59468768
+    },
+    "Sesame Street Dancing GIF.gif": {
+      "description": "Cookie Monster sways and steps across a colorful stage.",
+      "tags": [
+        "dance",
+        "puppet",
+        "blue"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 62,
+      "fps": 15,
+      "fpsRational": [
+        15,
+        1
+      ],
+      "durationSeconds": 4.133333,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.1144,
+        "neighborDifference": 0.0277
+      },
+      "filmstrip": {
+        "file": "filmstrips/Sesame Street Dancing GIF.gif.jpg",
+        "frames": [
+          0,
+          12,
+          24,
+          37,
+          49,
+          61
+        ]
+      },
+      "bytes": 4251011
+    },
+    "Spiral Trippy Tunnel GIF by Feliks Tomasz Konczakowski.gif": {
+      "description": "A ribbed spiral tunnel cycles through green, cyan, blue, purple and red.",
+      "tags": [
+        "spiral",
+        "tunnel",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 100,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 4,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0274,
+        "neighborDifference": 0.0253
+      },
+      "filmstrip": {
+        "file": "filmstrips/Spiral Trippy Tunnel GIF by Feliks Tomasz Konczakowski.gif.jpg",
+        "frames": [
+          0,
+          20,
+          40,
+          59,
+          79,
+          99
+        ]
+      },
+      "bytes": 7812269
+    },
+    "Trippy Animation GIF by Xenoself.gif": {
+      "description": "Nested neon diamonds and chevrons shift in color and alignment.",
+      "tags": [
+        "geometric",
+        "neon",
+        "op-art"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 500,
+      "height": 500,
+      "frameCount": 16,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 0.8,
+      "timing": "constant",
+      "hasAlpha": false,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.1188,
+        "neighborDifference": 0.1343
+      },
+      "filmstrip": {
+        "file": "filmstrips/Trippy Animation GIF by Xenoself.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          9,
+          12,
+          15
+        ]
+      },
+      "bytes": 2010444
+    }
+  },
+  "fonts": {}
+}

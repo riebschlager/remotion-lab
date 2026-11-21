@@ -1,0 +1,1833 @@
+{
+  "version": 1,
+  "collection": "2026-11-02-5",
+  "description": "Thirty animated GIFs in a numbered sequence, with cutout and cartoon stickers, colorful effects and characters, and graphic stickers.",
+  "tags": [
+    "animated-gifs",
+    "petal-textures",
+    "sticker-mix"
+  ],
+  "clips": {
+    "01_gif-static_Art Animation Sticker by Hi-Art.gif": {
+      "description": "Retro red television is switched between color bars, black and static.",
+      "tags": [
+        "television",
+        "static",
+        "test-pattern"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 22,
+      "fps": 12.5,
+      "fpsRational": [
+        25,
+        2
+      ],
+      "durationSeconds": 1.76,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0093,
+        "neighborDifference": 0.0821
+      },
+      "filmstrip": {
+        "file": "filmstrips/01_gif-static_Art Animation Sticker by Hi-Art.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          13,
+          17,
+          21
+        ]
+      },
+      "bytes": 287018
+    },
+    "02_gif-special_Sticker Puppet Sticker by FUN WITH FRIDAY.gif": {
+      "description": "Shaggy gold-tinsel puppet with wide eyes and red lips shifts in place.",
+      "tags": [
+        "puppet",
+        "tinsel",
+        "character"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 396,
+      "height": 480,
+      "frameCount": 500,
+      "fps": 25.813113,
+      "fpsRational": null,
+      "durationSeconds": 19.37,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.03,
+        0.06,
+        0.09,
+        0.12,
+        0.15,
+        0.18,
+        0.21,
+        0.24,
+        0.27,
+        0.3,
+        0.33,
+        0.36,
+        0.39,
+        0.42,
+        0.45,
+        0.48,
+        0.51,
+        0.54,
+        0.57,
+        0.6,
+        0.63,
+        0.66,
+        0.69,
+        0.72,
+        0.75,
+        0.78,
+        0.81,
+        0.84,
+        0.87,
+        0.9,
+        0.93,
+        0.96,
+        0.99,
+        1.02,
+        1.05,
+        1.08,
+        1.11,
+        1.14,
+        1.17,
+        1.2,
+        1.23,
+        1.26,
+        1.29,
+        1.32,
+        1.35,
+        1.38,
+        1.41,
+        1.44,
+        1.47,
+        1.5,
+        1.53,
+        1.56,
+        1.59,
+        1.62,
+        1.65,
+        1.68,
+        1.71,
+        1.74,
+        1.77,
+        1.8,
+        1.83,
+        1.86,
+        1.89,
+        1.92,
+        1.95,
+        1.98,
+        2.01,
+        2.04,
+        2.07,
+        2.1,
+        2.13,
+        2.16,
+        2.19,
+        2.22,
+        2.25,
+        2.28,
+        2.31,
+        2.34,
+        2.37,
+        2.4,
+        2.43,
+        2.46,
+        2.49,
+        2.52,
+        2.55,
+        2.58,
+        2.61,
+        2.64,
+        2.67,
+        2.7,
+        2.73,
+        2.76,
+        2.79,
+        2.82,
+        2.85,
+        2.88,
+        2.91,
+        2.94,
+        2.97,
+        3,
+        3.03,
+        3.06,
+        3.09,
+        3.12,
+        3.15,
+        3.18,
+        3.21,
+        3.24,
+        3.27,
+        3.3,
+        3.33,
+        3.36,
+        3.39,
+        3.42,
+        3.45,
+        3.48,
+        3.51,
+        3.54,
+        3.57,
+        3.6,
+        3.63,
+        3.66,
+        3.69,
+        3.72,
+        3.75,
+        3.78,
+        3.81,
+        3.84,
+        3.87,
+        3.9,
+        3.93,
+        3.96,
+        3.99,
+        4.02,
+        4.05,
+        4.08,
+        4.11,
+        4.14,
+        4.17,
+        4.2,
+        4.23,
+        4.26,
+        4.29,
+        4.32,
+        4.35,
+        4.38,
+        4.41,
+        4.44,
+        4.47,
+        4.5,
+        4.53,
+        4.56,
+        4.59,
+        4.62,
+        4.65,
+        4.68,
+        4.71,
+        4.74,
+        4.77,
+        4.8,
+        4.83,
+        4.86,
+        4.89,
+        4.92,
+        4.95,
+        4.98,
+        5.01,
+        5.04,
+        5.07,
+        5.1,
+        5.13,
+        5.16,
+        5.19,
+        5.22,
+        5.25,
+        5.28,
+        5.31,
+        5.34,
+        5.37,
+        5.4,
+        5.43,
+        5.46,
+        5.49,
+        5.52,
+        5.55,
+        5.58,
+        5.61,
+        5.64,
+        5.67,
+        5.7,
+        5.73,
+        5.76,
+        5.79,
+        5.82,
+        5.85,
+        5.88,
+        5.91,
+        5.94,
+        5.97,
+        6,
+        6.03,
+        6.06,
+        6.09,
+        6.12,
+        6.15,
+        6.18,
+        6.21,
+        6.24,
+        6.27,
+        6.3,
+        6.33,
+        6.36,
+        6.39,
+        6.42,
+        6.45,
+        6.48,
+        6.51,
+        6.54,
+        6.57,
+        6.6,
+        6.63,
+        6.66,
+        6.69,
+        6.72,
+        6.75,
+        6.78,
+        6.81,
+        6.84,
+        6.87,
+        6.9,
+        6.93,
+        6.96,
+        6.99,
+        7.02,
+        7.05,
+        7.08,
+        7.11,
+        7.14,
+        7.17,
+        7.2,
+        7.23,
+        7.26,
+        7.29,
+        7.32,
+        7.35,
+        7.38,
+        7.41,
+        7.44,
+        7.47,
+        7.5,
+        7.53,
+        7.56,
+        7.59,
+        7.62,
+        7.65,
+        7.68,
+        7.71,
+        7.74,
+        7.77,
+        7.8,
+        7.83,
+        7.86,
+        7.89,
+        7.92,
+        7.95,
+        7.98,
+        8.01,
+        8.04,
+        8.07,
+        8.1,
+        8.13,
+        8.16,
+        8.19,
+        8.22,
+        8.25,
+        8.28,
+        8.31,
+        8.34,
+        8.37,
+        8.4,
+        8.43,
+        8.46,
+        8.49,
+        8.52,
+        8.55,
+        8.58,
+        8.61,
+        8.64,
+        8.67,
+        8.7,
+        8.73,
+        8.76,
+        8.79,
+        8.82,
+        8.85,
+        8.88,
+        8.91,
+        8.94,
+        8.97,
+        9,
+        9.03,
+        9.06,
+        9.09,
+        9.12,
+        9.15,
+        9.18,
+        9.21,
+        9.24,
+        9.27,
+        9.3,
+        9.33,
+        9.36,
+        9.39,
+        9.42,
+        9.45,
+        9.48,
+        9.51,
+        9.54,
+        9.57,
+        9.6,
+        9.63,
+        9.66,
+        9.69,
+        9.72,
+        9.75,
+        9.78,
+        9.81,
+        9.84,
+        9.87,
+        9.9,
+        9.93,
+        9.96,
+        9.99,
+        10.02,
+        10.05,
+        10.08,
+        10.11,
+        10.14,
+        10.17,
+        10.2,
+        10.23,
+        10.26,
+        10.29,
+        10.32,
+        10.35,
+        10.38,
+        10.41,
+        10.44,
+        10.47,
+        10.5,
+        10.53,
+        10.56,
+        10.59,
+        10.62,
+        10.65,
+        10.68,
+        10.71,
+        10.74,
+        10.77,
+        10.8,
+        10.83,
+        10.86,
+        10.89,
+        10.92,
+        10.95,
+        10.98,
+        11.01,
+        11.04,
+        11.07,
+        11.1,
+        11.13,
+        11.16,
+        11.19,
+        11.22,
+        11.25,
+        11.28,
+        11.31,
+        11.34,
+        11.37,
+        11.4,
+        11.43,
+        11.46,
+        11.49,
+        11.52,
+        11.55,
+        11.58,
+        11.61,
+        11.64,
+        11.67,
+        11.7,
+        11.73,
+        11.76,
+        11.79,
+        11.82,
+        11.85,
+        11.88,
+        11.91,
+        11.94,
+        11.97,
+        12,
+        12.03,
+        12.06,
+        12.09,
+        12.12,
+        12.15,
+        12.18,
+        12.21,
+        12.24,
+        12.27,
+        12.3,
+        12.33,
+        12.36,
+        12.39,
+        12.42,
+        12.45,
+        12.48,
+        12.51,
+        12.54,
+        12.57,
+        12.6,
+        12.63,
+        12.66,
+        12.69,
+        12.72,
+        12.75,
+        12.78,
+        12.81,
+        12.84,
+        12.87,
+        12.9,
+        12.93,
+        12.96,
+        12.99,
+        13.02,
+        13.05,
+        13.08,
+        13.11,
+        13.14,
+        13.17,
+        13.2,
+        13.23,
+        13.26,
+        13.29,
+        13.32,
+        13.35,
+        13.38,
+        13.41,
+        13.44,
+        13.47,
+        13.5,
+        13.53,
+        13.56,
+        13.59,
+        13.62,
+        13.65,
+        13.68,
+        13.71,
+        13.74,
+        13.77,
+        13.8,
+        13.83,
+        13.86,
+        13.89,
+        13.92,
+        13.95,
+        13.98,
+        14.01,
+        14.04,
+        14.07,
+        14.1,
+        14.13,
+        14.16,
+        14.19,
+        14.22,
+        14.25,
+        14.28,
+        14.31,
+        14.34,
+        14.37,
+        14.4,
+        14.43,
+        14.46,
+        14.49,
+        14.52,
+        14.55,
+        14.58,
+        14.61,
+        14.64,
+        14.67,
+        14.7,
+        14.73,
+        14.76,
+        14.79,
+        14.82,
+        14.85,
+        14.88,
+        14.91,
+        14.94,
+        14.97
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.0338,
+        "neighborDifference": 0.0144
+      },
+      "filmstrip": {
+        "file": "filmstrips/02_gif-special_Sticker Puppet Sticker by FUN WITH FRIDAY.gif.jpg",
+        "frames": [
+          0,
+          100,
+          200,
+          299,
+          399,
+          499
+        ]
+      },
+      "bytes": 28568769
+    },
+    "03_gif-og-sticker_woman_hand_dance.gif": {
+      "description": "Dancer in a graphic shirt and jeans makes small, repeated hand gestures.",
+      "tags": [
+        "dance",
+        "gesture",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 270,
+      "height": 480,
+      "frameCount": 20,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 2,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.1235,
+        "neighborDifference": 0.0425
+      },
+      "filmstrip": {
+        "file": "filmstrips/03_gif-og-sticker_woman_hand_dance.gif.jpg",
+        "frames": [
+          0,
+          4,
+          8,
+          11,
+          15,
+          19
+        ]
+      },
+      "bytes": 596344
+    },
+    "04_gif-og-sticker_minimalist_camping_scene.gif": {
+      "description": "Fine white line art shows a camping landscape, trees and a crescent moon.",
+      "tags": [
+        "camping",
+        "line-art",
+        "moon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 321,
+      "frameCount": 2,
+      "fps": 2,
+      "fpsRational": [
+        2,
+        1
+      ],
+      "durationSeconds": 1,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0041,
+        "neighborDifference": 0.0041
+      },
+      "filmstrip": {
+        "file": "filmstrips/04_gif-og-sticker_minimalist_camping_scene.gif.jpg",
+        "frames": [
+          0,
+          1
+        ]
+      },
+      "bytes": 10751
+    },
+    "05_gif-og-sticker_walking_man.gif": {
+      "description": "Photographic cutout in jeans and a dark shirt walks in place.",
+      "tags": [
+        "walk-cycle",
+        "cutout",
+        "character"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 328,
+      "height": 400,
+      "frameCount": 28,
+      "fps": 100,
+      "fpsRational": [
+        100,
+        1
+      ],
+      "durationSeconds": 0.28,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0309,
+        "neighborDifference": 0.0248
+      },
+      "filmstrip": {
+        "file": "filmstrips/05_gif-og-sticker_walking_man.gif.jpg",
+        "frames": [
+          0,
+          5,
+          11,
+          16,
+          22,
+          27
+        ]
+      },
+      "bytes": 261759
+    },
+    "06_gif-og-sticker_monica_dancing.gif": {
+      "description": "Monica dances in a bright pink top with a loose arm swing.",
+      "tags": [
+        "dance",
+        "character",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 178,
+      "height": 178,
+      "frameCount": 92,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 4.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.0984,
+        "neighborDifference": 0.0263
+      },
+      "filmstrip": {
+        "file": "filmstrips/06_gif-og-sticker_monica_dancing.gif.jpg",
+        "frames": [
+          0,
+          18,
+          36,
+          55,
+          73,
+          91
+        ]
+      },
+      "bytes": 413341
+    },
+    "07_gif-og-sticker_daniel_radcliffe_text.gif": {
+      "description": "Narrow red Daniel Radcliffe text repeats across a glittering banner.",
+      "tags": [
+        "text",
+        "banner",
+        "glitter"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 398,
+      "height": 62,
+      "frameCount": 5,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 0.25,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0407,
+        "neighborDifference": 0.0331
+      },
+      "filmstrip": {
+        "file": "filmstrips/07_gif-og-sticker_daniel_radcliffe_text.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "bytes": 37642
+    },
+    "08_gif-fun_Fish Skate Sticker by celio.gif": {
+      "description": "Blue fish-headed skater in red polka-dot trousers moves in place.",
+      "tags": [
+        "fish",
+        "skating",
+        "character"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 530,
+      "height": 530,
+      "frameCount": 17,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 0.68,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0304,
+        "neighborDifference": 0.0261
+      },
+      "filmstrip": {
+        "file": "filmstrips/08_gif-fun_Fish Skate Sticker by celio.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          10,
+          13,
+          16
+        ]
+      },
+      "bytes": 348528
+    },
+    "09_gif-mood_Black And White Photography Sticker by Jewish Museum of Australia(2).gif": {
+      "description": "Black botanical drawing of leaves above a tangle of exposed roots.",
+      "tags": [
+        "botanical",
+        "roots",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 430,
+      "height": 480,
+      "frameCount": 14,
+      "fps": 5,
+      "fpsRational": [
+        5,
+        1
+      ],
+      "durationSeconds": 2.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0262,
+        "neighborDifference": 0.034
+      },
+      "filmstrip": {
+        "file": "filmstrips/09_gif-mood_Black And White Photography Sticker by Jewish Museum of Australia(2).gif.jpg",
+        "frames": [
+          0,
+          3,
+          5,
+          8,
+          10,
+          13
+        ]
+      },
+      "bytes": 851258
+    },
+    "10_gif-special_Fun Love Sticker by Tarver.gif": {
+      "description": "Round blue smiley face with pink cheeks and a wide grin, wobbling in place on a transparent ground. Loops on its own; fills its square frame.",
+      "tags": [
+        "sticker",
+        "transparent",
+        "smiley",
+        "face",
+        "wobble",
+        "loops"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 15,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 1.05,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0244,
+        "neighborDifference": 0.0254
+      },
+      "filmstrip": {
+        "file": "filmstrips/10_gif-special_Fun Love Sticker by Tarver.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          8,
+          11,
+          14
+        ]
+      },
+      "bytes": 222196
+    },
+    "11_gif-og-sticker_rotating_mountain.gif": {
+      "description": "Dark conical mountain with a pale rocky streak rotates in place.",
+      "tags": [
+        "mountain",
+        "rotation",
+        "3d"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 473,
+      "height": 480,
+      "frameCount": 46,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 4.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0093,
+        "neighborDifference": 0.0446
+      },
+      "filmstrip": {
+        "file": "filmstrips/11_gif-og-sticker_rotating_mountain.gif.jpg",
+        "frames": [
+          0,
+          9,
+          18,
+          27,
+          36,
+          45
+        ]
+      },
+      "bytes": 2597253
+    },
+    "12_gif-og-sticker_dancing_ice_cream_cone.gif": {
+      "description": "Cartoon waffle cone with eyes and legs bounces under a scoop of ice cream.",
+      "tags": [
+        "food",
+        "ice-cream",
+        "dance"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 272,
+      "height": 480,
+      "frameCount": 98,
+      "fps": 33.333333,
+      "fpsRational": [
+        100,
+        3
+      ],
+      "durationSeconds": 2.94,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0095,
+        "neighborDifference": 0.047
+      },
+      "filmstrip": {
+        "file": "filmstrips/12_gif-og-sticker_dancing_ice_cream_cone.gif.jpg",
+        "frames": [
+          0,
+          19,
+          39,
+          58,
+          78,
+          97
+        ]
+      },
+      "bytes": 2522688
+    },
+    "13_gif-mood_Black And White Photography Sticker by Jewish Museum of Australia(1).gif": {
+      "description": "White parrot in grayscale holds a profile pose with subtle movement.",
+      "tags": [
+        "bird",
+        "parrot",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 412,
+      "height": 480,
+      "frameCount": 18,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 1.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0027,
+        "neighborDifference": 0.0042
+      },
+      "filmstrip": {
+        "file": "filmstrips/13_gif-mood_Black And White Photography Sticker by Jewish Museum of Australia(1).gif.jpg",
+        "frames": [
+          0,
+          3,
+          7,
+          10,
+          14,
+          17
+        ]
+      },
+      "bytes": 339891
+    },
+    "14_gif-og-sticker_isometric_grass_platform.gif": {
+      "description": "Isometric bright-green grass tile with small sparkling details.",
+      "tags": [
+        "isometric",
+        "landscape",
+        "grass"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 440,
+      "height": 252,
+      "frameCount": 16,
+      "fps": 2.962963,
+      "fpsRational": null,
+      "durationSeconds": 5.4,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.1,
+        0.2,
+        0.3,
+        0.4,
+        0.5,
+        0.6,
+        1.9,
+        2,
+        2.1,
+        2.2,
+        2.3,
+        2.4,
+        2.5,
+        2.6,
+        2.7
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0019,
+        "neighborDifference": 0.0016
+      },
+      "filmstrip": {
+        "file": "filmstrips/14_gif-og-sticker_isometric_grass_platform.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          9,
+          12,
+          15
+        ]
+      },
+      "bytes": 46124
+    },
+    "15_gif-static_Tv Static Sticker by Eternal Family.gif": {
+      "description": "Portrait with a face filled by flickering gray television static.",
+      "tags": [
+        "portrait",
+        "static",
+        "collage"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 432,
+      "frameCount": 15,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 0.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0114,
+        "neighborDifference": 0.0119
+      },
+      "filmstrip": {
+        "file": "filmstrips/15_gif-static_Tv Static Sticker by Eternal Family.gif.jpg",
+        "frames": [
+          0,
+          3,
+          6,
+          8,
+          11,
+          14
+        ]
+      },
+      "bytes": 633338
+    },
+    "16_gif-lines_Animation Loop Sticker by Keyframe Kit(3).gif": {
+      "description": "White figure-eight knot repeatedly opens and reties its top loop.",
+      "tags": [
+        "line-art",
+        "knot",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 29,
+      "fps": 7.397959,
+      "fpsRational": null,
+      "durationSeconds": 3.92,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.08,
+        0.16,
+        0.24,
+        0.32,
+        0.4,
+        0.48,
+        0.56,
+        0.64,
+        0.72,
+        0.8,
+        0.88,
+        0.96,
+        1.04,
+        1.12,
+        1.2,
+        1.28,
+        1.36,
+        1.44,
+        1.52,
+        1.6,
+        1.68,
+        1.76,
+        1.84,
+        1.92,
+        2,
+        2.08,
+        2.16,
+        2.24
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0,
+        "neighborDifference": 0.0166
+      },
+      "filmstrip": {
+        "file": "filmstrips/16_gif-lines_Animation Loop Sticker by Keyframe Kit(3).gif.jpg",
+        "frames": [
+          0,
+          6,
+          11,
+          17,
+          22,
+          28
+        ]
+      },
+      "bytes": 49760
+    },
+    "17_gif-special_Stop Motion Whatever Sticker by NICOLE DADDONA.gif": {
+      "description": "Pale sculpted skull rolls its oversized eyes from side to side.",
+      "tags": [
+        "skull",
+        "stop-motion",
+        "eyes"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 461,
+      "height": 480,
+      "frameCount": 6,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 0.6,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0426,
+        "neighborDifference": 0.0741
+      },
+      "filmstrip": {
+        "file": "filmstrips/17_gif-special_Stop Motion Whatever Sticker by NICOLE DADDONA.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "bytes": 522347
+    },
+    "18_gif-og-sticker_growing_flower.gif": {
+      "description": "Orange-red petals fold down around a dark center, then grow open again.",
+      "tags": [
+        "flower",
+        "bloom",
+        "orange"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 473,
+      "height": 480,
+      "frameCount": 38,
+      "fps": 20,
+      "fpsRational": [
+        20,
+        1
+      ],
+      "durationSeconds": 1.9,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0004,
+        "neighborDifference": 0.0204
+      },
+      "filmstrip": {
+        "file": "filmstrips/18_gif-og-sticker_growing_flower.gif.jpg",
+        "frames": [
+          0,
+          7,
+          15,
+          22,
+          30,
+          37
+        ]
+      },
+      "bytes": 1932659
+    },
+    "19_gif-fun_Animation Loop Sticker by Keyframe Kit(1).gif": {
+      "description": "A hand-drawn white line curls into a loop, breaks apart, and reforms.",
+      "tags": [
+        "line-art",
+        "abstract",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 29,
+      "fps": 7.397959,
+      "fpsRational": null,
+      "durationSeconds": 3.92,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.08,
+        0.16,
+        0.24,
+        0.32,
+        0.4,
+        0.48,
+        0.56,
+        0.64,
+        0.72,
+        0.8,
+        0.88,
+        0.96,
+        1.04,
+        1.12,
+        1.2,
+        1.28,
+        1.36,
+        1.44,
+        1.52,
+        1.6,
+        1.68,
+        1.76,
+        1.84,
+        1.92,
+        2,
+        2.08,
+        2.16,
+        2.24
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0,
+        "neighborDifference": 0.0149
+      },
+      "filmstrip": {
+        "file": "filmstrips/19_gif-fun_Animation Loop Sticker by Keyframe Kit(1).gif.jpg",
+        "frames": [
+          0,
+          6,
+          11,
+          17,
+          22,
+          28
+        ]
+      },
+      "bytes": 51012
+    },
+    "20_gif-special_See Third Eye Sticker by Tarver.gif": {
+      "description": "Cartoon eye with green lid and dripping paint cycles iris colors.",
+      "tags": [
+        "eye",
+        "drip",
+        "color-cycle"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 576,
+      "height": 424,
+      "frameCount": 10,
+      "fps": 14.285714,
+      "fpsRational": [
+        100,
+        7
+      ],
+      "durationSeconds": 0.7,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0703,
+        "neighborDifference": 0.0532
+      },
+      "filmstrip": {
+        "file": "filmstrips/20_gif-special_See Third Eye Sticker by Tarver.gif.jpg",
+        "frames": [
+          0,
+          2,
+          4,
+          5,
+          7,
+          9
+        ]
+      },
+      "bytes": 104444
+    },
+    "21_gif-og-sticker_kneeling_fairy_angel.gif": {
+      "description": "Kneeling figure in a pale dress with blue wings and a faint sparkling outline.",
+      "tags": [
+        "fairy",
+        "wings",
+        "glitter"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 214,
+      "height": 250,
+      "frameCount": 3,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 0.3,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0067,
+        "neighborDifference": 0.0077
+      },
+      "filmstrip": {
+        "file": "filmstrips/21_gif-og-sticker_kneeling_fairy_angel.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2
+        ]
+      },
+      "bytes": 48647
+    },
+    "22_gif-og-sticker_couple_in_pink_dancing.gif": {
+      "description": "Two performers in pink raise their arms and step through a duet.",
+      "tags": [
+        "dance",
+        "duet",
+        "cutout"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 405,
+      "height": 480,
+      "frameCount": 70,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 2.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.0795,
+        "neighborDifference": 0.0244
+      },
+      "filmstrip": {
+        "file": "filmstrips/22_gif-og-sticker_couple_in_pink_dancing.gif.jpg",
+        "frames": [
+          0,
+          14,
+          28,
+          41,
+          55,
+          69
+        ]
+      },
+      "bytes": 2560299
+    },
+    "23_gif-fun_Short Film Thumbs Up Sticker by Pleins Écrans.gif": {
+      "description": "Green cartoon character with an orange crest gestures with its hands.",
+      "tags": [
+        "character",
+        "illustration",
+        "gesture"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 436,
+      "height": 480,
+      "frameCount": 127,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 5.08,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0004,
+        "neighborDifference": 0.0074
+      },
+      "filmstrip": {
+        "file": "filmstrips/23_gif-fun_Short Film Thumbs Up Sticker by Pleins Écrans.gif.jpg",
+        "frames": [
+          0,
+          25,
+          50,
+          76,
+          101,
+          126
+        ]
+      },
+      "bytes": 1078690
+    },
+    "24_gif-weird_gif.gif": {
+      "description": "Round orange creature with long legs and arms subtly shifts pose.",
+      "tags": [
+        "character",
+        "3d",
+        "orange"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 673,
+      "height": 600,
+      "frameCount": 30,
+      "fps": 33.333333,
+      "fpsRational": [
+        100,
+        3
+      ],
+      "durationSeconds": 0.9,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.001,
+        "neighborDifference": 0.0157
+      },
+      "filmstrip": {
+        "file": "filmstrips/24_gif-weird_gif.gif.jpg",
+        "frames": [
+          0,
+          6,
+          12,
+          17,
+          23,
+          29
+        ]
+      },
+      "bytes": 1690927
+    },
+    "25_gif-dancimal_Jump Bouncing Sticker by Neil Sanders.gif": {
+      "description": "Pale blue frog flops, flips and bounces; soft shading.",
+      "tags": [
+        "character",
+        "light-blue",
+        "frog",
+        "bounce"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 520,
+      "frameCount": 30,
+      "fps": 16.666667,
+      "fpsRational": null,
+      "durationSeconds": 1.8,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.12,
+        0.21,
+        0.28,
+        0.34,
+        0.39,
+        0.43,
+        0.47,
+        0.51,
+        0.55,
+        0.59,
+        0.64,
+        0.7,
+        0.77,
+        0.86,
+        0.98,
+        1.07,
+        1.14,
+        1.2,
+        1.25,
+        1.29,
+        1.33,
+        1.37,
+        1.41,
+        1.45,
+        1.49,
+        1.53,
+        1.58,
+        1.64,
+        1.71
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0302,
+        "neighborDifference": 0.0866
+      },
+      "filmstrip": {
+        "file": "filmstrips/25_gif-dancimal_Jump Bouncing Sticker by Neil Sanders.gif.jpg",
+        "frames": [
+          0,
+          6,
+          12,
+          17,
+          23,
+          29
+        ]
+      },
+      "bytes": 282279
+    },
+    "26_gif-fun_I Love You Art Sticker by toomanynadias.gif": {
+      "description": "Iridescent long-stemmed rose shimmers through blue, violet and red highlights.",
+      "tags": [
+        "flower",
+        "rose",
+        "iridescent"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 313,
+      "height": 470,
+      "frameCount": 96,
+      "fps": 25,
+      "fpsRational": [
+        25,
+        1
+      ],
+      "durationSeconds": 3.84,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0214,
+        "neighborDifference": 0.0253
+      },
+      "filmstrip": {
+        "file": "filmstrips/26_gif-fun_I Love You Art Sticker by toomanynadias.gif.jpg",
+        "frames": [
+          0,
+          19,
+          38,
+          57,
+          76,
+          95
+        ]
+      },
+      "bytes": 1854961
+    },
+    "27_gif-og-sticker_party_central_cartoon.gif": {
+      "description": "A red balloon bobs above orange and blue party cartoons.",
+      "tags": [
+        "party",
+        "balloon",
+        "cartoon"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 138,
+      "height": 202,
+      "frameCount": 5,
+      "fps": 2.631579,
+      "fpsRational": null,
+      "durationSeconds": 1.9,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.1,
+        0.55,
+        1,
+        1.45
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": false,
+        "seamDifference": 0.057,
+        "neighborDifference": 0.0156
+      },
+      "filmstrip": {
+        "file": "filmstrips/27_gif-og-sticker_party_central_cartoon.gif.jpg",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "bytes": 7363
+    },
+    "28_gif-dancimal_Dance Party Sticker by Neil Sanders.gif": {
+      "description": "Tall lime-green blob in black trousers bops and sways; tall narrow frame.",
+      "tags": [
+        "character",
+        "lime",
+        "bop",
+        "tall"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 317,
+      "height": 601,
+      "frameCount": 24,
+      "fps": 30,
+      "fpsRational": null,
+      "durationSeconds": 0.8,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.05,
+        0.08,
+        0.11,
+        0.14,
+        0.17,
+        0.2,
+        0.25,
+        0.28,
+        0.31,
+        0.34,
+        0.37,
+        0.4,
+        0.45,
+        0.48,
+        0.51,
+        0.54,
+        0.57,
+        0.6,
+        0.65,
+        0.68,
+        0.71,
+        0.74,
+        0.77
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0463,
+        "neighborDifference": 0.0682
+      },
+      "filmstrip": {
+        "file": "filmstrips/28_gif-dancimal_Dance Party Sticker by Neil Sanders.gif.jpg",
+        "frames": [
+          0,
+          5,
+          9,
+          14,
+          18,
+          23
+        ]
+      },
+      "bytes": 164098
+    },
+    "29_gif-static_Television Flowers Sticker by CONTROL CENTER.gif": {
+      "description": "Orange television displays static under green and purple flowers.",
+      "tags": [
+        "television",
+        "flowers",
+        "static"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 600,
+      "height": 600,
+      "frameCount": 8,
+      "fps": 10,
+      "fpsRational": [
+        10,
+        1
+      ],
+      "durationSeconds": 0.8,
+      "timing": "constant",
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0.0328,
+        "neighborDifference": 0.0439
+      },
+      "filmstrip": {
+        "file": "filmstrips/29_gif-static_Television Flowers Sticker by CONTROL CENTER.gif.jpg",
+        "frames": [
+          0,
+          1,
+          3,
+          4,
+          6,
+          7
+        ]
+      },
+      "bytes": 110890
+    },
+    "30_gif-lines_Animation Loop Sticker by Keyframe Kit(1).gif": {
+      "description": "A loose cluster of white curls shifts and redraws itself.",
+      "tags": [
+        "line-art",
+        "abstract",
+        "monochrome"
+      ],
+      "format": "gif",
+      "codec": "gif",
+      "width": 480,
+      "height": 480,
+      "frameCount": 29,
+      "fps": 7.397959,
+      "fpsRational": null,
+      "durationSeconds": 3.92,
+      "timing": "variable",
+      "frameStarts": [
+        0,
+        0.08,
+        0.16,
+        0.24,
+        0.32,
+        0.4,
+        0.48,
+        0.56,
+        0.64,
+        0.72,
+        0.8,
+        0.88,
+        0.96,
+        1.04,
+        1.12,
+        1.2,
+        1.28,
+        1.36,
+        1.44,
+        1.52,
+        1.6,
+        1.68,
+        1.76,
+        1.84,
+        1.92,
+        2,
+        2.08,
+        2.16,
+        2.24
+      ],
+      "hasAlpha": true,
+      "hasAudio": false,
+      "loop": {
+        "seamless": true,
+        "seamDifference": 0,
+        "neighborDifference": 0.021
+      },
+      "filmstrip": {
+        "file": "filmstrips/30_gif-lines_Animation Loop Sticker by Keyframe Kit(1).gif.jpg",
+        "frames": [
+          0,
+          6,
+          11,
+          17,
+          22,
+          28
+        ]
+      },
+      "bytes": 74477
+    }
+  },
+  "fonts": {}
+}
