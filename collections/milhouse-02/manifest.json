@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "collection": "milhouse-02",
+  "description": "Falling.fbx contains a skinned Milhouse mesh, embedded palette texture and a 4.10-second falling take. FBX is skipped by the clip/font scanner.",
+  "tags": [
+    "milhouse",
+    "3d",
+    "fbx",
+    "falling"
+  ],
+  "clips": {},
+  "fonts": {}
+}

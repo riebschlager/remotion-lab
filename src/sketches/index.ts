@@ -12,6 +12,7 @@ import milhousePortalDive from './milhouse-portal-dive/sketch';
 import milhouseChunks from './milhouse-chunks/sketch';
 import infiniteBloom from './infinite-bloom/sketch';
 import milhouseInfiniteBloom from './milhouse-infinite-bloom/sketch';
+import milhouseBreakingNews from './milhouse-breaking-news/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -31,6 +32,7 @@ export const sketches: Sketch[] = [
   milhouseChunks,
   infiniteBloom,
   milhouseInfiniteBloom,
+  milhouseBreakingNews,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);

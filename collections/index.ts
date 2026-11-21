@@ -11,7 +11,8 @@ import c8 from './2026-11-02-9/manifest.json';
 import c9 from './gif-dancimal/manifest.json';
 import c10 from './gif-flower/manifest.json';
 import c11 from './milhouse-01/manifest.json';
-import c12 from './test/manifest.json';
+import c12 from './milhouse-02/manifest.json';
+import c13 from './test/manifest.json';
 
 /** Every committed collection manifest, keyed by collection name. */
 export const manifests = {
@@ -27,5 +28,6 @@ export const manifests = {
   'gif-dancimal': c9,
   'gif-flower': c10,
   'milhouse-01': c11,
-  'test': c12,
+  'milhouse-02': c12,
+  'test': c13,
 };
