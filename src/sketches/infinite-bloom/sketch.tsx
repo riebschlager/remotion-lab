@@ -192,8 +192,13 @@ const Pollen: React.FC<{
   </>;
 };
 
-const InfiniteBloom: React.FC<z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent'>>> = ({
-  zoom, center, textureFolder, textureOpacity, texturePlayback, petals, transparent, ...shape
+export const InfiniteBloom: React.FC<z.output<typeof schema> &
+  Partial<Pick<SketchBaseProps, 'transparent'>> & {
+    showFolderPicker?: boolean;
+    textureRefs?: readonly ClipRef[];
+  }> = ({
+  zoom, center, textureFolder, textureOpacity, texturePlayback, petals, transparent,
+  showFolderPicker = true, textureRefs, ...shape
 }) => {
   const {loopPhase, beatPhase, totalBeats, beatsPerBar, bpm, fps} = useBeat();
   const {isStudio, isRendering} = useRemotionEnvironment();
@@ -206,7 +211,7 @@ const InfiniteBloom: React.FC<z.output<typeof schema> & Partial<Pick<SketchBaseP
       if (issue) return issue;
     }
   }, [local.clips, texturePlayback, textureOpacity, bpm, fps, beatsPerBar, totalBeats]);
-  const textures = playbackError ? [] : local.clips ?? folderClips(textureFolder);
+  const textures = textureRefs ?? (playbackError ? [] : local.clips ?? folderClips(textureFolder));
   const events = Math.max(8, textures.length);
   const position = loopPhase * events;
   const latest = Math.floor(position);
@@ -227,15 +232,12 @@ const InfiniteBloom: React.FC<z.output<typeof schema> & Partial<Pick<SketchBaseP
       <Pollen pulse={pulse} center={center} rings={rings} playback={texturePlayback}
         textureOpacity={textures.length ? textureOpacity : 0} />
     </div>
-    {isStudio && !isRendering && <LocalGifFolderPicker folder={local.folder}
+    {showFolderPicker && isStudio && !isRendering && <LocalGifFolderPicker folder={local.folder}
       onFolderChange={local.setFolder} playbackError={playbackError} />}
   </AbsoluteFill>;
 };
 
-export default defineSketch({
-  id: 'infinite-bloom',
-  title: 'Infinite Bloom',
-  description: 'A flower that keeps opening, with animated GIFs clipped inside its petals.',
+export const bloomSettings = {
   schema,
   defaults: {
     zoom: 1,
@@ -243,10 +245,18 @@ export default defineSketch({
     textureOpacity: 0.78,
     texturePlayback: {mode: 'fit', duration: {bars: 1}, direction: 'ping-pong'},
     petals: 8,
-  },
+  } satisfies z.input<typeof schema>,
+  assets: (props: z.output<typeof schema>) => props.textureOpacity > 0 ? folderClips(props.textureFolder) : [],
+  clips: (props: z.output<typeof schema>, field = 'texturePlayback') => props.textureOpacity > 0
+    ? folderClips(props.textureFolder).map((texture) => ({clip: texture, playback: props.texturePlayback, field}))
+    : [],
+};
+
+export default defineSketch({
+  id: 'infinite-bloom',
+  title: 'Infinite Bloom',
+  description: 'A flower that keeps opening, with animated GIFs clipped inside its petals.',
+  ...bloomSettings,
   timing: {bpm: 108},
   Component: InfiniteBloom,
-  assets: (props) => props.textureOpacity > 0 ? folderClips(props.textureFolder) : [],
-  clips: (props) => props.textureOpacity > 0 ? folderClips(props.textureFolder)
-    .map((texture) => ({clip: texture, playback: props.texturePlayback, field: 'texturePlayback'})) : [],
 });

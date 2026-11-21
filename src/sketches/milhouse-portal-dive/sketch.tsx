@@ -1,16 +1,17 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {useDelayRender} from 'remotion';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useDelayRender, useRemotionEnvironment} from 'remotion';
 import {ThreeCanvas} from '@remotion/three';
-import {useFrame} from '@react-three/fiber';
+import {useFrame, useThree} from '@react-three/fiber';
 import {
-  Color, Group, HalfFloatType, LoadingManager, NoBlending, NoToneMapping, PerspectiveCamera,
-  Mesh, Vector2, Vector3, WebGLRenderTarget,
+  CanvasTexture, Color, Group, HalfFloatType, LinearFilter, LoadingManager, NoBlending, NoToneMapping,
+  PerspectiveCamera, Mesh, SRGBColorSpace, Vector2, Vector3, WebGLRenderTarget,
 } from 'three';
 import {RectAreaLightUniformsLib} from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {zColor} from '@remotion/zod-types';
 import {z} from 'zod';
 import {collectionFile} from '../../assets';
+import {useGifFrame} from '../../assets/GifFrame';
 import {useBeat} from '../../beat/BeatContext';
 import {step} from '../../beat/envelopes';
 import {useCanvas} from '../canvas';
@@ -18,6 +19,7 @@ import {defineSketch, useAsset, type SketchBaseProps} from '../define';
 import {sliceModel, type Model} from './sliceGeometry';
 import {createPerformance, SOURCE_DURATION} from './animation';
 import {portalGeometry} from './portalGeometry';
+import {createDiveHandoff} from './diveHandoff';
 
 const modelFile = collectionFile('milhouse-01', 'milhouse-2.fbx');
 const SOURCE_IN = 11.8;
@@ -33,7 +35,17 @@ const schema = z.object({
   rimColor: zColor(),
   echoColor: zColor(),
 });
-type Props = z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent'>>;
+type Props = z.output<typeof schema> & Partial<Pick<SketchBaseProps, 'transparent'>> & {
+  revealBackdropThroughPortal?: boolean;
+  destinationPreview?: {
+    src: string;
+    frame: number;
+    width: number;
+    height: number;
+    opacity: number;
+    brightness: number;
+  };
+};
 
 let modelPromise: Promise<Group> | undefined;
 function loadModel(src: string) {
@@ -66,6 +78,11 @@ const ease = (value: number) => {
 };
 const between = (value: number, from: number, to: number) => ease((value - from) / (to - from));
 
+export const portalTransition = (phase: number, diveStart: number) => {
+  const plunge = between(phase, diveStart, 0.99);
+  return {plunge, handoff: between(plunge, 0.69, 0.96)};
+};
+
 const portalVertex = `
   varying vec2 fieldUv;
   varying vec4 screen;
@@ -76,30 +93,75 @@ const portalVertex = `
   }
 `;
 const portalFragment = `
-  uniform sampler2D field, destination;
+  uniform sampler2D field, destination, preview;
   uniform vec3 rimColor, echoColor;
   uniform vec2 center;
-  uniform float windowScale, clock, handoff;
-  uniform bool entrance;
+  uniform float windowScale, clock, handoff, screenAlignment;
+  uniform float previewOpacity, previewBrightness;
+  uniform vec2 previewScale;
+  uniform bool entrance, revealBackdrop;
   varying vec2 fieldUv;
   varying vec4 screen;
   void main() {
     vec2 distanceField = texture2D(field, fieldUv).rg;
     vec2 screenUv = screen.xy / screen.w * 0.5 + 0.5;
     vec2 projected = (screenUv - center) / windowScale + 0.5;
-    vec2 imageUv = mix(projected, screenUv, handoff);
+    vec2 imageUv = mix(projected, screenUv, screenAlignment);
     vec4 room = texture2D(destination, imageUv);
     float bounds = min(min(imageUv.x, 1.0 - imageUv.x), min(imageUv.y, 1.0 - imageUv.y));
     float window = float(entrance) * smoothstep(0.0, 0.08, bounds);
     float rim = 1.0 - smoothstep(0.012, 0.06, distanceField.g);
     float band = pow(0.5 + 0.5 * cos(6.28318 * (distanceField.r * 3.0 - clock)), 10.0);
     vec3 led = mix(rimColor, echoColor, smoothstep(0.22, 0.78, 0.5 + 0.5 * sin(fieldUv.x * 19.0)));
-    vec3 paint = mix(vec3(0.018, 0.003, 0.043), room.rgb, window * room.a);
-    paint = mix(paint, led, max(rim, band * (1.0 - distanceField.r) * 0.37));
-    gl_FragColor = mix(vec4(paint, 1.0), room, handoff);
+    vec3 base = vec3(0.018, 0.003, 0.043);
+    float edge = max(rim, band * (1.0 - distanceField.r) * 0.37);
+    if (revealBackdrop) {
+      // Keep the window transparent wherever the destination has no figure.
+      vec4 interior = mix(vec4(base, 1.0), room, window);
+      if (previewOpacity > 0.0) {
+        vec2 capUv = vec2(fieldUv.x, 1.0 - fract(fieldUv.y * 2.0));
+        vec4 image = texture2D(preview, (capUv - 0.5) * previewScale + 0.5);
+        vec3 previewRoom = room.rgb * window +
+          image.rgb * previewBrightness * (1.0 - room.a * window);
+        interior = mix(interior, vec4(previewRoom, 1.0), image.a * previewOpacity);
+      }
+      vec4 color = mix(mix(interior, vec4(led, 1.0), edge), room, handoff);
+      gl_FragColor = vec4(color.rgb / max(color.a, 0.0001), color.a);
+    } else {
+      vec3 paint = mix(base, room.rgb, window * room.a);
+      gl_FragColor = mix(vec4(mix(paint, led, edge), 1.0), room, handoff);
+    }
     #include <colorspace_fragment>
+    if (revealBackdrop) gl_FragColor.rgb *= gl_FragColor.a;
   }
 `;
+
+function usePreviewTexture(preview: Props['destinationPreview'], visible: boolean) {
+  const advance = useThree(state => state.advance);
+  const {isRendering} = useRemotionEnvironment();
+  const {src, width = 1, height = 1} = preview ?? {};
+  const texture = useMemo(() => {
+    if (!src) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const result = new CanvasTexture(canvas);
+    result.colorSpace = SRGBColorSpace;
+    result.minFilter = LinearFilter;
+    result.generateMipmaps = false;
+    return result;
+  }, [src, width, height]);
+  const canvas = useMemo(() => ({current: texture ? texture.image as HTMLCanvasElement : null}), [texture]);
+  useEffect(() => () => texture?.dispose(), [texture]);
+  const upload = useCallback(() => {
+    if (!texture) return;
+    texture.needsUpdate = true;
+    // Remotion's WebGL frame may already have rendered while the GIF decoded.
+    if (isRendering) advance(0);
+  }, [advance, isRendering, texture]);
+  useGifFrame(visible ? src : undefined, preview?.frame ?? 0, canvas, upload);
+  return texture;
+}
 
 function splitPose(model: Model) {
   const [lower, upper] = sliceModel(model, 2);
@@ -136,8 +198,9 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   const {phase} = step(beat, beatsPerBar, totalBeats);
   const open = between(phase, 0.10, 0.32);
   const approach = between(phase, 0.20, props.diveStart);
-  const plunge = between(phase, props.diveStart, 0.99);
-  const handoff = between(plunge, 0.69, 0.96);
+  const {plunge, handoff} = portalTransition(phase, props.diveStart);
+  const dissolve = between(plunge, 0.55, 0.96);
+  const screenAlignment = between(plunge, 0.48, 0.73);
   const upper = useRef<Group>(null);
   const lowerSurface = useRef<Mesh>(null);
   const upperSurface = useRef<Mesh>(null);
@@ -159,6 +222,9 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   );
   useEffect(() => () => {if (pose !== opening) pose.dispose();}, [pose, opening]);
   const showGates = open > 0;
+  const preview = props.destinationPreview;
+  const previewTexture = usePreviewTexture(preview, showGates && handoff < 1);
+  const previewAspect = preview ? preview.width / preview.height : 1;
   const faces = useMemo(() => showGates ? portalFaces(pose) : null, [pose, showGates]);
   useEffect(() => () => faces?.dispose(), [faces]);
 
@@ -169,6 +235,8 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
     {type: HalfFloatType},
   ), [width, height, scale]);
   useEffect(() => () => target.dispose(), [target]);
+  const roomDissolve = useMemo(() => createDiveHandoff(target.texture), [target]);
+  useEffect(() => () => roomDissolve.dispose(), [roomDissolve]);
 
   const fov = 37;
   const distance = Math.max(11.8, 7.5 / aspect);
@@ -205,7 +273,10 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
     camera.quaternion.copy(cameraView.quaternion);
     camera.updateMatrixWorld();
     if (!showGates || !upper.current || !lowerSurface.current || !upperSurface.current ||
-      !gates.current || !upperCap.current) return;
+      !gates.current || !upperCap.current) {
+      gl.render(scene, camera);
+      return;
+    }
     const previousTarget = gl.getRenderTarget();
     const lift = upper.current.position.clone();
     const roll = upper.current.rotation.z;
@@ -215,7 +286,7 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       upper.current.position.set(0, 0, 0);
       upper.current.rotation.z = 0;
       gates.current.visible = upperCap.current.visible = false;
-      gl.setRenderTarget(target);
+      if (dissolve < 1) gl.setRenderTarget(target);
       gl.render(scene, hero);
     } finally {
       gl.setRenderTarget(previousTarget);
@@ -225,7 +296,11 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       upper.current.rotation.z = roll;
       gates.current.visible = upperCap.current.visible = true;
     }
-  }, -1);
+    // The destination takes over before the camera can graze the outgoing mesh.
+    if (dissolve === 1) return;
+    gl.render(scene, camera);
+    if (dissolve > 0) roomDissolve.render(gl, dissolve);
+  }, 1);
 
   const gateMaterial = (face: ReturnType<typeof portalGeometry>, entrance: boolean) => ({
     vertexShader: portalVertex,
@@ -237,6 +312,12 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
       center: {value: new Vector2(projectedEntry.x * 0.5 + 0.5, projectedEntry.y * 0.5 + 0.5)},
       windowScale: {value: 0.10 + 0.68 * plunge ** 1.6}, clock: {value: phase * 3},
       handoff: {value: entrance ? handoff : 0}, entrance: {value: entrance},
+      screenAlignment: {value: entrance ? screenAlignment : 0},
+      revealBackdrop: {value: props.revealBackdropThroughPortal === true},
+      preview: {value: previewTexture},
+      previewOpacity: {value: entrance ? (preview?.opacity ?? 0) * (1 - handoff) : 0},
+      previewBrightness: {value: (preview?.brightness ?? 1) ** 2.2},
+      previewScale: {value: new Vector2(Math.min(1, 1 / previewAspect), Math.min(1, previewAspect))},
     },
   });
 
@@ -277,7 +358,7 @@ const Studio: React.FC<{root: Group; props: Props}> = ({root, props}) => {
   </>;
 };
 
-const MilhousePortalDive: React.FC<Props> = props => {
+export const MilhousePortalDive: React.FC<Props> = props => {
   const root = useModel();
   const {width, height, aspect} = useCanvas();
   return root && <ThreeCanvas width={width} height={height}
@@ -291,18 +372,22 @@ const MilhousePortalDive: React.FC<Props> = props => {
   </ThreeCanvas>;
 };
 
-export default defineSketch({
-  id: 'milhouse-portal-dive',
-  title: 'Milhouse Portal Dive',
-  description: 'Milhouse splits in two, revealing the same studio through the cut. One continuous dive per bar.',
+export const portalDiveSettings = {
   schema,
   defaults: {
     lift: 1.4, slide: 1.0, diveStart: 0.55, sourceIn: SOURCE_IN, sourceOut: SOURCE_OUT,
     backdrop: '#302139', floorColor: '#403246', rimColor: '#00efef', echoColor: '#ff00ce',
   },
   timing: {bpm: 120, bars: 4, beatsPerBar: 4},
-  validate: ({sourceIn, sourceOut}) => sourceIn < sourceOut
+  validate: ({sourceIn, sourceOut}: Pick<Props, 'sourceIn' | 'sourceOut'>) => sourceIn < sourceOut
     ? [] : ['sourceOut: the FBX out point must be later than sourceIn.'],
-  Component: MilhousePortalDive,
   assets: [modelFile],
+};
+
+export default defineSketch({
+  id: 'milhouse-portal-dive',
+  title: 'Milhouse Portal Dive',
+  description: 'Milhouse splits in two, revealing the same studio through the cut. One continuous dive per bar.',
+  ...portalDiveSettings,
+  Component: MilhousePortalDive,
 });

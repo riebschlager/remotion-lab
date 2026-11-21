@@ -1,4 +1,4 @@
-import React, {useLayoutEffect, useRef} from 'react';
+import React, {useLayoutEffect, useRef, type RefObject} from 'react';
 import {useDelayRender} from 'remotion';
 
 type FrameRequest = {
@@ -80,18 +80,16 @@ const createSource = (src: string) => {
 
 const sources = new Map<string, ReturnType<typeof createSource>>();
 
-/** One indexed decode at a time per GIF. Obsolete requests are removed as the playhead moves. */
-export const GifFrame: React.FC<{
-  src: string;
-  frame: number;
-  width: number;
-  height: number;
-  fit: 'contain' | 'cover' | 'fill';
-  style?: React.CSSProperties;
-}> = ({src, frame, width, height, fit, style}) => {
-  const canvas = useRef<HTMLCanvasElement>(null);
+/** Draw an indexed GIF frame into a canvas before releasing the render. */
+export const useGifFrame = (
+  src: string | undefined,
+  frame: number,
+  canvas: RefObject<HTMLCanvasElement | null>,
+  onDraw?: () => void,
+) => {
   const {delayRender, continueRender, cancelRender} = useDelayRender();
   useLayoutEffect(() => {
+    if (!src) return;
     const source = sources.get(src) ?? createSource(src);
     sources.set(src, source);
     source.users++;
@@ -104,6 +102,7 @@ export const GifFrame: React.FC<{
   }, [src]);
 
   useLayoutEffect(() => {
+    if (!src) return;
     const handle = delayRender(`Decoding GIF frame ${frame} of ${src}`);
     const unsubscribe = sources.get(src)!.request(frame, {
       draw(image) {
@@ -115,6 +114,7 @@ export const GifFrame: React.FC<{
           if (!context) throw new Error('GIF frame requires a 2D canvas context.');
           context.clearRect(0, 0, target.width, target.height);
           context.drawImage(image, 0, 0);
+          onDraw?.();
           continueRender(handle);
         } catch (error) {
           cancelRender(error instanceof Error ? error : new Error(String(error)));
@@ -128,7 +128,18 @@ export const GifFrame: React.FC<{
       unsubscribe();
       continueRender(handle);
     };
-  }, [src, frame, delayRender, continueRender, cancelRender]);
+  }, [src, frame, canvas, onDraw, delayRender, continueRender, cancelRender]);
+};
 
+export const GifFrame: React.FC<{
+  src: string;
+  frame: number;
+  width: number;
+  height: number;
+  fit: 'contain' | 'cover' | 'fill';
+  style?: React.CSSProperties;
+}> = ({src, frame, width, height, fit, style}) => {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  useGifFrame(src, frame, canvas);
   return <canvas ref={canvas} style={{width, height, objectFit: fit, ...style}} />;
 };
