@@ -13,6 +13,7 @@ import milhouseChunks from './milhouse-chunks/sketch';
 import infiniteBloom from './infinite-bloom/sketch';
 import milhouseInfiniteBloom from './milhouse-infinite-bloom/sketch';
 import milhouseBreakingNews from './milhouse-breaking-news/sketch';
+import sharkFrenzy from './shark-frenzy/sketch';
 
 /**
  * Every sketch folder is listed here once. `npm run sketch:new` adds the two
@@ -33,6 +34,7 @@ export const sketches: Sketch[] = [
   infiniteBloom,
   milhouseInfiniteBloom,
   milhouseBreakingNews,
+  sharkFrenzy,
 ];
 
 export const findSketch = (id: string) => sketches.find((sketch) => sketch.id === id);

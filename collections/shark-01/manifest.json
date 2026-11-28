@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "collection": "shark-01",
+  "description": "shark.glb (three.js GLTFExporter r187) contains a low-poly shark in two skinned meshes that share a 33-joint rig and one flat palette-atlas texture. Three takes: Bite (2.96 s, 56 keys), Idle (2.50 s, 45 keys) and Swim_Vertical (3.33 s, 75 keys). Each starts and ends within one degree of the same pose, so all three loop. guy.glb (same exporter) is a man in a grey T-shirt and jeans: one skinned mesh, 66-joint humanoid rig, 512² photo texture, 1.82 units tall with feet at y = 0. Five takes: Attack_Ground_Pound (2.96 s, does not loop; deepest crouch at 0.72 s), Bow (3.67 s), Cheering_Two_Hands (1.57 s, 6° seam), Chest_Open (1.33 s), Confused (2.83 s). GLB is skipped by the clip/font scanner.",
+  "tags": [
+    "shark",
+    "3d",
+    "glb",
+    "skinned",
+    "low-poly",
+    "bite",
+    "idle",
+    "swim"
+  ],
+  "clips": {},
+  "fonts": {}
+}
